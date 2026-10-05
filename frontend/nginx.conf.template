@@ -1,0 +1,45 @@
+# Rendered at container start by the nginx image's envsubst step.
+# BACKEND_HOST and BACKEND_PORT tell nginx where the API lives, so the browser only ever
+# calls relative /api/... URLs and never needs to know a backend hostname.
+server {
+    listen 8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Security headers (declared once at server level so every response carries them).
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'" always;
+
+    location /api/ {
+        proxy_pass http://${BACKEND_HOST}:${BACKEND_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+    }
+
+    # Cheap endpoint for container and Kubernetes health checks (no backend involved).
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # Vite fingerprints asset file names, so they can be cached for a long time.
+    location /assets/ {
+        expires 1y;
+        try_files $uri =404;
+    }
+
+    # Single-page app: unknown paths fall back to index.html, which must never be cached.
+    location / {
+        expires -1;
+        try_files $uri /index.html;
+    }
+}
