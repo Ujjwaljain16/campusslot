@@ -1,0 +1,23 @@
+# Used by the GitHub Actions deploy job on a throw-away kind cluster. kind has no metrics-server,
+# so the HPA is off and the replica counts are fixed. The images are pulled from GHCR with an
+# image pull secret created by the workflow.
+imagePullSecrets:
+  - name: ghcr
+
+hpa:
+  enabled: false
+
+backend:
+  replicaCount: 2
+  env:
+    APP_ENV: ci
+
+frontend:
+  replicaCount: 2
+
+ingress:
+  enabled: true
+  className: nginx
+
+serviceMonitor:
+  enabled: false

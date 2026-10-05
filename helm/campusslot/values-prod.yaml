@@ -1,0 +1,44 @@
+# Example values for a production style cluster such as the Amazon EKS cluster described in
+# terraform/. The database is managed outside the cluster (for example Amazon RDS), so its
+# connection string is supplied through an existing Secret instead of being created by this chart.
+#
+# Create the secret out of band, never from a file in Git:
+#   kubectl create secret generic campusslot-database -n campusslot \
+#     --from-literal=DATABASE_URL='postgresql+psycopg://<user>:<password>@<rds-endpoint>:5432/campusslot'
+postgres:
+  enabled: false
+
+database:
+  existingSecret: campusslot-database
+  secretKey: DATABASE_URL
+
+backend:
+  replicaCount: 3
+  env:
+    APP_ENV: production
+  resources:
+    requests: { cpu: 250m, memory: 256Mi }
+    limits: { cpu: "1", memory: 512Mi }
+
+frontend:
+  replicaCount: 3
+
+ingress:
+  enabled: true
+  className: nginx
+  host: campusslot.example.com
+  annotations: {}
+  tls:
+    - secretName: campusslot-tls
+      hosts:
+        - campusslot.example.com
+
+hpa:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60
+  scaleDownStabilizationSeconds: 300
+
+serviceMonitor:
+  enabled: true

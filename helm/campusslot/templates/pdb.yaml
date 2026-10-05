@@ -1,0 +1,26 @@
+{{- if .Values.pdb.enabled }}
+# Keeps at least one replica of each tier running while nodes are drained for maintenance.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "campusslot.fullname" . }}-backend
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "campusslot.selectorLabels" (dict "root" . "component" "backend") | nindent 6 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "campusslot.fullname" . }}-frontend
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "campusslot.selectorLabels" (dict "root" . "component" "frontend") | nindent 6 }}
+{{- end }}

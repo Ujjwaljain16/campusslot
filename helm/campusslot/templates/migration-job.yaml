@@ -1,0 +1,67 @@
+{{- if .Values.migration.enabled }}
+# Runs "alembic upgrade head" once per release revision, so two backend replicas never try to
+# migrate the same database at the same time. It is an ordinary resource (not a Helm hook) because
+# the database is created by this same release. The backend readiness probe stays unready until the
+# schema exists, so "helm --wait" finishes only after the migration has really completed.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "campusslot.fullname" . }}-migrate-{{ .Release.Revision }}
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+spec:
+  backoffLimit: 6
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: {{ .Values.migration.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "campusslot.selectorLabels" (dict "root" . "component" "migration") | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "campusslot.fullname" . }}
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: {{ include "campusslot.backendImage" . | quote }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          # PostgreSQL may still be starting, so retry for up to a minute before giving up.
+          command:
+            - sh
+            - -c
+            - |
+              i=0
+              until alembic upgrade head; do
+                i=$((i + 1))
+                if [ "$i" -ge 30 ]; then echo "migration failed" >&2; exit 1; fi
+                echo "database not ready, retrying ($i/30)"; sleep 2
+              done
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "campusslot.databaseSecretName" . }}
+                  key: {{ .Values.database.secretKey }}
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { cpu: 300m, memory: 192Mi }
+          securityContext:
+            {{- include "campusslot.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

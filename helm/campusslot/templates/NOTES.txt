@@ -1,0 +1,20 @@
+CampusSlot {{ .Chart.AppVersion }} was deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Images (tagged with the commit SHA):
+  backend : {{ include "campusslot.backendImage" . }}
+  frontend: {{ include "campusslot.frontendImage" . }}
+
+Check the rollout:
+  kubectl get pods,svc,ingress,hpa -n {{ .Release.Namespace }}
+
+{{- if .Values.ingress.enabled }}
+
+Open the application through the Ingress{{ if .Values.ingress.host }} at http://{{ .Values.ingress.host }}{{ end }}.
+On Minikube with the Docker driver, forward the ingress controller to your machine:
+  kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8080:80
+  then browse to http://localhost:8080  (API docs: http://localhost:8080/docs)
+{{- else }}
+
+The Ingress is disabled. Reach the frontend with:
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "campusslot.fullname" . }}-frontend 8080:80
+{{- end }}

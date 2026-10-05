@@ -1,0 +1,57 @@
+{{- if .Values.ingress.enabled }}
+# One entry point: "/" goes to the React frontend and "/api" goes to the FastAPI backend.
+# An Ingress object is only configuration; an ingress controller (for example ingress-nginx)
+# must be running in the cluster for it to take effect.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "campusslot.fullname" . }}
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "campusslot.fullname" . }}-backend
+                port:
+                  number: {{ .Values.backend.port }}
+          {{- if .Values.ingress.exposeApiDocs }}
+          - path: /docs
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "campusslot.fullname" . }}-backend
+                port:
+                  number: {{ .Values.backend.port }}
+          - path: /openapi.json
+            pathType: Exact
+            backend:
+              service:
+                name: {{ include "campusslot.fullname" . }}-backend
+                port:
+                  number: {{ .Values.backend.port }}
+          {{- end }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "campusslot.fullname" . }}-frontend
+                port:
+                  number: 80
+      {{- with .Values.ingress.host }}
+      host: {{ . | quote }}
+      {{- end }}
+{{- end }}

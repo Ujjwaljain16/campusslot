@@ -1,0 +1,90 @@
+# Default values for the CampusSlot chart. Environment specific overrides live in
+# values-dev.yaml (Minikube), values-ci.yaml (kind in GitHub Actions) and values-prod.yaml (EKS).
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Needed only when the images live in a private registry, for example:
+#   imagePullSecrets: [{ name: ghcr }]
+imagePullSecrets: []
+
+backend:
+  image:
+    repository: ghcr.io/ujjwaljain16/campusslot-backend
+    # No default tag on purpose: CI passes the commit SHA, and the chart refuses to render without
+    # one so that "latest" can never be deployed by accident.
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  port: 8000
+  env:
+    APP_ENV: production
+    LOG_LEVEL: INFO
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 256Mi }
+
+frontend:
+  image:
+    repository: ghcr.io/ujjwaljain16/campusslot-frontend
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  port: 8080
+  resources:
+    requests: { cpu: 25m, memory: 32Mi }
+    limits: { cpu: 200m, memory: 128Mi }
+
+# In-cluster PostgreSQL (StatefulSet + PVC). Fine for a demo; for production prefer a managed
+# database such as Amazon RDS: set postgres.enabled=false and provide database.existingSecret.
+postgres:
+  enabled: true
+  image: postgres:16-alpine
+  database: campusslot
+  username: campusslot
+  # Supplied at install time and never stored in Git:
+  #   helm upgrade --install ... --set-string postgres.password="$(openssl rand -hex 16)"
+  password: ""
+  persistence:
+    size: 1Gi
+    storageClass: ""
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 256Mi }
+
+# Use an existing Secret that already contains a DATABASE_URL key (for example one created by
+# External Secrets). When set, the chart does not create its own Secret.
+database:
+  existingSecret: ""
+  secretKey: DATABASE_URL
+
+migration:
+  enabled: true
+  ttlSecondsAfterFinished: 600
+
+ingress:
+  enabled: true
+  className: nginx
+  # Empty host matches any hostname, so http://localhost works through a port-forward.
+  host: ""
+  annotations: {}
+  tls: []
+  # Also route /docs and /openapi.json to the API so Swagger is reachable through the Ingress.
+  exposeApiDocs: true
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 50
+  scaleDownStabilizationSeconds: 300
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+# Requires the Prometheus Operator CRDs (installed by kube-prometheus-stack).
+serviceMonitor:
+  enabled: false
+  interval: 15s
+  labels: {}

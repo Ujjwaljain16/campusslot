@@ -1,0 +1,24 @@
+# Local development on Minikube. Use together with the image tag and a password, for example:
+#   helm upgrade --install campusslot ./helm/campusslot -n campusslot --create-namespace \
+#     -f helm/campusslot/values-dev.yaml \
+#     --set backend.image.tag=<sha> --set frontend.image.tag=<sha> \
+#     --set-string postgres.password="$(openssl rand -hex 16)"
+backend:
+  env:
+    APP_ENV: development
+
+ingress:
+  enabled: true
+  className: nginx
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 50
+  # A short window so the demo shows the scale-down within a couple of minutes.
+  scaleDownStabilizationSeconds: 60
+
+postgres:
+  persistence:
+    size: 1Gi

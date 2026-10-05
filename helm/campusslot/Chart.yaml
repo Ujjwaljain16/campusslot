@@ -1,0 +1,15 @@
+apiVersion: v2
+name: campusslot
+description: CampusSlot, a campus lab and room booking system (React frontend, FastAPI backend, PostgreSQL)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - booking
+  - fastapi
+  - react
+home: https://github.com/Ujjwaljain16/campusslot
+sources:
+  - https://github.com/Ujjwaljain16/campusslot
+maintainers:
+  - name: Ujjwal Jain
