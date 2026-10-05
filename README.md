@@ -212,9 +212,9 @@ The pipeline was not green on the first try, and three failures taught me someth
 
 ### Final rehearsal
 
-I rehearsed the live demo end to end and recorded it in [`rehearsal.txt`](docs/evidence/rehearsal.txt): I changed the page subtitle in `frontend/src/App.jsx`, ran the frontend tests and build, committed with a meaningful message and pushed to `main`. The pipeline built and scanned both images and pushed them with the commit SHA. I then ran `scripts/deploy-local.sh <sha>`, and Kubernetes rolled both Deployments to the new images without downtime while the migration Job completed. I verified three things from the outside: `/api/info` reported exactly the commit that I had pushed, the rendered page showed the new subtitle with the footer `Build 5e03c9a`, and all existing bookings were still in the database.
+I rehearsed the live demo end to end and recorded it in [`rehearsal.txt`](docs/evidence/rehearsal.txt): I changed the page subtitle in `frontend/src/App.jsx`, ran the frontend tests and build, committed with a meaningful message and pushed to `main`. The pipeline built and scanned both images and pushed them with the commit SHA. I then ran `scripts/deploy-local.sh <sha>`, and Kubernetes rolled both Deployments to the new images while the migration Job completed. The chart allows no unavailable replicas during a rollout, but I did not measure downtime during this run. I verified three things from the outside: `/api/info` reported exactly the commit that I had pushed, the rendered page showed the new subtitle with the footer `Build 5e03c9a`, and all existing bookings were still in the database.
 
-The first push of this rehearsal failed in the smoke test described above, so the loop took about eleven minutes from the first push to the new version being live, including the diagnosis and the fix. A clean run takes about four minutes for the pipeline plus the deploy.
+The first push of this rehearsal failed in the smoke test described above, so the loop took about eleven minutes from the first push to the new version being live, including the diagnosis and the fix. A clean run takes about four minutes for the pipeline plus about one minute for the local deploy.
 
 ![The application after the rehearsal deployment](docs/evidence/rehearsal-after-deploy.png)
 
