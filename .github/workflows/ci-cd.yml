@@ -21,10 +21,32 @@ env:
 
 jobs:
   # ------------------------------------------------------------------------------------------
+  # Decide whether the change needs the whole pipeline. A push or pull request that only touches
+  # documentation skips the heavy jobs. A skipped job counts as passed for the required checks of
+  # the protected branch, so documentation changes still merge.
+  # ------------------------------------------------------------------------------------------
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-24.04
+    outputs:
+      code: ${{ steps.detect.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: detect
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: bash .github/scripts/changes.sh
+
+  # ------------------------------------------------------------------------------------------
   # Quality gate 1: backend lint, security lint and unit tests (fast SQLite database)
   # ------------------------------------------------------------------------------------------
   backend-test:
     name: Backend tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -54,6 +76,8 @@ jobs:
   # ------------------------------------------------------------------------------------------
   frontend-build:
     name: Frontend build
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -78,6 +102,8 @@ jobs:
   # ------------------------------------------------------------------------------------------
   postgres-integration:
     name: PostgreSQL integration tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -114,6 +140,8 @@ jobs:
   # ------------------------------------------------------------------------------------------
   secret-scan:
     name: Secret scan (gitleaks)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -133,6 +161,8 @@ jobs:
   # ------------------------------------------------------------------------------------------
   static-analysis:
     name: Static analysis (Terraform and Helm)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -226,43 +256,32 @@ jobs:
           done
 
   # ------------------------------------------------------------------------------------------
-  # Build both images, scan them with Trivy, and push to GHCR only if both are clean.
-  # Images are tagged with the commit SHA so every deployment traces back to one commit.
+  # Build both images in parallel, scan them with Trivy, and push to GHCR only if both are clean AND
+  # every quality gate has succeeded. The build starts at once, while the tests and the static analysis
+  # are still running, and the push waits for them. Images are tagged with the commit SHA so every
+  # deployment traces back to one commit.
   # ------------------------------------------------------------------------------------------
   build-scan-push:
     name: Build, scan and push images
-    needs: [backend-test, frontend-build, postgres-integration, secret-scan, static-analysis]
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
+      actions: read
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
 
-      - name: Build backend image
-        uses: docker/build-push-action@v7
+      - name: Build both images in parallel
+        uses: docker/bake-action@v7
+        env:
+          SHA: ${{ github.sha }}
         with:
-          context: ./backend
+          files: docker-bake.hcl
           load: true
           push: false
-          tags: ${{ env.IMAGE_PREFIX }}-backend:${{ github.sha }}
-          build-args: |
-            GIT_SHA=${{ github.sha }}
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
-
-      - name: Build frontend image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./frontend
-          load: true
-          push: false
-          tags: ${{ env.IMAGE_PREFIX }}-frontend:${{ github.sha }}
-          build-args: |
-            GIT_SHA=${{ github.sha }}
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,mode=max,scope=frontend
 
       # Security gate: any fixable HIGH or CRITICAL finding fails the job, so nothing below runs.
       - name: Scan backend image (Trivy)
@@ -282,6 +301,17 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
           format: table
+
+      # Everything above needs no other job. Pushing an image does: it must not happen unless the tests,
+      # the dependency audits, the secret scan and the static analysis have all succeeded.
+      - name: Wait for the other quality gates before pushing
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          bash .github/scripts/wait-for-jobs.sh 600
+          "Backend tests" "Frontend build" "PostgreSQL integration tests"
+          "Secret scan (gitleaks)" "Static analysis (Terraform and Helm)"
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
@@ -310,12 +340,13 @@ jobs:
   # ------------------------------------------------------------------------------------------
   deploy:
     name: Deploy with Helm (kind)
-    if: github.event_name != 'pull_request'
-    needs: build-scan-push
+    if: github.event_name != 'pull_request' && needs.changes.outputs.code == 'true'
+    needs: changes
     runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: read
+      actions: read
     env:
       NAMESPACE: campusslot
     steps:
@@ -362,6 +393,13 @@ jobs:
             --set backend.image.tag=${{ github.sha }} \
             --set frontend.image.tag=${{ github.sha }} \
             --set-string postgres.password=lint-only
+
+      # The cluster, the ingress controller and the namespace did not need the images, so they were
+      # prepared while the images were still being built. From here on the images are needed.
+      - name: Wait for the images that the build job publishes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/wait-for-jobs.sh 900 "Build, scan and push images"
 
       - name: helm upgrade --install with the commit SHA tags
         run: |
