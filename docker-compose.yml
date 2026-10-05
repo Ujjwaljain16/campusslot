@@ -1,0 +1,63 @@
+# Local stack: PostgreSQL + FastAPI backend + nginx-served React frontend.
+#   docker compose up --build        start everything
+#   docker compose ps                see health status
+#   docker compose down              stop (data is kept in the named volume)
+#   docker compose down -v           stop and delete the database volume
+#
+# Values come from a local .env file (copy .env.example). The defaults below let a fresh clone run
+# immediately; they are development placeholders only, never production credentials.
+name: campusslot
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-campusslot}
+      POSTGRES_USER: ${POSTGRES_USER:-campusslot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-campusslot-dev-only}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        GIT_SHA: ${GIT_SHA:-local}
+    image: campusslot-backend:local
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-campusslot}:${POSTGRES_PASSWORD:-campusslot-dev-only}@postgres:5432/${POSTGRES_DB:-campusslot}
+      RUN_MIGRATIONS: "true"
+      APP_ENV: ${APP_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        GIT_SHA: ${GIT_SHA:-local}
+    image: campusslot-frontend:local
+    environment:
+      BACKEND_HOST: backend
+      BACKEND_PORT: "8000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:8080"
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
