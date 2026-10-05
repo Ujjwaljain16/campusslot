@@ -14,3 +14,4 @@ Short records of the choices that shaped this project, with the options that I r
 | [0008](0008-manual-promotion-via-git.md) | Promote builds with a commit to the GitOps values |
 | [0009](0009-standalone-repository.md) | Build the capstone in its own repository |
 | [0010](0010-trivy-ignore-unfixed.md) | Gate on fixable HIGH and CRITICAL findings only |
+| [0011](0011-one-scanner-for-iac-and-manifests.md) | Use one scanner for the infrastructure code and the manifests |
