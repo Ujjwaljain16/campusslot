@@ -1,0 +1,85 @@
+
+### 0. Start from a clean slate (an old volume still held a previous database password)
+ Container campusslot-postgres-1  Removing
+ Container campusslot-postgres-1  Removed
+ Volume campusslot_postgres-data  Removing
+ Network campusslot_default  Removing
+ Volume campusslot_postgres-data  Removed
+ Network campusslot_default  Removed
+
+### 1. Build and start the stack
+ Container campusslot-postgres-1  Waiting
+ Container campusslot-postgres-1  Healthy
+ Container campusslot-backend-1  Starting
+ Container campusslot-backend-1  Started
+ Container campusslot-backend-1  Waiting
+ Container campusslot-backend-1  Healthy
+ Container campusslot-frontend-1  Starting
+ Container campusslot-frontend-1  Started
+all three services reported healthy
+
+### 2. docker compose ps
+NAME                    IMAGE                       COMMAND                  SERVICE    CREATED          STATUS                    PORTS
+campusslot-backend-1    campusslot-backend:local    "./docker-entrypoint…"   backend    20 seconds ago   Up 13 seconds (healthy)   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+campusslot-frontend-1   campusslot-frontend:local   "/docker-entrypoint.…"   frontend   20 seconds ago   Up 7 seconds (healthy)    0.0.0.0:3000->8080/tcp, [::]:3000->8080/tcp
+campusslot-postgres-1   postgres:16-alpine          "docker-entrypoint.s…"   postgres   20 seconds ago   Up 18 seconds (healthy)   5432/tcp
+
+### 3. Health checks through the published ports
+backend  GET :8000/health -> {"status":"ok"}
+backend  GET :8000/ready  -> {"status":"ready"}
+frontend GET :3000/healthz -> HTTP 200
+frontend GET :3000/api/rooms (nginx proxies to the backend) -> 6 rooms
+
+### 4. Create a booking through the frontend proxy, then try to double book it
+first booking  -> HTTP 201
+same slot again -> HTTP 409
+bookings stored: 1 ['Compose persistence proof']
+
+### 5. Persistence: docker compose down (volume kept), then up again
+ Container campusslot-postgres-1  Stopped
+ Container campusslot-postgres-1  Removing
+ Container campusslot-postgres-1  Removed
+ Network campusslot_default  Removing
+ Network campusslot_default  Removed
+containers left: 0
+campusslot
+campusslot_postgres-data
+ Container campusslot-backend-1  Waiting
+ Container campusslot-backend-1  Healthy
+ Container campusslot-frontend-1  Starting
+ Container campusslot-frontend-1  Started
+healthy again
+bookings after restart: 1 ['Compose persistence proof']
+
+### 6. Non-root proof: id inside both application containers
+backend : uid=10001(app) gid=10001(app) groups=10001(app)
+frontend: uid=101(nginx) gid=101(nginx) groups=101(nginx)
+backend  image USER: 10001:10001
+frontend image USER: 101
+backend  HEALTHCHECK: ["CMD","python","-c","import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+frontend HEALTHCHECK: ["CMD-SHELL","wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+
+### 7. Image sizes
+REPOSITORY:TAG                                                                      SIZE
+campusslot-backend:local                                                            289MB
+ghcr.io/ujjwaljain16/campusslot-frontend:a8fd94cd8c976f4bccc1534a31510e4ead333a2c   90.6MB
+campusslot-frontend:local                                                           90.6MB
+ghcr.io/ujjwaljain16/campusslot-backend:a8fd94cd8c976f4bccc1534a31510e4ead333a2c    37.6MB
+
+### 8. Contrast: removing the volume (down -v) really does delete the data
+ Container campusslot-postgres-1  Removing
+ Container campusslot-postgres-1  Removed
+ Network campusslot_default  Removing
+ Volume campusslot_postgres-data  Removing
+ Volume campusslot_postgres-data  Removed
+ Network campusslot_default  Removed
+campusslot volumes left: 1
+
+### 9. Correction to step 8: an exact check for the Compose volume
+(step 8 counted 1 because its grep also matched a volume called 'campusslot', which belongs to the Minikube cluster and not to Compose)
+docker volume ls, filtered for the Compose volume campusslot_postgres-data:
+  (none: the Compose volume is gone)
+docker volume ls, all volumes whose name contains campusslot:
+  campusslot
+
+Note: the image size lines in step 7 mix compressed and unpacked sizes from Docker's image store, so they are not comparable and are not used in the README.
