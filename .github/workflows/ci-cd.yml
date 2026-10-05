@@ -25,7 +25,7 @@ jobs:
   # ------------------------------------------------------------------------------------------
   backend-test:
     name: Backend tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: backend
@@ -52,7 +52,7 @@ jobs:
   # ------------------------------------------------------------------------------------------
   frontend-build:
     name: Frontend build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: frontend
@@ -76,7 +76,7 @@ jobs:
   # ------------------------------------------------------------------------------------------
   postgres-integration:
     name: PostgreSQL integration tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16-alpine
@@ -112,7 +112,7 @@ jobs:
   # ------------------------------------------------------------------------------------------
   secret-scan:
     name: Secret scan (gitleaks)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
@@ -131,7 +131,7 @@ jobs:
   build-scan-push:
     name: Build, scan and push images
     needs: [backend-test, frontend-build, postgres-integration, secret-scan]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -200,3 +200,103 @@ jobs:
             echo "- \`${{ env.IMAGE_PREFIX }}-backend:${{ github.sha }}\`"
             echo "- \`${{ env.IMAGE_PREFIX }}-frontend:${{ github.sha }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # ------------------------------------------------------------------------------------------
+  # Deploy: install the Helm chart, with the SHA-tagged images just pushed, onto a throw-away
+  # kind cluster and prove it works end to end through the Ingress. A laptop cluster cannot be
+  # reached from a GitHub runner, so the persistent demo cluster is updated with
+  # "make deploy-local SHA=<sha>" using exactly the same chart and the same images.
+  # ------------------------------------------------------------------------------------------
+  deploy:
+    name: Deploy with Helm (kind)
+    if: github.event_name != 'pull_request'
+    needs: build-scan-push
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    env:
+      NAMESPACE: campusslot
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+        with:
+          version: v3.22.0
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: campusslot-ci
+          config: ci/kind-config.yaml
+
+      - name: Install the ingress controller
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
+          kubectl wait --namespace ingress-nginx --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller --timeout=180s
+
+      - name: Create the namespace and the registry pull secret
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl create secret docker-registry ghcr --namespace "$NAMESPACE" \
+            --docker-server=ghcr.io \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Lint the chart
+        run: |
+          helm lint helm/campusslot -f helm/campusslot/values-ci.yaml \
+            --set backend.image.tag=${{ github.sha }} \
+            --set frontend.image.tag=${{ github.sha }} \
+            --set-string postgres.password=lint-only
+
+      - name: helm upgrade --install with the commit SHA tags
+        run: |
+          helm upgrade --install campusslot helm/campusslot \
+            --namespace "$NAMESPACE" \
+            -f helm/campusslot/values-ci.yaml \
+            --set backend.image.tag=${{ github.sha }} \
+            --set frontend.image.tag=${{ github.sha }} \
+            --set-string postgres.password="$(openssl rand -hex 16)" \
+            --atomic --timeout 6m
+
+      - name: Show what was deployed
+        run: |
+          helm list --namespace "$NAMESPACE"
+          kubectl get pods,svc,ingress --namespace "$NAMESPACE"
+
+      - name: Smoke test through the Ingress
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost/healthz > /dev/null && break || sleep 2
+          done
+          echo "frontend: $(curl -fsS http://localhost/healthz)"
+
+          rooms=$(curl -fsS http://localhost/api/rooms | python3 -c "import sys, json; print(len(json.load(sys.stdin)))")
+          echo "rooms returned by the API: $rooms"
+          test "$rooms" -ge 6
+
+          deployed=$(curl -fsS http://localhost/api/info | python3 -c "import sys, json; print(json.load(sys.stdin)['git_sha'])")
+          echo "deployed commit: $deployed"
+          test "$deployed" = "${{ github.sha }}"
+
+          body='{"room_id":1,"purpose":"CI smoke test","booked_by":"github-actions","start_time":"2030-01-01T10:00:00Z","end_time":"2030-01-01T11:00:00Z"}'
+          first=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d "$body" http://localhost/api/bookings)
+          second=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d "$body" http://localhost/api/bookings)
+          echo "first booking: HTTP $first, same slot again: HTTP $second"
+          test "$first" = "201"
+          test "$second" = "409"
+
+          {
+            echo "### Deployed to kind with Helm"
+            echo "- commit: \`${{ github.sha }}\`"
+            echo "- rooms: $rooms, booking created (201) and the overlapping request rejected (409)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          kubectl get all,ingress,events --namespace "$NAMESPACE" || true
+          kubectl logs --namespace "$NAMESPACE" --selector app.kubernetes.io/component=backend --tail=80 || true
+          kubectl logs --namespace "$NAMESPACE" --selector app.kubernetes.io/component=migration --tail=80 || true
