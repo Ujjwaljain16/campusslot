@@ -1,0 +1,6 @@
+# Always use LF so shell scripts, Dockerfiles and YAML behave identically on Windows, Linux and CI.
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
