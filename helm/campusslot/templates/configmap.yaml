@@ -1,0 +1,12 @@
+# Non-secret application settings. The database password is not here: it lives in a Secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "campusslot.fullname" . }}-backend-config
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+data:
+  {{- range $key, $value := .Values.backend.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

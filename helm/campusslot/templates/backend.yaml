@@ -26,6 +26,8 @@ spec:
       annotations:
         # A changed database Secret rolls the pods so they pick up the new connection string.
         checksum/database-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        # A changed ConfigMap rolls the pods too, because environment variables are read only at start.
+        checksum/backend-config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ include "campusslot.fullname" . }}
       automountServiceAccountToken: false
@@ -47,16 +49,15 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.backend.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "campusslot.fullname" . }}-backend-config
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: {{ include "campusslot.databaseSecretName" . }}
                   key: {{ .Values.database.secretKey }}
-            {{- range $key, $value := .Values.backend.env }}
-            - name: {{ $key }}
-              value: {{ $value | quote }}
-            {{- end }}
           # Starting up: give the app up to a minute before liveness checks can restart it.
           startupProbe:
             httpGet: { path: /health, port: http }

@@ -17,9 +17,14 @@ backend:
     pullPolicy: IfNotPresent
   replicaCount: 2
   port: 8000
+  # Non-secret settings. They are rendered into a ConfigMap and loaded with envFrom, and a change
+  # to any of them rolls the backend pods through a checksum annotation.
   env:
     APP_ENV: production
     LOG_LEVEL: INFO
+    MAX_BOOKING_HOURS: "12"
+    DAY_OPEN_HOUR: "8"
+    DAY_CLOSE_HOUR: "20"
   resources:
     requests: { cpu: 100m, memory: 128Mi }
     limits: { cpu: 500m, memory: 256Mi }
@@ -60,6 +65,8 @@ database:
 
 migration:
   enabled: true
+  # Set to true when Argo CD deploys the chart (see gitops/values.yaml).
+  argocdHook: false
   ttlSecondsAfterFinished: 600
 
 ingress:
