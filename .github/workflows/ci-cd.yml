@@ -127,12 +127,105 @@ jobs:
         run: gitleaks detect --source . --verbose
 
   # ------------------------------------------------------------------------------------------
+  # Quality gate 5: static analysis of the infrastructure code and the Kubernetes manifests.
+  # Accepted findings live in terraform/.trivyignore.yaml and helm/.trivyignore.yaml, each with a
+  # written reason, so a new finding fails the build and an old one is explained.
+  # ------------------------------------------------------------------------------------------
+  static-analysis:
+    name: Static analysis (Terraform and Helm)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: Terraform format and validate
+        working-directory: terraform
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: Scan the Terraform (demonstration profile)
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_TF_VARS: terraform/terraform.tfvars.example
+        with:
+          scan-type: config
+          scan-ref: terraform
+          severity: MEDIUM,HIGH,CRITICAL
+          exit-code: "1"
+          trivyignores: terraform/.trivyignore.yaml
+          format: table
+
+      # The security controls that the demonstration leaves off for cost must disappear when they are
+      # switched on. Only the permanent, explained exceptions may remain in the production profile.
+      - name: Scan the Terraform (production profile must clear the cost-driven findings)
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_TF_VARS: terraform/terraform.tfvars.prod.example
+        with:
+          scan-type: config
+          scan-ref: terraform
+          severity: MEDIUM,HIGH,CRITICAL
+          exit-code: "0"
+          format: json
+          output: prod-terraform.json
+      - name: Check the production profile findings
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          permanent = {"AWS-0040", "AWS-0041", "AWS-0104", "AWS-0164"}
+          found = {m["ID"] for r in json.load(open("prod-terraform.json")).get("Results", [])
+                   for m in (r.get("Misconfigurations") or [])}
+          print("findings in the production profile:", sorted(found))
+          unexpected = found - permanent
+          if unexpected:
+              print("not allowed in the production profile:", sorted(unexpected))
+              sys.exit(1)
+          print("only the documented permanent exceptions remain")
+          PY
+
+      - name: Scan the Helm chart
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_HELM_VALUES: helm/campusslot/values-ci.yaml
+          TRIVY_HELM_SET: backend.image.tag=ci,frontend.image.tag=ci,postgres.password=ci
+        with:
+          scan-type: config
+          scan-ref: helm/campusslot
+          severity: MEDIUM,HIGH,CRITICAL
+          exit-code: "1"
+          trivyignores: helm/.trivyignore.yaml
+          format: table
+
+      - name: Validate the rendered manifests against the Kubernetes schema
+        run: |
+          version=v0.8.0
+          curl -fsSLO "https://github.com/yannh/kubeconform/releases/download/${version}/kubeconform-linux-amd64.tar.gz"
+          curl -fsSLO "https://github.com/yannh/kubeconform/releases/download/${version}/CHECKSUMS"
+          grep " kubeconform-linux-amd64.tar.gz$" CHECKSUMS | sha256sum -c -
+          tar -xzf kubeconform-linux-amd64.tar.gz kubeconform
+          # The three value sets that are really used: CI, local development, and what Argo CD renders.
+          for values in "-f helm/campusslot/values-ci.yaml" \
+                        "-f helm/campusslot/values-dev.yaml" \
+                        "-f helm/campusslot/values-dev.yaml -f gitops/values.yaml"; do
+            echo "== helm template $values"
+            helm template campusslot helm/campusslot $values \
+              --set backend.image.tag=ci --set frontend.image.tag=ci --set-string postgres.password=ci \
+              | ./kubeconform -strict -summary -ignore-missing-schemas -kubernetes-version 1.36.0
+          done
+
+  # ------------------------------------------------------------------------------------------
   # Build both images, scan them with Trivy, and push to GHCR only if both are clean.
   # Images are tagged with the commit SHA so every deployment traces back to one commit.
   # ------------------------------------------------------------------------------------------
   build-scan-push:
     name: Build, scan and push images
-    needs: [backend-test, frontend-build, postgres-integration, secret-scan]
+    needs: [backend-test, frontend-build, postgres-integration, secret-scan, static-analysis]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
