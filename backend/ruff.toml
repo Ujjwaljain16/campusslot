@@ -4,6 +4,10 @@ target-version = "py312"
 [lint]
 select = ["E", "F", "I", "B", "UP"]
 
+[lint.isort]
+# The local "alembic/" migrations folder shares its name with the third-party library.
+known-third-party = ["alembic"]
+
 [lint.flake8-bugbear]
 # FastAPI dependency injection is built on calls in argument defaults.
 extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
