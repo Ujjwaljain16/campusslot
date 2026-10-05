@@ -24,6 +24,8 @@ The application itself is not deployed to EKS. Kubernetes, Helm, monitoring and 
 
 **Cluster creator access.** `enable_cluster_creator_admin_permissions` creates an EKS access entry that gives the identity running Terraform admin rights in the cluster, so `kubectl` works straight after the apply.
 
+**Security controls that are switches, not omissions.** Control plane logging, Secrets encryption with a KMS key, and VPC flow logs are off by default to keep a short lived cluster cheap. They are the variables `enable_control_plane_logging`, `enable_secrets_encryption` and `enable_vpc_flow_logs`, and `terraform.tfvars.prod.example` turns all three on. The demonstration profile plans 48 resources and the production profile plans 58. The pipeline scans both profiles with Trivy and fails if the production profile still shows anything other than the four permanent, documented exceptions in `.trivyignore.yaml` (see [`docs/engineering/static-analysis.md`](../docs/engineering/static-analysis.md)).
+
 ## Usage
 
 ```bash

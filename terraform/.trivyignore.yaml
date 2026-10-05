@@ -1,0 +1,18 @@
+# Findings of the Terraform scan that I accepted on purpose. Each one has a written reason. The
+# production profile (terraform.tfvars.prod.example) must NOT need the first three, and the pipeline
+# checks that, so they cannot hide a real gap in production.
+misconfigurations:
+  - id: AWS-0038
+    statement: "Control plane logging is off in the demonstration profile to keep a short lived cluster cheap. enable_control_plane_logging turns it on, and CI proves that the finding disappears in the production profile."
+  - id: AWS-0039
+    statement: "Secrets encryption with a customer managed KMS key is off in the demonstration profile to save cost. enable_secrets_encryption turns it on, and CI proves that the finding disappears in the production profile."
+  - id: AWS-0178
+    statement: "VPC flow logs are off in the demonstration profile to save cost. enable_vpc_flow_logs turns them on, and CI proves that the finding disappears in the production profile."
+  - id: AWS-0040
+    statement: "The Kubernetes API must be reachable from the operator's machine. It is restricted to the operator's own address by api_allowed_cidrs, which cannot be empty or 0.0.0.0/0 (validation rule). Production would make the endpoint private and use a VPN or bastion."
+  - id: AWS-0041
+    statement: "The rule treats any public address as open, including a single /32. The value is the operator's own address, and the variable validation rejects 0.0.0.0/0."
+  - id: AWS-0104
+    statement: "Worker nodes in public subnets without a NAT gateway need outbound access to reach the EKS API and to pull images. Production would restrict egress with VPC endpoints and tighter security groups (docs/adr/0001)."
+  - id: AWS-0164
+    statement: "Public IP addresses on the worker nodes are the deliberate replacement for a NAT gateway, chosen for cost (docs/adr/0001). Production uses private subnets."

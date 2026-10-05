@@ -40,6 +40,12 @@ module "vpc" {
   # a public IP, and EKS rejects a node group whose subnets do not assign one.
   map_public_ip_on_launch = true
 
+  # Network flow logs, off in the demonstration profile to save cost (see var.enable_vpc_flow_logs).
+  enable_flow_log                      = var.enable_vpc_flow_logs
+  create_flow_log_cloudwatch_log_group = var.enable_vpc_flow_logs
+  create_flow_log_cloudwatch_iam_role  = var.enable_vpc_flow_logs
+  flow_log_max_aggregation_interval    = 60
+
   # Kubernetes uses these tags to find the subnets for load balancers.
   public_subnet_tags = {
     "kubernetes.io/role/elb" = 1
@@ -74,10 +80,10 @@ module "eks" {
 
   # Cost trimming for a short lived demo: no customer managed KMS key and no control plane
   # log group. A production cluster would enable both.
-  create_kms_key              = false
-  encryption_config           = null
-  enabled_log_types           = []
-  create_cloudwatch_log_group = false
+  create_kms_key              = var.enable_secrets_encryption
+  encryption_config           = var.enable_secrets_encryption ? { resources = ["secrets"] } : null
+  enabled_log_types           = var.enable_control_plane_logging ? ["api", "audit", "authenticator", "controllerManager", "scheduler"] : []
+  create_cloudwatch_log_group = var.enable_control_plane_logging
 
   addons = {
     coredns    = {}

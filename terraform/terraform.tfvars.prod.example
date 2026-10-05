@@ -1,0 +1,8 @@
+# The security controls that the demonstration profile leaves off to save cost.
+# Use together with your own api_allowed_cidrs, for example:
+#   terraform plan -var-file=terraform.tfvars.prod.example -var 'api_allowed_cidrs=["203.0.113.7/32"]'
+api_allowed_cidrs = ["203.0.113.7/32"]
+
+enable_control_plane_logging = true
+enable_secrets_encryption    = true
+enable_vpc_flow_logs         = true

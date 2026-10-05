@@ -61,3 +61,25 @@ variable "api_allowed_cidrs" {
     error_message = "Provide at least one CIDR and do not use 0.0.0.0/0."
   }
 }
+
+# The three switches below are security controls that this demonstration leaves off to keep the cost
+# of a short lived cluster close to zero. A production deployment turns them on, see
+# terraform.tfvars.prod.example. They are variables so that the secure setting is one line away, and so
+# that a scanner can check both profiles.
+variable "enable_control_plane_logging" {
+  description = "Send the Kubernetes API, audit, authenticator, controller manager and scheduler logs to CloudWatch"
+  type        = bool
+  default     = false
+}
+
+variable "enable_secrets_encryption" {
+  description = "Encrypt Kubernetes Secrets in etcd with a customer managed KMS key"
+  type        = bool
+  default     = false
+}
+
+variable "enable_vpc_flow_logs" {
+  description = "Capture network flow logs of the VPC in CloudWatch"
+  type        = bool
+  default     = false
+}
