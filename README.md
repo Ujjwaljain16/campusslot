@@ -367,11 +367,16 @@ Known limitations, stated plainly:
 
 ## 18. Cleanup
 
-What I already shut down and verified:
+Everything that I created for the project has been shut down, and I verified each step:
 
 ```bash
-docker compose down                  # the stack; "down -v" also removes the database volume
-terraform apply destroy.tfplan       # 48 resources destroyed, then checked with the AWS CLI
+docker compose down -v               # the Compose stack, and with -v its database volume
+minikube delete -p campusslot        # the local cluster, including ingress, Prometheus and Grafana
+terraform apply destroy.tfplan       # the 48 AWS resources, destroyed earlier
 ```
 
-After the destroy I checked the region with the AWS CLI. It reported no EKS cluster, no VPC other than the default one, and no NAT gateway, Elastic IP, instance, volume or load balancer ([`aws-cleanup-verification.txt`](docs/evidence/aws-cleanup-verification.txt)).
+I also stopped the port-forwards that I had started, and I removed the leftover test container, the Compose volume and the project images from Docker, by name, so that data of my other projects was not touched. A final listing shows no container, volume, image or network of this project, no Minikube profile and no kube context.
+
+On AWS, a final check of `ap-south-1` ([`final-cleanup-verification.txt`](docs/evidence/final-cleanup-verification.txt)) reported no EKS cluster, no VPC other than the default one, and no NAT gateway, Elastic IP, internet gateway, instance, volume, load balancer or OIDC provider. The AWS account page still showed the full 120 USD credit when I checked, because billing data arrives hours late. My estimate for the whole EKS run is about 10 US cents, and I will confirm the real figure in the billing console once it updates.
+
+To rebuild any part of the project, the sections above give the exact commands. The Minikube demo is recreated with `minikube start`, `scripts/install-monitoring.sh` and `scripts/deploy-local.sh <sha>`.
