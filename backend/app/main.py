@@ -3,7 +3,7 @@ import logging
 from fastapi import Depends, FastAPI
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -43,15 +43,22 @@ def create_app() -> FastAPI:
     def health() -> dict:
         return {"status": "ok"}
 
-    @app.get("/ready", tags=["meta"], summary="Readiness: the database is reachable")
+    @app.get("/ready", tags=["meta"], summary="Readiness: the database is reachable and migrated")
     def ready(db: Session = Depends(get_db)):
         try:
             db.execute(text("SELECT 1"))
+            schema_present = inspect(db.get_bind()).has_table("bookings")
         except SQLAlchemyError as exc:
             logger.warning("readiness check failed: %s", exc.__class__.__name__)
             return JSONResponse(
                 status_code=503,
                 content={"status": "unavailable", "detail": "database unreachable"},
+            )
+        if not schema_present:
+            # Traffic must not arrive before the migration Job has created the tables.
+            return JSONResponse(
+                status_code=503,
+                content={"status": "unavailable", "detail": "database schema is not migrated yet"},
             )
         return {"status": "ready"}
 

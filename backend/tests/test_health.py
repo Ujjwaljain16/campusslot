@@ -1,4 +1,7 @@
+from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.db import get_db
 from app.main import app
@@ -31,6 +34,20 @@ def test_ready_returns_503_when_database_is_unavailable(client):
     response = client.get("/ready")
     assert response.status_code == 503
     assert response.json()["status"] == "unavailable"
+
+
+def test_ready_returns_503_until_the_schema_has_been_migrated(client):
+    """A reachable but empty database is not ready: the migration Job has not run yet."""
+    engine = create_engine("sqlite://", poolclass=StaticPool)
+    empty_database = sessionmaker(bind=engine)()
+
+    def empty_db():
+        yield empty_database
+
+    app.dependency_overrides[get_db] = empty_db
+    response = client.get("/ready")
+    assert response.status_code == 503
+    assert "not migrated" in response.json()["detail"]
 
 
 def test_liveness_stays_ok_even_when_database_is_down(client):
