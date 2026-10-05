@@ -1,0 +1,14 @@
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov
+tests
+conftest.py
+pytest.ini
+requirements-dev.txt
+ruff.toml
+.env
+.env.*
