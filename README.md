@@ -158,6 +158,7 @@ The stack has a PostgreSQL service with a `pg_isready` health check and a named 
 One failure is worth recording. My first start of this proof failed with a database authentication error. A volume from an earlier run still held the old password, and PostgreSQL applies `POSTGRES_PASSWORD` only when it initialises an empty volume. I confirmed that the volume was mine, removed it and started again.
 
 ![docker compose ps](docs/evidence/terminal-docker-compose-ps.png)
+![docker compose up --build -d](docs/evidence/terminal-docker-compose-up-build.png)
 ![Non-root users](docs/evidence/terminal-docker-nonroot-id.png)
 ![Data survives down and up](docs/evidence/terminal-docker-persistence.png)
 ![The application under Compose](docs/evidence/app-compose.png)
@@ -180,6 +181,8 @@ npm test && npm audit --omit=dev --audit-level=high && npm run build
 | Backend, SQLite | 42 passed, coverage 89.86 percent against a floor of 85 | [backend-tests.txt](docs/evidence/backend-tests.txt) |
 | Backend, PostgreSQL 16 | 4 passed: migrations, the overlap constraint, the database layer returning 409, and a concurrent race that creates exactly one booking | [postgres-tests.txt](docs/evidence/postgres-tests.txt) |
 | Frontend | 12 passed, 0 audit vulnerabilities, production build succeeds | [frontend-tests.txt](docs/evidence/frontend-tests.txt) |
+
+![pytest -v, 42 passed](docs/evidence/terminal-pytest.png)
 
 The backend tests cover health, readiness with the database down and with an unmigrated schema, every route of rooms and bookings, and the rules from section 2, including the adjacent slot case in both directions and a booking that is extended without conflicting with itself. I ran the PostgreSQL tests against a throwaway container that I removed afterwards. Bandit reports no issue of medium or high severity, and one low severity note that the `-ll` flag filters out.
 
@@ -224,6 +227,10 @@ The Trivy scans of the pipeline run on 5 October 2026 reported zero HIGH or CRIT
 
 Limits: the application has no authentication, and the chart does not define network policies. I left both out of scope on purpose.
 
+The Trivy report of both scans, copied from the pipeline log, is in [`trivy-ci-output.txt`](docs/evidence/trivy-ci-output.txt). It lists the Debian packages and every Python package of the backend, and the Alpine packages of the frontend, each with zero findings.
+
+![Both Trivy scan steps succeeded in the pipeline](docs/evidence/github-trivy-scan-steps.png)
+
 ## 12. Terraform
 
 The configuration in [`terraform/`](terraform) builds a VPC with two public and two private subnets, and an EKS cluster with one `t3.small` managed node. It uses pinned community modules and keeps the Kubernetes API reachable only from my address. The design notes, the cost estimate and the destroy procedure are in [`terraform/README.md`](terraform/README.md).
@@ -245,6 +252,8 @@ I applied the plan to a real account in `ap-south-1` and destroyed it about 45 m
 Public worker subnets and no NAT gateway are an intentional simplification for cost. A NAT gateway costs about 0.045 USD per hour, and the whole run cost an estimated 10 US cents. A production design would place the nodes in private subnets with controlled egress.
 
 ![terraform output and cluster status](docs/evidence/terraform-output-terminal.png)
+![terraform validate and plan, 48 to add](docs/evidence/terminal-terraform-plan.png)
+![The recorded destroy transcript and the empty cluster list. The destroy itself ran earlier and is not repeated here](docs/evidence/terminal-terraform-destroy-transcript.png)
 ![EKS cluster in the console](docs/evidence/aws-eks-cluster.png)
 ![Node group in the console](docs/evidence/aws-eks-node-group.png)
 ![VPC](docs/evidence/aws-vpc.png)
@@ -268,6 +277,9 @@ The release contains a StatefulSet for PostgreSQL, a migration Job, two Deployme
 ```bash
 kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8080:80      # http://localhost:8080
 ```
+
+![kubectl get pods, svc, helm list, ingress and hpa](docs/evidence/terminal-kubectl-helm.png)
+![The application through the Ingress](docs/evidence/app-desktop.png)
 
 ### Autoscaling
 
@@ -302,6 +314,7 @@ scripts/deploy-local.sh <commit-sha>
 The backend exposes the standard HTTP metrics and two of its own, `campusslot_bookings_total` and `campusslot_booking_conflicts_total{layer}`. I recorded a sample of `/metrics` and the PromQL results in [`metrics-and-promql.txt`](docs/evidence/metrics-and-promql.txt).
 
 ![Prometheus targets, 5 of 5 backend pods up](docs/evidence/prometheus-targets.png)
+![ServiceMonitor, monitoring pods and the /metrics output](docs/evidence/terminal-monitoring-metrics.png)
 ![Grafana dashboard](docs/evidence/grafana-dashboard.png)
 
 The dashboard shows request rate by route, latency percentiles, the 5xx rate, rejected bookings by layer, CPU per backend pod, and current against desired replicas. Two details came from real problems. The first latency panel showed every route at exactly 0.1 seconds, because the default histogram has no bucket below that value, so I switched to the high resolution histogram. Grafana was also killed once for exceeding my 300 MiB memory limit while it rendered the dashboard, and I raised the limit to 512 MiB.
@@ -326,7 +339,7 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 | Topic | Evidence |
 |---|---|
 | Application | `app-desktop.png`, `app-mobile.png`, `app-compose.png`, `api-docs.png`, `postgres-data-proof.txt` (tables, Alembic version 0003, seeded rooms, bookings and the `EXCLUDE` constraint, read with `psql` inside the database pod) |
-| Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt` |
+| Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt`, `terminal-pytest.png` |
 | Docker | `docker-proof.txt`, three `terminal-docker-*.png` screenshots |
 | Git and CI/CD | `github-commit-history.png`, `github-actions-run.png`, `ghcr-backend-package.png`, `ghcr-frontend-package.png`, `trivy-ci-output.txt` (the Trivy report of both images from the pipeline log) |
 | Kubernetes | `hpa-timeline.txt` |
