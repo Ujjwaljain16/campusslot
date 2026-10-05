@@ -291,16 +291,30 @@ jobs:
       - name: Smoke test through the Ingress
         run: |
           set -euo pipefail
-          for _ in $(seq 1 30); do
-            curl -fsS http://localhost/healthz > /dev/null && break || sleep 2
-          done
-          echo "frontend: $(curl -fsS http://localhost/healthz)"
+          # Helm waits for the pods to be Ready, but the ingress controller learns about new backends a
+          # few seconds later and answers 503 until then. Every call therefore waits for its own success.
+          fetch() {
+            for _ in $(seq 1 40); do
+              if resp=$(curl -fsS "$1"); then
+                echo "$resp"
+                return 0
+              fi
+              sleep 2
+            done
+            echo "no successful response from $1" >&2
+            return 1
+          }
 
-          rooms=$(curl -fsS http://localhost/api/rooms | python3 -c "import sys, json; print(len(json.load(sys.stdin)))")
+          fetch http://localhost/healthz > /dev/null
+          echo "frontend health check: ok"
+
+          fetch http://localhost/api/rooms > /tmp/rooms.json
+          rooms=$(python3 -c "import json; print(len(json.load(open('/tmp/rooms.json'))))")
           echo "rooms returned by the API: $rooms"
           test "$rooms" -ge 6
 
-          deployed=$(curl -fsS http://localhost/api/info | python3 -c "import sys, json; print(json.load(sys.stdin)['git_sha'])")
+          fetch http://localhost/api/info > /tmp/info.json
+          deployed=$(python3 -c "import json; print(json.load(open('/tmp/info.json'))['git_sha'])")
           echo "deployed commit: $deployed"
           test "$deployed" = "${{ github.sha }}"
 

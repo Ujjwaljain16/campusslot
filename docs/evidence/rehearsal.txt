@@ -6,3 +6,7 @@ images: campusslot-backend:786337172ac20bac858b3d31f46feeafd99fd8dc campusslot-f
 api/info: git_sha=786337172ac20bac858b3d31f46feeafd99fd8dc
 page subtitle (read from the rendered page): Lab and room booking without double bookings
 page footer: Build 7863371 / API v1.0.0 / development
+
+### 2. The change: frontend/src/App.jsx subtitle
+commit: dc987ac Reword the page subtitle to state the booking guarantee plainly
+pushed at: 19:01:27 IST
