@@ -1,0 +1,59 @@
+# Grafana Alloy collects the logs of the CampusSlot pods and ships them to Loki. It replaces
+# Promtail, which has reached end of life. loki.source.kubernetes tails logs through the Kubernetes
+# API, so no host paths have to be mounted.
+#
+#   helm upgrade --install alloy grafana/alloy -n monitoring --version 1.13.0 -f monitoring/alloy-values.yaml
+controller:
+  type: daemonset
+
+alloy:
+  resources:
+    requests: { cpu: 25m, memory: 64Mi }
+    limits: { memory: 192Mi }
+  configMap:
+    content: |
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      // Only the application namespace is collected, which keeps the log volume small.
+      discovery.relabel "campusslot" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          regex         = "campusslot"
+          action        = "keep"
+        }
+        rule {
+          target_label = "app"
+          replacement  = "campusslot"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_component"]
+          target_label  = "component"
+        }
+      }
+
+      loki.source.kubernetes "campusslot" {
+        targets    = discovery.relabel.campusslot.output
+        forward_to = [loki.write.local.receiver]
+      }
+
+      loki.write "local" {
+        endpoint {
+          url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+        }
+      }

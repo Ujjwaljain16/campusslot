@@ -9,18 +9,20 @@ from pathlib import Path
 
 NS = 'namespace="campusslot"'
 DS = {"type": "prometheus"}
+LOKI = {"type": "loki", "uid": "loki"}
 
 
-def panel(pid, title, expr, legend, x, y, w=12, h=8, unit="short", kind="timeseries"):
+def panel(pid, title, expr, legend, x, y, w=12, h=8, unit="short", kind="timeseries", ds=None):
+    ds = ds or DS
     return {
         "id": pid,
         "type": kind,
         "title": title,
-        "datasource": DS,
+        "datasource": ds,
         "gridPos": {"x": x, "y": y, "w": w, "h": h},
         "fieldConfig": {"defaults": {"unit": unit, "custom": {"lineWidth": 2, "fillOpacity": 12}}, "overrides": []},
         "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
-        "targets": [{"refId": "A", "datasource": DS, "expr": expr, "legendFormat": legend}],
+        "targets": [{"refId": "A", "datasource": ds, "expr": expr, "legendFormat": legend}],
     }
 
 
@@ -81,6 +83,33 @@ panels[5]["targets"].append(
         "legendFormat": "desired",
     }
 )
+
+# Log based panels. Loki reads the JSON lines that the application writes to standard output.
+panels.append(
+    panel(
+        7,
+        "Rejected bookings per layer, counted from the logs",
+        'sum by (layer) (count_over_time({app="campusslot", component="backend"} | json '
+        '| message="booking rejected: overlapping slot" [1m]))',
+        "{{layer}}",
+        0,
+        24,
+        ds=LOKI,
+    )
+)
+panels.append(
+    panel(
+        8,
+        "Application logs",
+        '{app="campusslot", component="backend"} | json | message != ""',
+        "",
+        12,
+        24,
+        kind="logs",
+        ds=LOKI,
+    )
+)
+panels[-1]["options"] = {"showTime": True, "wrapLogMessage": True, "sortOrder": "Descending"}
 
 dashboard = {
     "uid": "campusslot-overview",

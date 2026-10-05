@@ -38,6 +38,13 @@ prometheus:
 
 grafana:
   defaultDashboardsEnabled: false
+  # Logs are queried from Loki, which is installed by scripts/install-monitoring.sh.
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      access: proxy
+      url: http://loki.monitoring.svc.cluster.local:3100
   # The sidecar loads every ConfigMap labelled grafana_dashboard=1, in any namespace.
   sidecar:
     dashboards:
