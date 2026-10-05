@@ -81,7 +81,7 @@ export default function App() {
           <span className="brand-mark" aria-hidden="true" />
           <div>
             <h1>CampusSlot</h1>
-            <p>Lab and room booking without double bookings</p>
+            <p>Book a lab or room in seconds, with no double bookings</p>
           </div>
         </div>
         <button

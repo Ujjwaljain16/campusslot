@@ -1,0 +1,8 @@
+﻿### Final rehearsal: commit a change, watch the pipeline, deploy the new image, verify
+started: 2026-10-05 19:01:07 IST
+
+### 1. Before: what is deployed
+images: campusslot-backend:786337172ac20bac858b3d31f46feeafd99fd8dc campusslot-frontend:786337172ac20bac858b3d31f46feeafd99fd8dc 
+api/info: git_sha=786337172ac20bac858b3d31f46feeafd99fd8dc
+page subtitle (read from the rendered page): Lab and room booking without double bookings
+page footer: Build 7863371 / API v1.0.0 / development
