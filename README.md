@@ -392,6 +392,7 @@ The demonstration also found two real problems:
 - **A sync that failed although nothing was wrong.** After a rollout the metrics server needs about a minute to see the new pods, and during that time the autoscaler reports that it has no metrics. Argo CD called that `Degraded`, failed the sync and retried it, and each retry ran the migration again, so four migrations completed for one change. I added a custom health check that reports `Progressing` for that state. The same change then synced on the first attempt, with `successfully synced (no more tasks)`.
 
 ![Argo CD showing the application Healthy and Synced](docs/evidence/argocd-application.png)
+![The ConfigMap, the Secret that lives outside Git, and the Application](docs/evidence/terminal-configmap-argocd.png)
 
 The Argo CD UI shows the application tree, with 13 resources synced and none degraded. The desired state is public in this repository, and the secret is not.
 
@@ -420,7 +421,7 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 | Git and CI/CD | `github-commit-history.png`, `github-actions-run.png`, `ghcr-backend-package.png`, `ghcr-frontend-package.png`, `trivy-ci-output.txt` and `trivy-*-report.png` (the Trivy report of both images from the pipeline log) |
 | Kubernetes and the final rehearsal | `hpa-timeline.txt`, `rehearsal.txt`, `rehearsal-after-deploy.png` |
 | Monitoring and logs | `prometheus-targets.png`, `grafana-dashboard.png`, `grafana-dashboard-with-logs.png`, `metrics-and-promql.txt`, `loki-logs-proof.txt` |
-| GitOps | `gitops-bootstrap.txt`, `gitops-demo.txt`, `argocd-application.png` |
+| GitOps | `gitops-bootstrap.txt`, `gitops-demo.txt`, `argocd-application.png`, `terminal-configmap-argocd.png` |
 | Troubleshooting | `lab1` to `lab4` transcripts |
 | Terraform and AWS | plan, apply, second apply, destroy transcripts, `eks-verification.txt`, `aws-cleanup-verification.txt`, console screenshots |
 
@@ -444,17 +445,17 @@ Known limitations, stated plainly:
 
 ## 20. Cleanup
 
-Everything that I created for the project has been shut down, and I verified each step:
+Everything that I created for the project has been shut down, and I verified each step. The local cluster was built and deleted twice, once for the Kubernetes and monitoring work and once for the GitOps and logging work.
 
 ```bash
 docker compose down                  # the Compose stack
 docker volume rm campusslot_postgres-data   # its database volume, which a plain down keeps
-minikube delete -p campusslot        # the local cluster, including ingress, Prometheus and Grafana
+minikube delete -p campusslot        # the local cluster, including ingress, Prometheus, Grafana, Loki and Argo CD
 terraform apply destroy.tfplan       # the 48 AWS resources, destroyed earlier
 ```
 
 I also stopped the port-forwards that I had started, and I removed the leftover test container, the Compose volume and the project images from Docker, by name, so that data of my other projects was not touched. A final listing shows no container, volume, image or network of this project, no Minikube profile and no kube context.
 
-On AWS, a final check of `ap-south-1` ([`final-cleanup-verification.txt`](docs/evidence/final-cleanup-verification.txt)) reported no EKS cluster, no VPC other than the default one, and no NAT gateway, Elastic IP, internet gateway, instance, volume, load balancer or OIDC provider. The AWS account page still showed the full 120 USD credit when I checked, because billing data arrives hours late. My estimate for the whole EKS run is about 10 US cents, and I will confirm the real figure in the billing console once it updates.
+On AWS, a final check of `ap-south-1` ([`final-cleanup-verification.txt`](docs/evidence/final-cleanup-verification.txt), run twice) reported no EKS cluster, no VPC other than the default one, and no NAT gateway, Elastic IP, internet gateway, instance, volume, load balancer or OIDC provider. The AWS account page still showed the full 120 USD credit at the second check, which was several hours after the destroy, because billing data arrives late. My estimate for the whole EKS run is about 10 US cents, and I will confirm the real figure in the billing console once it updates.
 
-To rebuild any part of the project, the sections above give the exact commands. The Minikube demo is recreated with `minikube start`, `scripts/install-monitoring.sh` and `scripts/deploy-local.sh <sha>`.
+To rebuild any part of the project, the sections above give the exact commands. The Minikube demo is recreated with `minikube start`, `scripts/install-monitoring.sh` and either `scripts/deploy-local.sh <sha>` or `scripts/bootstrap-gitops.sh` for the GitOps variant.
