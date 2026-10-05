@@ -6,9 +6,9 @@ module.vpc.aws_vpc.this[0]: Refreshing state... [id=vpc-05a8cc7c4b087b053]
 module.eks.data.aws_partition.current[0]: Read complete after 0s [id=aws]
 module.eks.data.aws_iam_policy_document.assume_role_policy[0]: Read complete after 0s [id=2830595799]
 module.eks.aws_iam_role.this[0]: Refreshing state... [id=campusslot-cluster-0ed77d717f458e4067274a0330]
-module.eks.data.aws_caller_identity.current[0]: Read complete after 1s [id=189393508581]
+module.eks.data.aws_caller_identity.current[0]: Read complete after 1s [id=<ACCOUNT_ID>]
 module.eks.data.aws_iam_session_context.current[0]: Reading...
-module.eks.data.aws_iam_session_context.current[0]: Read complete after 0s [id=arn:aws:iam::189393508581:user/terraform-devops-labs]
+module.eks.data.aws_iam_session_context.current[0]: Read complete after 0s [id=arn:aws:iam::<ACCOUNT_ID>:user/terraform-devops-labs]
 module.eks.aws_iam_role_policy_attachment.this["AmazonEKSClusterPolicy"]: Refreshing state... [id=campusslot-cluster-0ed77d717f458e4067274a0330/arn:aws:iam::aws:policy/AmazonEKSClusterPolicy]
 data.aws_availability_zones.available: Read complete after 11s [id=ap-south-1]
 module.vpc.aws_default_network_acl.this[0]: Refreshing state... [id=acl-0e937648f23e2aaf3]
@@ -46,7 +46,7 @@ module.eks.module.eks_managed_node_group["default"].data.aws_iam_policy_document
 module.eks.module.eks_managed_node_group["default"].aws_iam_role.this[0]: Refreshing state... [id=default-eks-node-group-c96748292ac6e21889296d35ef]
 module.eks.aws_eks_cluster.this[0]: Refreshing state... [id=campusslot]
 module.eks.data.aws_eks_addon_version.this["kube-proxy"]: Reading...
-module.eks.aws_eks_access_entry.this["cluster_creator"]: Refreshing state... [id=campusslot:arn:aws:iam::189393508581:user/terraform-devops-labs]
+module.eks.aws_eks_access_entry.this["cluster_creator"]: Refreshing state... [id=campusslot:arn:aws:iam::<ACCOUNT_ID>:user/terraform-devops-labs]
 module.eks.data.aws_eks_addon_version.this["coredns"]: Reading...
 module.eks.data.aws_eks_addon_version.this["vpc-cni"]: Reading...
 module.eks.data.tls_certificate.this[0]: Reading...
@@ -57,7 +57,7 @@ module.eks.data.aws_eks_addon_version.this["vpc-cni"]: Read complete after 0s [i
 module.eks.data.aws_eks_addon_version.this["kube-proxy"]: Read complete after 0s [id=kube-proxy]
 module.eks.data.aws_eks_addon_version.this["coredns"]: Read complete after 0s [id=coredns]
 module.eks.aws_eks_addon.before_compute["vpc-cni"]: Refreshing state... [id=campusslot:vpc-cni]
-module.eks.aws_eks_access_policy_association.this["cluster_creator_admin"]: Refreshing state... [id=campusslot#arn:aws:iam::189393508581:user/terraform-devops-labs#arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy]
+module.eks.aws_eks_access_policy_association.this["cluster_creator_admin"]: Refreshing state... [id=campusslot#arn:aws:iam::<ACCOUNT_ID>:user/terraform-devops-labs#arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy]
 module.eks.module.eks_managed_node_group["default"].data.aws_ssm_parameter.ami[0]: Read complete after 0s [id=/aws/service/eks/optimized-ami/1.36/amazon-linux-2023/x86_64/standard/recommended/release_version]
 module.eks.module.eks_managed_node_group["default"].aws_iam_role_policy_attachment.this["AmazonEKS_CNI_Policy"]: Refreshing state... [id=default-eks-node-group-c96748292ac6e21889296d35ef/arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy]
 module.eks.module.eks_managed_node_group["default"].aws_iam_role_policy_attachment.this["AmazonEC2ContainerRegistryReadOnly"]: Refreshing state... [id=default-eks-node-group-c96748292ac6e21889296d35ef/arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly]
@@ -65,7 +65,7 @@ module.eks.module.eks_managed_node_group["default"].aws_iam_role_policy_attachme
 module.eks.module.eks_managed_node_group["default"].aws_launch_template.this[0]: Refreshing state... [id=lt-09bcbd8301e8aa54c]
 module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Refreshing state... [id=campusslot:default-b095687dc2f7958244afd03ea6]
 module.eks.data.tls_certificate.this[0]: Read complete after 9s [id=1e3a331631939a1ae4a625cd4244a4963dabbfa2]
-module.eks.aws_iam_openid_connect_provider.oidc_provider[0]: Refreshing state... [id=arn:aws:iam::189393508581:oidc-provider/oidc.eks.ap-south-1.amazonaws.com/id/52CC4664E0AC5B12535295FFCD541D6D]
+module.eks.aws_iam_openid_connect_provider.oidc_provider[0]: Refreshing state... [id=arn:aws:iam::<ACCOUNT_ID>:oidc-provider/oidc.eks.ap-south-1.amazonaws.com/id/52CC4664E0AC5B12535295FFCD541D6D]
 
 Note: Objects have changed outside of Terraform
 
@@ -74,7 +74,7 @@ last "terraform apply" which may have affected this plan:
 
   # module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0] has changed
   ~ resource "aws_eks_node_group" "this" {
-      + arn                    = "arn:aws:eks:ap-south-1:189393508581:nodegroup/campusslot/default-b095687dc2f7958244afd03ea6/c6d08600-3150-6489-0450-456fe7352689"
+      + arn                    = "arn:aws:eks:ap-south-1:<ACCOUNT_ID>:nodegroup/campusslot/default-b095687dc2f7958244afd03ea6/c6d08600-3150-6489-0450-456fe7352689"
         id                     = "campusslot:default-b095687dc2f7958244afd03ea6"
       + resources              = [
           + {
@@ -180,7 +180,7 @@ Terraform will perform the following actions:
 
   # module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0] is tainted, so must be replaced
 +/- resource "aws_eks_node_group" "this" {
-      ~ arn                    = "arn:aws:eks:ap-south-1:189393508581:nodegroup/campusslot/default-b095687dc2f7958244afd03ea6/c6d08600-3150-6489-0450-456fe7352689" -> (known after apply)
+      ~ arn                    = "arn:aws:eks:ap-south-1:<ACCOUNT_ID>:nodegroup/campusslot/default-b095687dc2f7958244afd03ea6/c6d08600-3150-6489-0450-456fe7352689" -> (known after apply)
       ~ disk_size              = 0 -> (known after apply)
       ~ id                     = "campusslot:default-b095687dc2f7958244afd03ea6" -> (known after apply)
       - labels                 = {} -> null

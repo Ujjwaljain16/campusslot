@@ -141,12 +141,12 @@ module.eks.data.aws_eks_addon_version.this["vpc-cni"]: Read complete after 0s [i
 module.eks.data.aws_eks_addon_version.this["kube-proxy"]: Read complete after 0s [id=kube-proxy]
 module.eks.data.aws_eks_addon_version.this["coredns"]: Read complete after 0s [id=coredns]
 module.eks.aws_eks_addon.before_compute["vpc-cni"]: Creating...
-module.eks.aws_eks_access_entry.this["cluster_creator"]: Creation complete after 0s [id=campusslot:arn:aws:iam::189393508581:user/terraform-devops-labs]
+module.eks.aws_eks_access_entry.this["cluster_creator"]: Creation complete after 0s [id=campusslot:arn:aws:iam::<ACCOUNT_ID>:user/terraform-devops-labs]
 module.eks.aws_eks_access_policy_association.this["cluster_creator_admin"]: Creating...
-module.eks.aws_eks_access_policy_association.this["cluster_creator_admin"]: Creation complete after 1s [id=campusslot#arn:aws:iam::189393508581:user/terraform-devops-labs#arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy]
+module.eks.aws_eks_access_policy_association.this["cluster_creator_admin"]: Creation complete after 1s [id=campusslot#arn:aws:iam::<ACCOUNT_ID>:user/terraform-devops-labs#arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy]
 module.eks.data.tls_certificate.this[0]: Read complete after 6s [id=1e3a331631939a1ae4a625cd4244a4963dabbfa2]
 module.eks.aws_iam_openid_connect_provider.oidc_provider[0]: Creating...
-module.eks.aws_iam_openid_connect_provider.oidc_provider[0]: Creation complete after 2s [id=arn:aws:iam::189393508581:oidc-provider/oidc.eks.ap-south-1.amazonaws.com/id/52CC4664E0AC5B12535295FFCD541D6D]
+module.eks.aws_iam_openid_connect_provider.oidc_provider[0]: Creation complete after 2s [id=arn:aws:iam::<ACCOUNT_ID>:oidc-provider/oidc.eks.ap-south-1.amazonaws.com/id/52CC4664E0AC5B12535295FFCD541D6D]
 module.eks.aws_eks_addon.before_compute["vpc-cni"]: Creation complete after 8s [id=campusslot:vpc-cni]
 module.eks.time_sleep.this[0]: Still creating... [10s elapsed]
 module.eks.time_sleep.this[0]: Still creating... [23s elapsed]

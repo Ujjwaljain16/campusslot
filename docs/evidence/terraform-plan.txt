@@ -4,9 +4,9 @@ module.eks.data.aws_partition.current[0]: Reading...
 module.eks.data.aws_caller_identity.current[0]: Reading...
 module.eks.data.aws_partition.current[0]: Read complete after 0s [id=aws]
 module.eks.data.aws_iam_policy_document.assume_role_policy[0]: Read complete after 0s [id=2830595799]
-module.eks.data.aws_caller_identity.current[0]: Read complete after 0s [id=189393508581]
+module.eks.data.aws_caller_identity.current[0]: Read complete after 0s [id=<ACCOUNT_ID>]
 module.eks.data.aws_iam_session_context.current[0]: Reading...
-module.eks.data.aws_iam_session_context.current[0]: Read complete after 0s [id=arn:aws:iam::189393508581:user/terraform-devops-labs]
+module.eks.data.aws_iam_session_context.current[0]: Read complete after 0s [id=arn:aws:iam::<ACCOUNT_ID>:user/terraform-devops-labs]
 data.aws_availability_zones.available: Read complete after 0s [id=ap-south-1]
 module.eks.module.eks_managed_node_group["default"].data.aws_iam_policy_document.assume_role_policy[0]: Reading...
 module.eks.module.eks_managed_node_group["default"].data.aws_iam_policy_document.assume_role_policy[0]: Read complete after 0s [id=2560088296]
@@ -69,7 +69,7 @@ Terraform will perform the following actions:
       + id                = (known after apply)
       + kubernetes_groups = (known after apply)
       + modified_at       = (known after apply)
-      + principal_arn     = "arn:aws:iam::189393508581:user/terraform-devops-labs"
+      + principal_arn     = "arn:aws:iam::<ACCOUNT_ID>:user/terraform-devops-labs"
       + region            = "ap-south-1"
       + tags_all          = {
           + "ManagedBy" = "terraform"
@@ -87,7 +87,7 @@ Terraform will perform the following actions:
       + id            = (known after apply)
       + modified_at   = (known after apply)
       + policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-      + principal_arn = "arn:aws:iam::189393508581:user/terraform-devops-labs"
+      + principal_arn = "arn:aws:iam::<ACCOUNT_ID>:user/terraform-devops-labs"
       + region        = "ap-south-1"
 
       + access_scope {
