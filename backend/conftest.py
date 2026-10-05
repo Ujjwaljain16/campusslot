@@ -46,3 +46,13 @@ def client(db_session):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def room(client):
+    response = client.post(
+        "/api/rooms",
+        json={"name": "Lab A", "building": "Block 1", "capacity": 30, "kind": "lab"},
+    )
+    assert response.status_code == 201, response.text
+    return response.json()

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from .config import get_settings
 from .db import get_db
-from .routes import rooms
+from .routes import bookings, rooms
 
 settings = get_settings()
 logging.basicConfig(
@@ -28,6 +28,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(rooms.router)
+    app.include_router(bookings.router)
 
     @app.get("/", tags=["meta"], summary="Service banner")
     def root() -> dict:
