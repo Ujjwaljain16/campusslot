@@ -1,0 +1,17 @@
+.git
+.github
+.env
+.env.*
+**/__pycache__
+**/*.pyc
+**/.venv
+**/node_modules
+**/dist
+**/.pytest_cache
+**/.ruff_cache
+**/.coverage
+docs
+terraform
+helm
+monitoring
+troubleshooting
