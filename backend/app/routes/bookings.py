@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -53,8 +54,15 @@ def _find_conflict(
     return db.scalars(stmt.limit(1)).first()
 
 
+logger = logging.getLogger("campusslot.bookings")
+
+
 def _conflict_error(conflict: Booking | None, layer: str) -> HTTPException:
     BOOKING_CONFLICTS.labels(layer=layer).inc()
+    logger.warning(
+        "booking rejected: overlapping slot",
+        extra={"layer": layer, "blocking_booking_id": conflict.id if conflict else None},
+    )
     detail: dict = {"message": "The room is already booked for part of this time"}
     if conflict is not None:
         detail["conflicting_booking"] = BookingRead.model_validate(conflict).model_dump(mode="json")

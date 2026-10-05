@@ -1,6 +1,7 @@
 import logging
+import time
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import inspect, text
@@ -9,14 +10,15 @@ from sqlalchemy.orm import Session
 
 from .config import get_settings
 from .db import get_db
+from .logging_config import configure_logging
 from .routes import bookings, rooms
 
 settings = get_settings()
-logging.basicConfig(
-    level=settings.log_level.upper(),
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
+configure_logging(settings.log_level)
 logger = logging.getLogger("campusslot")
+
+# Probe and metrics requests would drown out real traffic in the logs.
+QUIET_PATHS = {"/health", "/ready", "/metrics"}
 
 
 def create_app() -> FastAPI:
@@ -26,6 +28,22 @@ def create_app() -> FastAPI:
         description="Room and laboratory slot booking for a university campus. "
         "Overlapping bookings for the same room are rejected with 409 Conflict.",
     )
+
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        started = time.perf_counter()
+        response = await call_next(request)
+        if request.url.path not in QUIET_PATHS:
+            logger.info(
+                "request",
+                extra={
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": response.status_code,
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 1),
+                },
+            )
+        return response
 
     app.include_router(rooms.router)
     app.include_router(bookings.router)
