@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from .config import get_settings
 from .db import get_db
+from .routes import rooms
 
 settings = get_settings()
 logging.basicConfig(
@@ -25,6 +26,8 @@ def create_app() -> FastAPI:
         description="Room and laboratory slot booking for a university campus. "
         "Overlapping bookings for the same room are rejected with 409 Conflict.",
     )
+
+    app.include_router(rooms.router)
 
     @app.get("/", tags=["meta"], summary="Service banner")
     def root() -> dict:
