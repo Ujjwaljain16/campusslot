@@ -2,7 +2,7 @@
 # Argo CD rolls out. CI builds and publishes the images; promoting a build means changing the tags.
 backend:
   env:
-    LOG_LEVEL: DEBUG
+    LOG_LEVEL: INFO
   image:
     tag: cd14c5a2029738b444485baeb853dc914f8b3b69
 frontend:

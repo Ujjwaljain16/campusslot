@@ -2,6 +2,21 @@
 #
 #   helm upgrade --install argocd argo/argo-cd -n argocd --create-namespace --version 10.9.6 -f gitops/argocd-values.yaml
 configs:
+  cm:
+    # After a rollout the metrics server needs about a minute to see the new pods. During that window an
+    # HPA reports that it cannot read metrics, which Argo CD would call Degraded and answer with a
+    # failed sync and a retry (and a repeated migration). That state is progress, not failure.
+    resource.customizations.health.autoscaling_HorizontalPodAutoscaler: |
+      hs = { status = "Healthy", message = "" }
+      if obj.status ~= nil and obj.status.conditions ~= nil then
+        for _, condition in ipairs(obj.status.conditions) do
+          if condition.type == "ScalingActive" and condition.status == "False" then
+            hs.status = "Progressing"
+            hs.message = condition.message
+          end
+        end
+      end
+      return hs
   params:
     # The UI is reached through a local port-forward, so TLS termination is not needed here.
     server.insecure: true
