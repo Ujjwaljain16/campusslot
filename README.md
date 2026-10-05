@@ -204,10 +204,19 @@ The deploy job creates a throw-away kind cluster, installs the ingress controlle
 ![A green pipeline run](docs/evidence/github-actions-run.png)
 ![Images in GHCR, tagged with commit SHAs](docs/evidence/ghcr-backend-package.png)
 
-The pipeline was not green on the first try, and two failures taught me something:
+The pipeline was not green on the first try, and three failures taught me something:
 
 - **Webhook race.** The deploy job failed twice because the ingress admission webhook refused connections for a few seconds after its endpoint became ready. I first added a wait for the webhook endpoint, which was not enough, and then wrapped the Helm install in a bounded retry. This is safe because `--atomic` fully removes a failed release. The later runs passed on the first attempt, so the retry path itself has not been exercised yet.
 - **A bad action pin** in an earlier module taught me to verify every action version against the GitHub API before committing, which I did for this workflow.
+- **A smoke test race.** During the final rehearsal the Helm install succeeded, but my smoke test received a `503` from `/api/rooms` through the ingress. Helm waits for the pods to be Ready, and the ingress controller learns about new backends a few seconds later. My test called the API once without waiting. Every smoke test call now retries until it succeeds, and I checked both the success and the failure path of that helper before pushing.
+
+### Final rehearsal
+
+I rehearsed the live demo end to end and recorded it in [`rehearsal.txt`](docs/evidence/rehearsal.txt): I changed the page subtitle in `frontend/src/App.jsx`, ran the frontend tests and build, committed with a meaningful message and pushed to `main`. The pipeline built and scanned both images and pushed them with the commit SHA. I then ran `scripts/deploy-local.sh <sha>`, and Kubernetes rolled both Deployments to the new images without downtime while the migration Job completed. I verified three things from the outside: `/api/info` reported exactly the commit that I had pushed, the rendered page showed the new subtitle with the footer `Build 5e03c9a`, and all existing bookings were still in the database.
+
+The first push of this rehearsal failed in the smoke test described above, so the loop took about eleven minutes from the first push to the new version being live, including the diagnosis and the fix. A clean run takes about four minutes for the pipeline plus the deploy.
+
+![The application after the rehearsal deployment](docs/evidence/rehearsal-after-deploy.png)
 
 ## 11. Security
 
@@ -344,7 +353,7 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 | Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt`, `terminal-pytest.png` |
 | Docker | `docker-proof.txt`, three `terminal-docker-*.png` screenshots |
 | Git and CI/CD | `github-commit-history.png`, `github-actions-run.png`, `ghcr-backend-package.png`, `ghcr-frontend-package.png`, `trivy-ci-output.txt` and `trivy-*-report.png` (the Trivy report of both images from the pipeline log) |
-| Kubernetes | `hpa-timeline.txt` |
+| Kubernetes and the final rehearsal | `hpa-timeline.txt`, `rehearsal.txt`, `rehearsal-after-deploy.png` |
 | Monitoring | `prometheus-targets.png`, `grafana-dashboard.png`, `metrics-and-promql.txt` |
 | Troubleshooting | `lab1` to `lab4` transcripts |
 | Terraform and AWS | plan, apply, second apply, destroy transcripts, `eks-verification.txt`, `aws-cleanup-verification.txt`, console screenshots |

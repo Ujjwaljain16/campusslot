@@ -10,3 +10,40 @@ page footer: Build 7863371 / API v1.0.0 / development
 ### 2. The change: frontend/src/App.jsx subtitle
 commit: dc987ac Reword the page subtitle to state the booking guarantee plainly
 pushed at: 19:01:27 IST
+
+### 3. Pipeline result for 5e03c9a4a1737e481928aafb15b0ff6a0adbc3c2 (run 37318155615)
+all six jobs succeeded: tests, frontend build, PostgreSQL tests, secret scan, build/scan/push (117s), kind deploy with smoke test (107s)
+(The run for the first rehearsal commit dc987ac failed in the kind smoke test with a 503 from the ingress. I fixed the test in 5e03c9a, see the git log.)
+
+### 4. Deploy that commit to the local cluster
+19:11:37
+Reusing the existing database password from secret campusslot-database
+STATUS: deployed
+REVISION: 4
+NAME                                       READY   STATUS        RESTARTS   AGE
+pod/campusslot-backend-575d569c49-s8j2k    1/1     Terminating   0          156m
+pod/campusslot-backend-74f6c9b5fd-2fbkc    1/1     Running       0          8s
+pod/campusslot-backend-74f6c9b5fd-7dfd4    1/1     Running       0          20s
+pod/campusslot-frontend-5579c45578-jfmgx   1/1     Running       0          20s
+pod/campusslot-frontend-5579c45578-pkrfv   1/1     Running       0          2s
+
+### 5. After: what is deployed
+images: campusslot-backend:5e03c9a4a1737e481928aafb15b0ff6a0adbc3c2 campusslot-frontend:5e03c9a4a1737e481928aafb15b0ff6a0adbc3c2 
+NAME                                   READY   STATUS      RESTARTS   AGE
+campusslot-backend-575d569c49-s8j2k    0/1     Completed   0          156m
+campusslot-backend-74f6c9b5fd-2fbkc    1/1     Running     0          8s
+campusslot-backend-74f6c9b5fd-7dfd4    1/1     Running     0          20s
+campusslot-frontend-5579c45578-jfmgx   1/1     Running     0          20s
+campusslot-frontend-5579c45578-pkrfv   1/1     Running     0          2s
+campusslot-migrate-4-h8cpf             0/1     Completed   0          20s
+campusslot-postgres-0                  1/1     Running     0          156m
+NAME      	NAMESPACE 	REVISION	UPDATED                              	STATUS  	CHART           	APP VERSION
+campusslot	campusslot	4       	2026-10-05 19:11:38.4095656 +0530 IST	deployed	campusslot-1.0.0	1.0.0      
+
+### 6. Verify what a user sees
+api/info git_sha: 5e03c9a4a1737e481928aafb15b0ff6a0adbc3c2
+matches the commit I pushed: True
+bookings still in the database after the upgrade: 145
+page subtitle (read from the rendered page): Book a lab or room in seconds, with no double bookings
+page footer: Build 5e03c9a / API v1.0.0 / development
+finished: 2026-10-05 19:12:10 IST
