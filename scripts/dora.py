@@ -8,7 +8,7 @@ Definitions used here (a "deployment" is a green run of the pipeline on main, wh
 Helm deployment to a throw-away kind cluster; deployments to my local Minikube cluster are manual
 and are not counted):
 
-* Deployment frequency: green runs on main per calendar day.
+* Deployment frequency: runs on main per calendar day in which the deploy job succeeded.
 * Lead time for changes: from the commit time of the pushed head commit to the end of its green run.
 * Change failure rate: failed runs divided by all finished runs (cancelled runs are left out).
 * Time to restore: from the end of a failed run to the end of the next green run.
@@ -59,6 +59,13 @@ def load_runs() -> list[dict]:
     return runs
 
 
+def deployed(run_id: int) -> bool:
+    """A deployment is a run in which the kind deploy job really succeeded. Since the pipeline skips
+    the heavy jobs for documentation-only changes, a green run is not always a deployment."""
+    jobs = json.loads(run(["gh", "run", "view", str(run_id), "-R", REPO, "--json", "jobs"]))["jobs"]
+    return any(j["name"] == "Deploy with Helm (kind)" and j["conclusion"] == "success" for j in jobs)
+
+
 def commit_time(sha: str) -> datetime:
     return parse(run(["git", "show", "-s", "--format=%cI", sha]).strip())
 
@@ -71,7 +78,9 @@ def main() -> int:
     runs = load_runs()
     finished = [r for r in runs if r["conclusion"] in ("success", "failure")]
     cancelled = [r for r in runs if r["conclusion"] == "cancelled"]
-    green = [r for r in finished if r["conclusion"] == "success"]
+    green_all = [r for r in finished if r["conclusion"] == "success"]
+    green = [r for r in green_all if deployed(r["databaseId"])]
+    skipped_docs = len(green_all) - len(green)
     red = [r for r in finished if r["conclusion"] == "failure"]
     if not finished:
         print("no finished runs found", file=sys.stderr)
@@ -102,14 +111,14 @@ def main() -> int:
         "",
         "| Metric | Value | How it is measured |",
         "|---|---|---|",
-        f"| Deployment frequency | {len(green)} green runs in {days} days, {len(green) / days:.1f} per day | Green pipeline runs on main, ending with the kind deployment |",
+        f"| Deployment frequency | {len(green)} deployments in {days} days, {len(green) / days:.1f} per day | Runs on main in which the kind deployment job succeeded, {skipped_docs} green runs without a deployment left out (earlier than the deploy job, or documentation only) |",
         f"| Lead time for changes | median {human(statistics.median(lead))}, longest {human(max(lead))} | Commit time of the pushed head commit to the end of its green run |",
         f"| Change failure rate | {len(red)} of {len(finished)} finished runs, {100 * len(red) / len(finished):.0f} percent | Failed runs divided by finished runs, {len(cancelled)} cancelled runs left out |",
         f"| Time to restore | median {human(statistics.median(restore)) if restore else 'n/a'}, longest {human(max(restore)) if restore else 'n/a'} | End of a failed run to the end of the next green run |",
         "",
         "## Green runs per day",
         "",
-        "| Day | Green runs |",
+        "| Day | Deployments |",
         "|---|---|",
     ]
     lines += [f"| {day} | {count} |" for day, count in sorted(per_day.items())]
