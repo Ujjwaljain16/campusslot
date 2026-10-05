@@ -230,6 +230,8 @@ Limits: the application has no authentication, and the chart does not define net
 The Trivy report of both scans, copied from the pipeline log, is in [`trivy-ci-output.txt`](docs/evidence/trivy-ci-output.txt). It lists the Debian packages and every Python package of the backend, and the Alpine packages of the frontend, each with zero findings.
 
 ![Both Trivy scan steps succeeded in the pipeline](docs/evidence/github-trivy-scan-steps.png)
+![Trivy report for the backend image, 0 vulnerabilities](docs/evidence/trivy-backend-report.png)
+![Trivy report for the frontend image, 0 vulnerabilities](docs/evidence/trivy-frontend-report.png)
 
 ## 12. Terraform
 
@@ -341,7 +343,7 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 | Application | `app-desktop.png`, `app-mobile.png`, `app-compose.png`, `api-docs.png`, `postgres-data-proof.txt` (tables, Alembic version 0003, seeded rooms, bookings and the `EXCLUDE` constraint, read with `psql` inside the database pod) |
 | Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt`, `terminal-pytest.png` |
 | Docker | `docker-proof.txt`, three `terminal-docker-*.png` screenshots |
-| Git and CI/CD | `github-commit-history.png`, `github-actions-run.png`, `ghcr-backend-package.png`, `ghcr-frontend-package.png`, `trivy-ci-output.txt` (the Trivy report of both images from the pipeline log) |
+| Git and CI/CD | `github-commit-history.png`, `github-actions-run.png`, `ghcr-backend-package.png`, `ghcr-frontend-package.png`, `trivy-ci-output.txt` and `trivy-*-report.png` (the Trivy report of both images from the pipeline log) |
 | Kubernetes | `hpa-timeline.txt` |
 | Monitoring | `prometheus-targets.png`, `grafana-dashboard.png`, `metrics-and-promql.txt` |
 | Troubleshooting | `lab1` to `lab4` transcripts |
