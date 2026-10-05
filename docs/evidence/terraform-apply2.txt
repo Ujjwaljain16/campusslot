@@ -1,0 +1,42 @@
+module.vpc.aws_subnet.public[0]: Modifying... [id=subnet-0d7428c96d2cd8a46]
+module.vpc.aws_subnet.public[1]: Modifying... [id=subnet-053f92868c68cedf5]
+module.vpc.aws_subnet.public[1]: Still modifying... [id=subnet-053f92868c68cedf5, 10s elapsed]
+module.vpc.aws_subnet.public[0]: Still modifying... [id=subnet-0d7428c96d2cd8a46, 10s elapsed]
+module.vpc.aws_subnet.public[0]: Modifications complete after 11s [id=subnet-0d7428c96d2cd8a46]
+module.vpc.aws_subnet.public[1]: Modifications complete after 11s [id=subnet-053f92868c68cedf5]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Creating...
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still creating... [13s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still creating... [23s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still creating... [33s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still creating... [46s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still creating... [56s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still creating... [1m6s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still creating... [1m19s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still creating... [1m29s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Creation complete after 1m36s [id=campusslot:default-63a712495af92f1b7ff66341fd]
+module.eks.aws_eks_addon.this["kube-proxy"]: Creating...
+module.eks.aws_eks_addon.this["coredns"]: Creating...
+module.eks.aws_eks_addon.this["coredns"]: Still creating... [13s elapsed]
+module.eks.aws_eks_addon.this["kube-proxy"]: Still creating... [13s elapsed]
+module.eks.aws_eks_addon.this["coredns"]: Creation complete after 18s [id=campusslot:coredns]
+module.eks.aws_eks_addon.this["kube-proxy"]: Still creating... [23s elapsed]
+module.eks.aws_eks_addon.this["kube-proxy"]: Creation complete after 28s [id=campusslot:kube-proxy]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0] (deposed object e67bb662): Destroying... [id=campusslot:default-b095687dc2f7958244afd03ea6]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Destruction complete after 4s
+
+Apply complete! Resources: 3 added, 2 changed, 1 destroyed.
+
+Outputs:
+
+cluster_endpoint = "https://52CC4664E0AC5B12535295FFCD541D6D.gr7.ap-south-1.eks.amazonaws.com"
+cluster_name = "campusslot"
+configure_kubectl = "aws eks update-kubeconfig --region ap-south-1 --name campusslot"
+private_subnet_ids = [
+  "subnet-09ad5aa316a43edd3",
+  "subnet-0fc4d0348659ce2b1",
+]
+public_subnet_ids = [
+  "subnet-0d7428c96d2cd8a46",
+  "subnet-053f92868c68cedf5",
+]
+vpc_id = "vpc-05a8cc7c4b087b053"

@@ -71,6 +71,12 @@ aws ec2 describe-vpcs --region ap-south-1 --filters Name=tag:Project,Values=camp
 
 Every resource carries the tags `Project=campusslot` and `ManagedBy=terraform`, so anything that survived is easy to find in the console.
 
+## What went wrong on the first apply
+
+The first `terraform apply` created the VPC and the EKS control plane, and then failed on the node group after about a minute with `Ec2SubnetInvalidConfiguration`. The node group health check on the EKS side explained it: the public subnets did not automatically assign public IP addresses to instances. The VPC module defaults `map_public_ip_on_launch` to `false`, and I had assumed that public subnets would assign addresses on their own. Without NAT, a node can only reach the internet through its own public IP, so EKS refuses to create the group.
+
+The saved plan had looked correct, because Terraform cannot know that EKS will reject a subnet setting. I found the cause with `aws eks describe-nodegroup` (the `health.issues` field), set `map_public_ip_on_launch = true` in `main.tf`, and made a second plan. That plan updated the two public subnets in place, replaced the tainted node group, and created the two add-ons that the failed run never reached, with nothing else changing. After the second apply, the node joined the cluster and became `Ready`. The transcripts are in [`docs/evidence`](../docs/evidence) as `terraform-apply.txt`, `terraform-replan.txt` and `terraform-apply2.txt`.
+
 ## Limits of this setup
 
 State is kept locally and is git-ignored. A team would keep it in an S3 bucket with locking. There is a single node, so the cluster has no node redundancy. These choices keep the demonstration cheap and are not meant as a production baseline.

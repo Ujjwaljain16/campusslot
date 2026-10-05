@@ -36,6 +36,10 @@ module "vpc" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
+  # Required by the design above: without a NAT gateway the nodes reach the internet only through
+  # a public IP, and EKS rejects a node group whose subnets do not assign one.
+  map_public_ip_on_launch = true
+
   # Kubernetes uses these tags to find the subnets for load balancers.
   public_subnet_tags = {
     "kubernetes.io/role/elb" = 1

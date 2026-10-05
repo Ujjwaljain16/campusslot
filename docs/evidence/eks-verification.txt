@@ -1,0 +1,40 @@
+### aws eks update-kubeconfig (written to a separate file)
+Added new context arn:aws:eks:ap-south-1:<ACCOUNT>:cluster/campusslot to /mnt/c/Users/ujjwa/AppData/Local/Temp/claude/D--Projects-Hack-Devops-labs/a211cd2f-5189-48cc-8e78-71245bb95b98/scratchpad/eks-kubeconfig
+
+### EKS cluster as AWS sees it
+{
+    "name": "campusslot",
+    "status": "ACTIVE",
+    "version": "1.36",
+    "endpointPublicAccess": true,
+    "publicAccessCidrs": [
+        "202.131.133.38/32"
+    ]
+}
+
+### Managed node group
+{
+    "status": "ACTIVE",
+    "instanceTypes": [
+        "t3.small"
+    ],
+    "scaling": {
+        "minSize": 1,
+        "maxSize": 2,
+        "desiredSize": 1
+    },
+    "subnets": [
+        "subnet-0d7428c96d2cd8a46",
+        "subnet-053f92868c68cedf5"
+    ]
+}
+
+### kubectl get nodes (token authentication, the token is not printed)
+NAME                                          STATUS   ROLES    AGE   VERSION               INTERNAL-IP    EXTERNAL-IP    OS-IMAGE                        KERNEL-VERSION                            CONT
+ip-10-0-100-140.ap-south-1.compute.internal   Ready    <none>   97s   v1.36.4-eks-3b4a6ca   10.0.100.140   65.0.133.235   Amazon Linux 2023.12.20260928   6.18.51-120.162.amzn2023.x86_64 (amd64)   cont
+
+NAME                       READY   STATUS    RESTARTS   AGE
+aws-node-n4cjl             2/2     Running   0          97s
+coredns-78699fb6f8-2hxfv   1/1     Running   0          67s
+coredns-78699fb6f8-7kfx9   1/1     Running   0          68s
+kube-proxy-2s4xl           1/1     Running   0          69s
