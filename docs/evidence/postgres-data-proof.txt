@@ -1,0 +1,39 @@
+### E4: PostgreSQL proof from the running Kubernetes release (psql inside the database pod)
+               List of relations
+ Schema |      Name       | Type  |   Owner    
+--------+-----------------+-------+------------
+ public | alembic_version | table | campusslot
+ public | bookings        | table | campusslot
+ public | rooms           | table | campusslot
+(3 rows)
+
+ version_num 
+-------------
+ 0003
+(1 row)
+
+ id |      name       |   building    | capacity 
+----+-----------------+---------------+----------
+  1 | Computing Lab 1 | Block A       |       40
+  2 | Computing Lab 2 | Block A       |       40
+  3 | Electronics Lab | Block B       |       30
+  4 | Classroom 101   | Block A       |       60
+  5 | Classroom 102   | Block A       |       60
+  6 | Seminar Hall    | Main Building |      120
+(6 rows)
+
+ id | room_id |          purpose           |    booked_by    |       start_time       |        end_time        |  status   
+----+---------+----------------------------+-----------------+------------------------+------------------------+-----------
+  7 |       4 | Data Structures lecture    | Prof. Rao       | 2026-10-05 03:30:00+00 | 2026-10-05 05:00:00+00 | confirmed
+  8 |       4 | Tutorial session           | TA Meera        | 2026-10-05 05:00:00+00 | 2026-10-05 06:00:00+00 | confirmed
+  9 |       2 | DevOps lab                 | Prof. Mehta     | 2026-10-05 04:30:00+00 | 2026-10-05 07:30:00+00 | confirmed
+ 10 |       6 | Hackathon kickoff          | Student council | 2026-10-05 08:30:00+00 | 2026-10-05 10:30:00+00 | confirmed
+ 11 |       3 | Embedded systems practical | Dr. Iyer        | 2026-10-05 06:00:00+00 | 2026-10-05 08:00:00+00 | confirmed
+ 12 |       2 | Traffic round 1            | load-user       | 2026-10-16 09:00:00+00 | 2026-10-16 10:00:00+00 | confirmed
+(6 rows)
+
+        conname         |                                                         pg_get_constraintdef                                                          
+------------------------+---------------------------------------------------------------------------------------------------------------------------------------
+ ex_bookings_no_overlap | EXCLUDE USING gist (room_id WITH =, tstzrange(start_time, end_time, '[)'::text) WITH &&) WHERE (((status)::text = 'confirmed'::text))
+(1 row)
+

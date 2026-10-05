@@ -112,6 +112,20 @@ npm run dev        # http://localhost:5173, the dev server proxies /api to port 
 
 I ran these steps and recorded the output in [`docs/evidence/run-locally.txt`](docs/evidence/run-locally.txt). The migrations created the schema and seeded six rooms, `/health` and `/ready` answered, and a request to `http://localhost:5173/api/info` through the Vite proxy returned the application metadata.
 
+### Configuration
+
+| Variable | Used by | Meaning | Default |
+|---|---|---|---|
+| `DATABASE_URL` | backend | SQLAlchemy URL of the database, for example `postgresql+psycopg://user:password@host:5432/db` | required |
+| `APP_ENV` | backend | Environment name reported by `/api/info` | `development` |
+| `LOG_LEVEL` | backend | Log verbosity | `INFO` |
+| `RUN_MIGRATIONS` | backend entrypoint | When `true`, run `alembic upgrade head` before starting (used by Compose, not by Kubernetes) | `false` |
+| `GIT_SHA`, `APP_VERSION` | backend | Build metadata baked into the image and shown by `/api/info` and the page footer | `dev`, `1.0.0` |
+| `MAX_BOOKING_HOURS`, `DAY_OPEN_HOUR`, `DAY_CLOSE_HOUR` | backend | Longest booking and the opening window used for the utilisation figures | 12, 8, 20 |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Compose | Database credentials, read from the git-ignored `.env` | see `.env.example` |
+| `BACKEND_HOST`, `BACKEND_PORT` | frontend (nginx) | Upstream that nginx proxies `/api` to | `backend`, `8000` |
+| `POSTGRES_TEST_URL` | tests | Enables the PostgreSQL integration tests against that database | unset |
+
 ## 7. Docker
 
 Both images use a multi-stage build and run as a non-root user.
@@ -311,10 +325,10 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 
 | Topic | Evidence |
 |---|---|
-| Application | `app-desktop.png`, `app-mobile.png`, `app-compose.png`, `api-docs.png` |
+| Application | `app-desktop.png`, `app-mobile.png`, `app-compose.png`, `api-docs.png`, `postgres-data-proof.txt` (tables, Alembic version 0003, seeded rooms, bookings and the `EXCLUDE` constraint, read with `psql` inside the database pod) |
 | Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt` |
 | Docker | `docker-proof.txt`, three `terminal-docker-*.png` screenshots |
-| CI/CD | `github-actions-run.png`, `ghcr-backend-package.png`, `ghcr-frontend-package.png` |
+| Git and CI/CD | `github-commit-history.png`, `github-actions-run.png`, `ghcr-backend-package.png`, `ghcr-frontend-package.png`, `trivy-ci-output.txt` (the Trivy report of both images from the pipeline log) |
 | Kubernetes | `hpa-timeline.txt` |
 | Monitoring | `prometheus-targets.png`, `grafana-dashboard.png`, `metrics-and-promql.txt` |
 | Troubleshooting | `lab1` to `lab4` transcripts |
