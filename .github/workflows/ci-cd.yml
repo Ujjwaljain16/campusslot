@@ -264,13 +264,24 @@ jobs:
 
       - name: helm upgrade --install with the commit SHA tags
         run: |
-          helm upgrade --install campusslot helm/campusslot \
-            --namespace "$NAMESPACE" \
-            -f helm/campusslot/values-ci.yaml \
-            --set backend.image.tag=${{ github.sha }} \
-            --set frontend.image.tag=${{ github.sha }} \
-            --set-string postgres.password="$(openssl rand -hex 16)" \
-            --atomic --timeout 6m
+          # The ingress admission webhook can still refuse connections for a few seconds after
+          # its endpoint is ready, while kube-proxy programs the Service address. --atomic removes
+          # a failed install completely, so a bounded retry is safe and the chart is never half installed.
+          password="$(openssl rand -hex 16)"
+          for attempt in 1 2 3; do
+            if helm upgrade --install campusslot helm/campusslot \
+              --namespace "$NAMESPACE" \
+              -f helm/campusslot/values-ci.yaml \
+              --set backend.image.tag=${{ github.sha }} \
+              --set frontend.image.tag=${{ github.sha }} \
+              --set-string postgres.password="$password" \
+              --atomic --timeout 6m; then
+              exit 0
+            fi
+            echo "helm attempt $attempt of 3 failed"
+            sleep 10
+          done
+          exit 1
 
       - name: Show what was deployed
         run: |
