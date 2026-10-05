@@ -48,6 +48,7 @@ def test_info_exposes_build_metadata(client):
     body = client.get("/api/info").json()
     assert body["name"] == "CampusSlot"
     assert {"version", "git_sha", "environment"} <= body.keys()
+    assert body["day_open_hour"] < body["day_close_hour"]
 
 
 def test_metrics_endpoint_serves_prometheus_text(client):

@@ -62,6 +62,8 @@ def create_app() -> FastAPI:
             "version": settings.app_version,
             "git_sha": settings.git_sha,
             "environment": settings.app_env,
+            "day_open_hour": settings.day_open_hour,
+            "day_close_hour": settings.day_close_hour,
         }
 
     # Probes and the metrics endpoint are excluded so request-rate panels show real user traffic.
