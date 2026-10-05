@@ -1,5 +1,6 @@
-# Loki in single binary mode, sized for a small Minikube node. Logs are kept on an emptyDir for a
-# few hours, which is enough for a demonstration. A production setup would use object storage.
+# Loki in single binary mode, sized for a small Minikube node. The logs go to a small volume and are
+# deleted after six hours. The chart runs Loki with a read-only root file system, so a writable
+# volume is required. A production setup would use object storage.
 #
 #   helm upgrade --install loki grafana/loki -n monitoring --version 7.3.0 -f monitoring/loki-values.yaml
 deploymentMode: SingleBinary
@@ -31,7 +32,8 @@ loki:
 singleBinary:
   replicas: 1
   persistence:
-    enabled: false
+    enabled: true
+    size: 2Gi
   resources:
     requests: { cpu: 50m, memory: 128Mi }
     limits: { memory: 384Mi }
