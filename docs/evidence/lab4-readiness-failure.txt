@@ -1,0 +1,35 @@
+### 1. Apply the broken manifest and put a Service in front of it
+deployment.apps/api-notready created
+service/api-notready exposed
+
+### 2. IDENTIFY: Running, restarts 0, but READY 0/1
+NAME                            READY   STATUS    RESTARTS   AGE
+api-notready-56b7676dd8-vkb8h   0/1     Running   0          44s
+
+### 3. INVESTIGATE: events show the readiness probe failing
+    Ready:          False
+    Liveness:       http-get http://:http/health delay=0s timeout=1s period=10s #success=1 #failure=3
+    Readiness:      http-get http://:http/ready delay=0s timeout=1s period=5s #success=1 #failure=3
+  Warning  Unhealthy  44s               kubelet            Readiness probe failed: Get "http://10.244.0.37:8000/ready": dial tcp 10.244.0.37:8000: connect: connection ref
+  Warning  Unhealthy  4s (x8 over 42s)  kubelet            Readiness probe failed: Get "http://10.244.0.37:8000/ready": context deadline exceeded (Client.Timeout exceeded
+
+### 4. The Service has no ready endpoints, so it would receive no traffic
+ready endpoints: [{"addresses":["10.244.0.37"],"conditions":{"ready":false,"serving":false,"terminating":false},"nodeName":"campusslot","targetRef":{"kind":"Pod","name":"api-notready-56b7676dd8-vkb8h","namespace":"ts-lab","uid":"47de3475-2f3c-4dd0-9d33-05563bb9ecdd"}}]
+Endpoints:                
+
+### 5. ROOT CAUSE: ask the app itself what is wrong
+/health 200 {"status":"ok"}
+/ready 503 {"status":"unavailable","detail":"database unreachable"}
+
+### 6. FIX: give the pod the real DATABASE_URL from the Secret
+deployment.apps/api-notready patched
+Waiting for deployment "api-notready" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api-notready" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api-notready" rollout to finish: 1 old replicas are pending termination...
+deployment "api-notready" successfully rolled out
+
+### 7. VERIFY
+NAME                            READY   STATUS        RESTARTS   AGE
+api-notready-56b7676dd8-vkb8h   0/1     Terminating   0          56s
+api-notready-7f7c7486d4-r8rqx   1/1     Running       0          9s
+Endpoints:                10.244.0.38:8000

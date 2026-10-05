@@ -18,7 +18,12 @@ kubectl apply -f "$ROOT/k8s/namespace.yaml"
 
 # The database password is fixed when PostgreSQL first initialises its volume, so an upgrade
 # must reuse it. Only a first install generates a new random one.
-SECRET="${RELEASE}-campusslot-database"
+# The chart names objects "<release>" when the release name already contains "campusslot",
+# otherwise "<release>-campusslot" (see the fullname helper in templates/_helpers.tpl).
+case "$RELEASE" in
+  *campusslot*) SECRET="${RELEASE}-database" ;;
+  *) SECRET="${RELEASE}-campusslot-database" ;;
+esac
 if kubectl get secret "$SECRET" -n "$NAMESPACE" >/dev/null 2>&1; then
   PASSWORD="$(kubectl get secret "$SECRET" -n "$NAMESPACE" -o jsonpath='{.data.POSTGRES_PASSWORD}' | base64 -d)"
   echo "Reusing the existing database password from secret $SECRET"

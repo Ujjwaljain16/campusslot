@@ -1,0 +1,36 @@
+### 1. Apply the broken manifest
+deployment.apps/api-svc created
+service/api-svc created
+Waiting for deployment "api-svc" rollout to finish: 0 of 1 updated replicas are available...
+deployment "api-svc" successfully rolled out
+
+### 2. IDENTIFY: the pod is healthy, but a request to the Service fails
+NAME                       READY   STATUS    RESTARTS   AGE
+api-svc-6554847c79-jb2zq   1/1     Running   0          11s
+wget: can't connect to remote host (10.104.165.2): Connection refused
+pod "probe" deleted from ts-lab namespace
+pod ts-lab/probe terminated (Error)
+
+### 3. INVESTIGATE: does the Service have endpoints?
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME      ENDPOINTS   AGE
+api-svc   <none>      14s
+Selector:                 app=api-svc,tier=backned
+Endpoints:                
+
+### 4. Compare the Service selector with the pod labels
+selector: {"app":"api-svc","tier":"backned"}
+NAME                       READY   STATUS    RESTARTS   AGE   LABELS
+api-svc-6554847c79-jb2zq   1/1     Running   0          14s   app=api-svc,pod-template-hash=6554847c79,tier=backend
+No resources found in ts-lab namespace.
+
+### 5. FIX: correct the typo in the selector
+service/api-svc patched
+selector: {"app":"api-svc","tier":"backend"}
+
+### 6. VERIFY
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME      ENDPOINTS          AGE
+api-svc   10.244.0.31:8000   14s
+warning: couldn't attach to pod/probe, falling back to streaming logs: unable to upgrade connection: container probe not found in pod probe_ts-lab
+{"status":"ok"}pod "probe" deleted from ts-lab namespace

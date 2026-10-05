@@ -1,0 +1,72 @@
+### 1. IDENTIFY: watch the status over time
+16:55:39  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   3 (65s ago)   5m15s
+16:55:44  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   3 (70s ago)   5m20s
+16:55:50  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   3 (75s ago)   5m25s
+16:55:55  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   3 (80s ago)   5m30s
+16:56:00  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   3 (85s ago)   5m35s
+16:56:05  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   3 (92s ago)   5m42s
+16:56:11  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   3 (97s ago)   5m47s
+16:56:16  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   3 (101s ago)   5m51s
+16:56:21  api-crashloop-6bbc7894b7-jn6fk   0/1   Error   3 (106s ago)   5m56s
+16:56:26  api-crashloop-6bbc7894b7-jn6fk   0/1   Error   3 (111s ago)   6m1s
+16:56:31  api-crashloop-6bbc7894b7-jn6fk   0/1   Error   3 (116s ago)   6m6s
+16:56:36  api-crashloop-6bbc7894b7-jn6fk   0/1   Error   3 (2m3s ago)   6m13s
+16:56:42  api-crashloop-6bbc7894b7-jn6fk   0/1   Error   3 (2m8s ago)   6m18s
+16:56:47  api-crashloop-6bbc7894b7-jn6fk   0/1   Error   3 (2m13s ago)   6m23s
+16:56:52  api-crashloop-6bbc7894b7-jn6fk   0/1   Error   3 (2m17s ago)   6m27s
+16:56:57  api-crashloop-6bbc7894b7-jn6fk   0/1   Error   3 (2m22s ago)   6m32s
+16:57:03  api-crashloop-6bbc7894b7-jn6fk   0/1   Error   3 (2m27s ago)   6m37s
+16:57:08  api-crashloop-6bbc7894b7-jn6fk   0/1   Error   3 (2m32s ago)   6m42s
+16:57:13  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   4 (57s ago)   6m49s
+16:57:18  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   4 (62s ago)   6m54s
+16:57:23  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   4 (67s ago)   6m59s
+16:57:28  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   4 (72s ago)   7m4s
+16:57:34  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   4 (76s ago)   7m8s
+16:57:39  api-crashloop-6bbc7894b7-jn6fk   1/1   Running   4 (81s ago)   7m13s
+
+### 2. INVESTIGATE: container state and exit code
+    State:          Running
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    1
+    Restart Count:  4
+  Warning  BackOff    87s (x3 over 4m40s)  kubelet            Back-off restarting failed container backend in pod api-crashloop-6bbc7894b7-jn6fk_ts-lab(7cc6501b-0f16-4d58-8bc5-382a51b2e2b9)
+
+### 3. Logs of the last crashed container
+      2 sqlalchemy.exc.OperationalError: (psycopg.OperationalError) failed to resolve host 'no-such-db': [Errno -5] No address associated with hostname
+      1 psycopg.OperationalError: failed to resolve host 'no-such-db': [Errno -5] No address associated with hostname
+      1 Migrations still failing after 15 attempts, giving up
+      1 Database not ready yet, retrying in 2 seconds (14/15)
+
+### 4. ROOT CAUSE: which DATABASE_URL host is the pod using?
+postgresql+psycopg://<user>:<password>@no-such-db:5432/campusslot
+campusslot      campusslot-postgres                  ClusterIP   10.104.182.44    <none>        5432/TCP                     22m
+
+### 5. FIX: use the real database. The Secret lives in another namespace, so the host must be the full service name
+secret/lab-database created
+deployment.apps/api-crashloop patched
+Waiting for deployment "api-crashloop" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api-crashloop" rollout to finish: 1 old replicas are pending termination...
+deployment "api-crashloop" successfully rolled out
+
+### 6. VERIFY
+NAME                             READY   STATUS        RESTARTS       AGE
+api-crashloop-6bbc7894b7-jn6fk   1/1     Terminating   4 (100s ago)   7m32s
+api-crashloop-6d86f97879-m4sgb   1/1     Running       0              0s
+    raise last_exc
+sqlalchemy.exc.OperationalError: (psycopg.OperationalError) failed to resolve host 'no-such-db': [Errno -5] No address associated with hostname
+(Background on this error at: https://sqlalche.me/e/21/e3q8)
+Database not ready yet, retrying in 2 seconds (9/15)
+Applying database migrations
+
+### 6b. VERIFY the new pod only (the old one was still terminating above)
+NAME                             READY   STATUS        RESTARTS       AGE
+api-crashloop-6bbc7894b7-jn6fk   1/1     Terminating   4 (2m1s ago)   7m53s
+api-crashloop-6d86f97879-m4sgb   1/1     Running       0              21s
+Applying database migrations
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)

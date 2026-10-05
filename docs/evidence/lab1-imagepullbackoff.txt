@@ -1,0 +1,35 @@
+### 1. Apply the broken manifest
+namespace/ts-lab created
+deployment.apps/api-badimage created
+
+### 2. IDENTIFY: pod status
+NAME                           READY   STATUS         RESTARTS   AGE
+api-badimage-5f8594469-tzmrn   0/1     ErrImagePull   0          40s
+
+### 3. INVESTIGATE: events at the end of describe
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  40s                default-scheduler  Successfully assigned ts-lab/api-badimage-5f8594469-tzmrn to campusslot
+  Normal   Pulling    21s (x2 over 39s)  kubelet            Pulling image "ghcr.io/ujjwaljain16/campusslot-backend:v9.9.9-does-not-exist"
+  Warning  Failed     20s (x2 over 37s)  kubelet            Failed to pull image "ghcr.io/ujjwaljain16/campusslot-backend:v9.9.9-does-not-exist": rpc error: code = NotFound desc = failed to pull and unpack image "ghcr.io/ujjwaljain16/campusslot-backend:v9.9.9-does-not-exist": failed to resolve reference "ghcr.io/ujjwaljain16/campusslot-backend:v9.9.9-does-not-exist": ghcr.io/ujjwaljain16/campusslot-backend:v9.9.9-does-not-exist: not found
+  Warning  Failed     20s (x2 over 37s)  kubelet            Error: ErrImagePull
+  Normal   BackOff    5s (x2 over 36s)   kubelet            Back-off pulling image "ghcr.io/ujjwaljain16/campusslot-backend:v9.9.9-does-not-exist"
+  Warning  Failed     5s (x2 over 36s)   kubelet            Error: ImagePullBackOff
+
+### 4. Does the tag exist in the registry?
+manifest unknown
+{
+	"schemaVersion": 2,
+
+### 5. FIX: point the Deployment at the real commit tag
+deployment.apps/api-badimage image updated
+Waiting for deployment "api-badimage" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api-badimage" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api-badimage" rollout to finish: 1 old replicas are pending termination...
+deployment "api-badimage" successfully rolled out
+
+### 6. VERIFY
+NAME                            READY   STATUS        RESTARTS   AGE
+api-badimage-5455b4487b-6k94s   1/1     Running       0          1s
+api-badimage-5f8594469-tzmrn    0/1     Terminating   0          80s
