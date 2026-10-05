@@ -234,6 +234,18 @@ jobs:
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
           kubectl wait --namespace ingress-nginx --for=condition=ready pod \
             --selector=app.kubernetes.io/component=controller --timeout=180s
+          # A Ready controller pod is not enough: the admission webhook that validates Ingress
+          # objects is reached through its own Service, which can lag a moment behind the pod.
+          # Installing the chart in that gap fails with "failed calling webhook".
+          for _ in $(seq 1 60); do
+            ready=$(kubectl get endpointslices --namespace ingress-nginx \
+              -l kubernetes.io/service-name=ingress-nginx-controller-admission \
+              -o jsonpath='{.items[*].endpoints[?(@.conditions.ready==true)].addresses[0]}')
+            [ -n "$ready" ] && break
+            sleep 2
+          done
+          test -n "$ready"
+          echo "admission webhook endpoint ready: $ready"
 
       - name: Create the namespace and the registry pull secret
         run: |
