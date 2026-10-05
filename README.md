@@ -370,7 +370,8 @@ Known limitations, stated plainly:
 Everything that I created for the project has been shut down, and I verified each step:
 
 ```bash
-docker compose down -v               # the Compose stack, and with -v its database volume
+docker compose down                  # the Compose stack
+docker volume rm campusslot_postgres-data   # its database volume, which a plain down keeps
 minikube delete -p campusslot        # the local cluster, including ingress, Prometheus and Grafana
 terraform apply destroy.tfplan       # the 48 AWS resources, destroyed earlier
 ```
