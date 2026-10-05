@@ -7,6 +7,13 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "campusslot.fullname" . }}-migrate-{{ .Release.Revision }}
+  {{- if .Values.migration.argocdHook }}
+  # Under Argo CD the release revision never changes, and a Job cannot be patched in place. Marking it as
+  # a sync hook that is deleted before each new run makes every sync start a fresh migration.
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  {{- end }}
   labels:
     {{- include "campusslot.labels" . | nindent 4 }}
     app.kubernetes.io/component: migration

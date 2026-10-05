@@ -1,0 +1,13 @@
+# A small Argo CD for a Minikube node: the optional components are switched off.
+#
+#   helm upgrade --install argocd argo/argo-cd -n argocd --create-namespace --version 10.9.6 -f gitops/argocd-values.yaml
+configs:
+  params:
+    # The UI is reached through a local port-forward, so TLS termination is not needed here.
+    server.insecure: true
+dex:
+  enabled: false
+notifications:
+  enabled: false
+applicationSet:
+  enabled: false

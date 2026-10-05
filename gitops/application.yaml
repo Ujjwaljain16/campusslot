@@ -1,0 +1,33 @@
+# Argo CD Application: the cluster is kept in line with what is committed in this repository.
+# Argo CD renders the Helm chart in helm/campusslot with the values below, applies it, and corrects
+# any manual change to the cluster (selfHeal) or any resource that was removed from Git (prune).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: campusslot
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Ujjwaljain16/campusslot.git
+    targetRevision: main
+    path: helm/campusslot
+    helm:
+      releaseName: campusslot
+      valueFiles:
+        - values-dev.yaml
+        # The desired state: image tags, replicas and the database Secret name.
+        - ../../gitops/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: campusslot
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 2m

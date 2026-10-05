@@ -1,0 +1,17 @@
+# Desired state of the CampusSlot deployment. A change to this file, committed to main, is what
+# Argo CD rolls out. CI builds and publishes the images; promoting a build means changing the tags.
+backend:
+  image:
+    tag: 5e03c9a4a1737e481928aafb15b0ff6a0adbc3c2
+frontend:
+  image:
+    tag: 5e03c9a4a1737e481928aafb15b0ff6a0adbc3c2
+
+# The database password is never stored in Git. scripts/bootstrap-gitops.sh creates this Secret in
+# the cluster with a random password, and the chart reads the connection string from it.
+database:
+  existingSecret: campusslot-db
+
+# Argo CD does not know the Helm release revision, so the migration runs as a sync hook instead.
+migration:
+  argocdHook: true
