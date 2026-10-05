@@ -1,0 +1,196 @@
+module.vpc.aws_route_table_association.public[1]: Destroying... [id=rtbassoc-00aa5e3f50dccf450]
+module.vpc.aws_default_route_table.default[0]: Destroying... [id=rtb-0b181513361106a11]
+module.eks.aws_iam_openid_connect_provider.oidc_provider[0]: Destroying... [id=arn:aws:iam::<ACCOUNT_ID>:oidc-provider/oidc.eks.ap-south-1.amazonaws.com/id/52CC4664E0AC5B12535295FFCD541D6D]
+module.vpc.aws_default_network_acl.this[0]: Destroying... [id=acl-0e937648f23e2aaf3]
+module.eks.aws_eks_addon.this["kube-proxy"]: Destroying... [id=campusslot:kube-proxy]
+module.vpc.aws_route_table_association.private[0]: Destroying... [id=rtbassoc-0eb923a0e12a63f4b]
+module.vpc.aws_route_table_association.public[0]: Destroying... [id=rtbassoc-08deeff46d0962523]
+module.vpc.aws_default_security_group.this[0]: Destroying... [id=sg-015eaae1ba1874e90]
+module.eks.aws_eks_access_policy_association.this["cluster_creator_admin"]: Destroying... [id=campusslot#arn:aws:iam::<ACCOUNT_ID>:user/terraform-devops-labs#arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy]
+module.eks.aws_eks_addon.this["coredns"]: Destroying... [id=campusslot:coredns]
+module.vpc.aws_default_security_group.this[0]: Destruction complete after 0s
+module.vpc.aws_default_network_acl.this[0]: Destruction complete after 0s
+module.vpc.aws_default_route_table.default[0]: Destruction complete after 0s
+module.vpc.aws_route_table_association.private[1]: Destroying... [id=rtbassoc-0bf18c9c922625380]
+module.vpc.aws_route.public_internet_gateway[0]: Destroying... [id=r-rtb-07a84292832341be51080289494]
+module.eks.aws_eks_addon.before_compute["vpc-cni"]: Destroying... [id=campusslot:vpc-cni]
+module.eks.aws_eks_access_policy_association.this["cluster_creator_admin"]: Destruction complete after 1s
+module.eks.aws_eks_access_entry.this["cluster_creator"]: Destroying... [id=campusslot:arn:aws:iam::<ACCOUNT_ID>:user/terraform-devops-labs]
+module.vpc.aws_route_table_association.public[1]: Destruction complete after 1s
+module.vpc.aws_route_table_association.private[0]: Destruction complete after 1s
+module.vpc.aws_route_table_association.private[1]: Destruction complete after 0s
+module.vpc.aws_route_table_association.public[0]: Destruction complete after 1s
+module.vpc.aws_route_table.private[0]: Destroying... [id=rtb-07ea6be778e70a45a]
+module.vpc.aws_route_table.private[1]: Destroying... [id=rtb-068569d822b648dc7]
+module.vpc.aws_route.public_internet_gateway[0]: Destruction complete after 1s
+module.eks.aws_eks_access_entry.this["cluster_creator"]: Destruction complete after 1s
+module.vpc.aws_internet_gateway.this[0]: Destroying... [id=igw-05b096cd1f195637e]
+module.vpc.aws_route_table.public[0]: Destroying... [id=rtb-07a84292832341be5]
+module.eks.aws_iam_openid_connect_provider.oidc_provider[0]: Destruction complete after 2s
+module.vpc.aws_route_table.private[0]: Destruction complete after 1s
+module.eks.aws_eks_addon.this["kube-proxy"]: Destruction complete after 2s
+module.vpc.aws_route_table.private[1]: Destruction complete after 1s
+module.vpc.aws_route_table.public[0]: Destruction complete after 1s
+module.eks.aws_eks_addon.before_compute["vpc-cni"]: Destruction complete after 2s
+module.eks.aws_eks_addon.this["coredns"]: Destruction complete after 3s
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd]
+module.eks.module.eks_managed_node_group["default"].module.user_data.null_resource.validate_cluster_service_cidr: Destroying... [id=8607089495835956701]
+module.eks.module.eks_managed_node_group["default"].module.user_data.null_resource.validate_cluster_service_cidr: Destruction complete after 0s
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 13s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 13s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 23s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 23s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 33s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 33s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 46s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 46s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 56s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 56s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 1m6s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 1m6s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 1m19s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 1m19s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 1m29s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 1m29s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 1m39s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 1m39s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 1m52s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 1m52s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 2m2s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 2m2s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 2m12s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 2m12s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 2m25s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 2m25s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 2m35s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 2m35s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 2m45s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 2m45s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 2m58s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 2m58s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 3m8s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 3m8s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 3m18s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 3m18s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 3m31s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 3m31s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 3m41s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 3m41s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 3m51s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 3m51s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 4m4s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 4m4s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 4m14s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 4m14s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 4m24s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 4m24s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 4m37s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 4m37s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 4m47s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 4m47s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 4m57s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 4m57s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 5m10s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 5m10s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 5m20s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 5m20s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 5m30s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 5m30s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 5m43s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 5m43s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 5m53s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 5m53s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 6m3s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 6m3s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 6m16s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 6m16s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 6m26s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 6m26s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Still destroying... [id=igw-05b096cd1f195637e, 6m36s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 6m36s elapsed]
+module.vpc.aws_internet_gateway.this[0]: Destruction complete after 6m44s
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 6m50s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 7m0s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 7m10s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 7m23s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 7m33s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 7m43s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 7m56s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 8m6s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Still destroying... [id=campusslot:default-63a712495af92f1b7ff66341fd, 8m16s elapsed]
+module.eks.module.eks_managed_node_group["default"].aws_eks_node_group.this[0]: Destruction complete after 8m20s
+module.eks.module.eks_managed_node_group["default"].aws_launch_template.this[0]: Destroying... [id=lt-09bcbd8301e8aa54c]
+module.eks.module.eks_managed_node_group["default"].aws_launch_template.this[0]: Destruction complete after 0s
+module.eks.module.eks_managed_node_group["default"].aws_iam_role_policy_attachment.this["AmazonEC2ContainerRegistryReadOnly"]: Destroying... [id=default-eks-node-group-c96748292ac6e21889296d35ef/arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly]
+module.eks.module.eks_managed_node_group["default"].aws_iam_role_policy_attachment.this["AmazonEKS_CNI_Policy"]: Destroying... [id=default-eks-node-group-c96748292ac6e21889296d35ef/arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy]
+module.eks.module.eks_managed_node_group["default"].aws_iam_role_policy_attachment.this["AmazonEKSWorkerNodePolicy"]: Destroying... [id=default-eks-node-group-c96748292ac6e21889296d35ef/arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy]
+module.eks.time_sleep.this[0]: Destroying... [id=2026-10-05T12:18:25Z]
+module.eks.time_sleep.this[0]: Destruction complete after 0s
+module.eks.aws_eks_cluster.this[0]: Destroying... [id=campusslot]
+module.eks.module.eks_managed_node_group["default"].aws_iam_role_policy_attachment.this["AmazonEKSWorkerNodePolicy"]: Destruction complete after 3s
+module.eks.module.eks_managed_node_group["default"].aws_iam_role_policy_attachment.this["AmazonEC2ContainerRegistryReadOnly"]: Destruction complete after 3s
+module.eks.module.eks_managed_node_group["default"].aws_iam_role_policy_attachment.this["AmazonEKS_CNI_Policy"]: Destruction complete after 3s
+module.eks.module.eks_managed_node_group["default"].aws_iam_role.this[0]: Destroying... [id=default-eks-node-group-c96748292ac6e21889296d35ef]
+module.eks.module.eks_managed_node_group["default"].aws_iam_role.this[0]: Destruction complete after 1s
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 10s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 20s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 33s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 43s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 53s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 1m6s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 1m16s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 1m26s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 1m39s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 1m49s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 1m59s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 2m12s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 2m22s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 2m32s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 2m45s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 2m55s elapsed]
+module.eks.aws_eks_cluster.this[0]: Still destroying... [id=campusslot, 3m5s elapsed]
+module.eks.aws_eks_cluster.this[0]: Destruction complete after 3m9s
+module.eks.aws_security_group_rule.node["ingress_cluster_6443_webhook"]: Destroying... [id=sgrule-183737337]
+module.vpc.aws_subnet.public[1]: Destroying... [id=subnet-053f92868c68cedf5]
+module.vpc.aws_subnet.public[0]: Destroying... [id=subnet-0d7428c96d2cd8a46]
+module.eks.aws_security_group_rule.node["ingress_cluster_kubelet"]: Destroying... [id=sgrule-851982593]
+module.eks.aws_security_group_rule.node["ingress_cluster_4443_webhook"]: Destroying... [id=sgrule-3283221615]
+module.eks.aws_iam_role_policy_attachment.this["AmazonEKSClusterPolicy"]: Destroying... [id=campusslot-cluster-0ed77d717f458e4067274a0330/arn:aws:iam::aws:policy/AmazonEKSClusterPolicy]
+module.eks.aws_security_group_rule.cluster["ingress_nodes_443"]: Destroying... [id=sgrule-62000463]
+module.eks.aws_security_group_rule.node["ingress_cluster_10251_webhook"]: Destroying... [id=sgrule-109144442]
+module.eks.aws_security_group_rule.node["ingress_self_coredns_udp"]: Destroying... [id=sgrule-1380533397]
+module.eks.aws_security_group_rule.node["ingress_cluster_443"]: Destroying... [id=sgrule-3464246544]
+module.vpc.aws_subnet.public[0]: Destruction complete after 1s
+module.vpc.aws_subnet.public[1]: Destruction complete after 1s
+module.eks.aws_security_group_rule.cluster["ingress_nodes_443"]: Destruction complete after 1s
+module.eks.aws_security_group_rule.node["ingress_cluster_6443_webhook"]: Destruction complete after 1s
+module.vpc.aws_subnet.private[1]: Destroying... [id=subnet-0fc4d0348659ce2b1]
+module.eks.aws_security_group_rule.node["egress_all"]: Destroying... [id=sgrule-1358289879]
+module.eks.aws_security_group_rule.node["ingress_nodes_ephemeral"]: Destroying... [id=sgrule-1484067450]
+module.vpc.aws_subnet.private[0]: Destroying... [id=subnet-09ad5aa316a43edd3]
+module.eks.aws_iam_role_policy_attachment.this["AmazonEKSClusterPolicy"]: Destruction complete after 2s
+module.eks.aws_security_group_rule.node["ingress_cluster_8443_webhook"]: Destroying... [id=sgrule-430942168]
+module.eks.aws_security_group_rule.node["ingress_cluster_kubelet"]: Destruction complete after 2s
+module.eks.aws_security_group_rule.node["ingress_cluster_9443_webhook"]: Destroying... [id=sgrule-2098107411]
+module.vpc.aws_subnet.private[1]: Destruction complete after 1s
+module.vpc.aws_subnet.private[0]: Destruction complete after 1s
+module.eks.aws_security_group_rule.node["ingress_self_coredns_tcp"]: Destroying... [id=sgrule-4128696186]
+module.eks.aws_iam_role.this[0]: Destroying... [id=campusslot-cluster-0ed77d717f458e4067274a0330]
+module.eks.aws_security_group_rule.node["ingress_cluster_4443_webhook"]: Destruction complete after 2s
+module.eks.aws_security_group_rule.node["ingress_self_coredns_udp"]: Destruction complete after 3s
+module.eks.aws_iam_role.this[0]: Destruction complete after 1s
+module.eks.aws_security_group_rule.node["ingress_cluster_443"]: Destruction complete after 3s
+module.eks.aws_security_group_rule.node["ingress_cluster_10251_webhook"]: Destruction complete after 3s
+module.eks.aws_security_group_rule.node["egress_all"]: Destruction complete after 3s
+module.eks.aws_security_group_rule.node["ingress_nodes_ephemeral"]: Destruction complete after 7s
+module.eks.aws_security_group_rule.node["ingress_cluster_8443_webhook"]: Destruction complete after 6s
+module.eks.aws_security_group_rule.node["ingress_cluster_9443_webhook"]: Destruction complete after 7s
+module.eks.aws_security_group_rule.node["ingress_self_coredns_tcp"]: Destruction complete after 7s
+module.eks.aws_security_group.cluster[0]: Destroying... [id=sg-0c1ea0a20f0d72414]
+module.eks.aws_security_group.node[0]: Destroying... [id=sg-029da838954282fb5]
+module.eks.aws_security_group.cluster[0]: Destruction complete after 1s
+module.eks.aws_security_group.node[0]: Destruction complete after 1s
+module.vpc.aws_vpc.this[0]: Destroying... [id=vpc-05a8cc7c4b087b053]
+module.vpc.aws_vpc.this[0]: Destruction complete after 0s
+
+Apply complete! Resources: 0 added, 0 changed, 48 destroyed.

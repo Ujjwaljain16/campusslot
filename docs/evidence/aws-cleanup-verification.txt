@@ -1,0 +1,35 @@
+checked at: 12:51:27 UTC
+### EKS clusters
+{
+    "clusters": []
+}
+### VPCs (default VPC is expected; no campusslot VPC)
+vpc-059e4a2d567f5c5d5	True	None
+### campusslot-tagged VPCs
+0
+### subnets tagged campusslot
+0
+### NAT gateways not deleted
+0
+### Elastic IPs
+0
+### internet gateways tagged campusslot
+0
+### running or pending EC2 instances
+0
+### EBS volumes
+0
+### load balancers
+0
+### IAM roles created by Terraform (name starts with campusslot or default-eks)
+### OIDC providers
+0
+### credits
+[
+    "FREE",
+    "ACTIVE",
+    {
+        "amount": 120.0,
+        "unit": "USD"
+    }
+]
