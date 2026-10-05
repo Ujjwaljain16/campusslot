@@ -2,10 +2,10 @@
 # Argo CD rolls out. CI builds and publishes the images; promoting a build means changing the tags.
 backend:
   image:
-    tag: 5e03c9a4a1737e481928aafb15b0ff6a0adbc3c2
+    tag: cd14c5a2029738b444485baeb853dc914f8b3b69
 frontend:
   image:
-    tag: 5e03c9a4a1737e481928aafb15b0ff6a0adbc3c2
+    tag: cd14c5a2029738b444485baeb853dc914f8b3b69
 
 # The database password is never stored in Git. scripts/bootstrap-gitops.sh creates this Secret in
 # the cluster with a random password, and the chart reads the connection string from it.
