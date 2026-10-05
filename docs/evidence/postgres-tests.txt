@@ -1,0 +1,14 @@
+### pytest -m postgres (migrations, EXCLUDE constraint, concurrent race) against a real PostgreSQL 16
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.1.1, pluggy-1.6.0 -- D:\Projects\Hack\campusslot\backend\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Projects\Hack\campusslot\backend
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 46 items / 42 deselected / 4 selected
+tests/test_postgres.py::test_migrations_create_the_schema_the_constraint_and_the_seed_rooms PASSED [ 25%]
+tests/test_postgres.py::test_database_rejects_overlapping_rows_even_without_the_application_check PASSED [ 50%]
+tests/test_postgres.py::test_api_returns_409_from_the_database_layer_when_the_application_check_is_bypassed PASSED [ 75%]
+tests/test_postgres.py::test_simultaneous_identical_requests_create_exactly_one_booking PASSED [100%]
+====================== 4 passed, 42 deselected in 0.68s =======================

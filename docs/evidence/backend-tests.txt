@@ -1,0 +1,92 @@
+### ruff check
+All checks passed!
+ruff check: passed
+
+### ruff format --check
+21 files already formatted
+
+### bandit -r app -ll (medium severity and above)
+	No issues identified.
+	Total lines of code: 515
+	Total lines skipped (#nosec): 0
+	Total issues (by severity):
+		Low: 1
+		Medium: 0
+		High: 0
+	Total issues (by confidence):
+		Low: 0
+		Medium: 0
+		High: 1
+
+### pytest -v with a coverage floor of 85 percent
+============================= test session starts =============================
+platform win32 -- Python 3.11.9, pytest-9.1.1, pluggy-1.6.0 -- D:\Projects\Hack\campusslot\backend\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Projects\Hack\campusslot\backend
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 46 items / 4 deselected / 42 selected
+
+tests/test_bookings.py::test_create_booking_returns_201_with_confirmed_status PASSED [  2%]
+tests/test_bookings.py::test_get_booking_by_id_and_missing_booking_is_404 PASSED [  4%]
+tests/test_bookings.py::test_list_bookings_filters_by_room_and_day PASSED [  7%]
+tests/test_bookings.py::test_list_bookings_respects_the_callers_timezone PASSED [  9%]
+tests/test_bookings.py::test_overlapping_booking_is_rejected_with_409_and_names_the_blocker PASSED [ 11%]
+tests/test_bookings.py::test_booking_fully_inside_another_is_rejected PASSED [ 14%]
+tests/test_bookings.py::test_booking_that_fully_contains_another_is_rejected PASSED [ 16%]
+tests/test_bookings.py::test_adjacent_slots_are_allowed_on_both_sides PASSED [ 19%]
+tests/test_bookings.py::test_same_time_in_a_different_room_is_allowed PASSED [ 21%]
+tests/test_bookings.py::test_cancelled_booking_frees_the_slot PASSED     [ 23%]
+tests/test_bookings.py::test_end_before_start_is_rejected_with_422 PASSED [ 26%]
+tests/test_bookings.py::test_zero_length_and_overlong_bookings_are_rejected_with_422 PASSED [ 28%]
+tests/test_bookings.py::test_booking_an_unknown_room_is_404 PASSED       [ 30%]
+tests/test_bookings.py::test_booking_a_switched_off_room_is_409 PASSED   [ 33%]
+tests/test_bookings.py::test_update_booking_changes_its_fields PASSED    [ 35%]
+tests/test_bookings.py::test_a_booking_can_be_extended_without_conflicting_with_itself PASSED [ 38%]
+tests/test_bookings.py::test_moving_a_booking_into_another_one_is_409 PASSED [ 40%]
+tests/test_bookings.py::test_update_missing_booking_is_404 PASSED        [ 42%]
+tests/test_bookings.py::test_delete_booking_removes_it_and_a_second_delete_is_404 PASSED [ 45%]
+tests/test_bookings.py::test_room_with_bookings_cannot_be_deleted PASSED [ 47%]
+tests/test_bookings.py::test_conflicts_and_creations_are_counted_in_prometheus_metrics PASSED [ 50%]
+tests/test_health.py::test_health_reports_ok PASSED                      [ 52%]
+tests/test_health.py::test_ready_reports_ready_when_database_is_reachable PASSED [ 54%]
+tests/test_health.py::test_ready_returns_503_when_database_is_unavailable PASSED [ 57%]
+tests/test_health.py::test_ready_returns_503_until_the_schema_has_been_migrated PASSED [ 59%]
+tests/test_health.py::test_liveness_stays_ok_even_when_database_is_down PASSED [ 61%]
+tests/test_health.py::test_info_exposes_build_metadata PASSED            [ 64%]
+tests/test_health.py::test_metrics_endpoint_serves_prometheus_text PASSED [ 66%]
+tests/test_rooms.py::test_create_room_returns_201_and_the_stored_room PASSED [ 69%]
+tests/test_rooms.py::test_list_rooms_is_ordered_and_can_hide_inactive_rooms PASSED [ 71%]
+tests/test_rooms.py::test_get_room_by_id_and_missing_room_is_404 PASSED  [ 73%]
+tests/test_rooms.py::test_duplicate_room_name_is_rejected_with_409 PASSED [ 76%]
+tests/test_rooms.py::test_update_room_replaces_its_fields PASSED         [ 78%]
+tests/test_rooms.py::test_update_missing_room_is_404 PASSED              [ 80%]
+tests/test_rooms.py::test_delete_room_removes_it PASSED                  [ 83%]
+tests/test_rooms.py::test_invalid_room_payload_is_rejected_with_422 PASSED [ 85%]
+tests/test_stats.py::test_stats_calculates_utilisation_inside_the_opening_window PASSED [ 88%]
+tests/test_stats.py::test_stats_only_counts_the_part_of_a_booking_inside_opening_hours PASSED [ 90%]
+tests/test_stats.py::test_stats_ignore_cancelled_bookings_and_switched_off_rooms PASSED [ 92%]
+tests/test_stats.py::test_stats_use_the_callers_timezone_for_the_day PASSED [ 95%]
+tests/test_stats.py::test_stats_report_rooms_in_use_right_now PASSED     [ 97%]
+tests/test_stats.py::test_stats_with_no_data_returns_zeros_not_errors PASSED [100%]
+
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.11.9-final-0 _______________
+
+Name                     Stmts   Miss  Cover   Missing
+------------------------------------------------------
+app\__init__.py              0      0   100%
+app\config.py               15      0   100%
+app\db.py                   24     14    42%   20-27, 32-38
+app\main.py                 40      1    98%   35
+app\metrics.py               3      0   100%
+app\models.py               45      4    91%   34, 36, 41, 44
+app\routes\__init__.py       0      0   100%
+app\routes\bookings.py     125     14    89%   65, 100, 195-201, 227-234
+app\routes\rooms.py         52      3    94%   55-57
+app\schemas.py              61      1    98%   46
+------------------------------------------------------
+TOTAL                      365     37    90%
+Required test coverage of 85% reached. Total coverage: 89.86%
+====================== 42 passed, 4 deselected in 1.44s =======================
