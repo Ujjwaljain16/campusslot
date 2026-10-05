@@ -6,7 +6,7 @@ From this point, every change reaches `main` through a pull request that has pas
 
 | Setting | Value |
 |---|---|
-| Required status checks | Backend tests, Frontend build, PostgreSQL integration tests, Secret scan (gitleaks), Build, scan and push images |
+| Required status checks | Backend tests, Frontend build, PostgreSQL integration tests, Secret scan (gitleaks), Static analysis (Terraform and Helm), Build, scan and push images |
 | Require a pull request before merging | yes, with 0 required approvals (a single developer cannot approve their own pull request) |
 | Dismiss stale approvals | yes |
 | Apply to administrators | yes, so that I follow the same flow as everyone else |
