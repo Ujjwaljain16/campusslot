@@ -1,0 +1,60 @@
+# kube-prometheus-stack trimmed to fit a 3.5 GB Minikube node next to the application.
+#
+#   helm install monitoring prometheus-community/kube-prometheus-stack \
+#     --namespace monitoring --create-namespace --version <chart-version> \
+#     -f monitoring/kube-prometheus-stack-values.yaml \
+#     --set-string grafana.adminPassword="$(openssl rand -hex 12)" \
+#     --server-side=true
+#
+# The Grafana admin password is passed at install time and never committed.
+
+# Not needed for the demo, and each one costs memory.
+alertmanager:
+  enabled: false
+nodeExporter:
+  enabled: false
+
+# Minikube does not expose these control plane endpoints, so their targets would only be red.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+kubeEtcd:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    # Pick up ServiceMonitors from every namespace and without the Helm release label,
+    # so the ServiceMonitor shipped in the CampusSlot chart is discovered as it is.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    retention: 6h
+    scrapeInterval: 15s
+    resources:
+      requests: { cpu: 100m, memory: 400Mi }
+      limits: { memory: 800Mi }
+
+grafana:
+  defaultDashboardsEnabled: false
+  # The sidecar loads every ConfigMap labelled grafana_dashboard=1, in any namespace.
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+  resources:
+    requests: { cpu: 50m, memory: 150Mi }
+    limits: { memory: 300Mi }
+
+kube-state-metrics:
+  resources:
+    requests: { cpu: 20m, memory: 40Mi }
+    limits: { memory: 100Mi }
+
+prometheusOperator:
+  resources:
+    requests: { cpu: 20m, memory: 60Mi }
+    limits: { memory: 150Mi }

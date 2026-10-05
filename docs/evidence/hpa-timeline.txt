@@ -1,0 +1,17 @@
+== baseline ==
+16:42:30  baseline  cpu=3%/50% replicas=2  pods: lv2wh(Running) s8j2k(Running) 
+== starting 4 load generators against http://campusslot-backend.campusslot.svc.cluster.local:8000/api/rooms ==
+16:42:30  load      cpu=3%/50% replicas=2  pods: lv2wh(Running) s8j2k(Running) 
+16:42:40  load      cpu=3%/50% replicas=2  pods: lv2wh(Running) s8j2k(Running) 
+16:42:51  load      cpu=21%/50% replicas=2  pods: lv2wh(Running) s8j2k(Running) 
+16:43:01  load      cpu=21%/50% replicas=2  pods: lv2wh(Running) s8j2k(Running) 
+16:43:11  load      cpu=21%/50% replicas=2  pods: lv2wh(Running) s8j2k(Running) 
+16:43:22  load      cpu=21%/50% replicas=2  pods: lv2wh(Running) s8j2k(Running) 
+16:43:32  load      cpu=21%/50% replicas=2  pods: lv2wh(Running) s8j2k(Running) 
+16:43:42  load      cpu=21%/50% replicas=2  pods: lv2wh(Running) s8j2k(Running) 
+16:43:52  load      cpu=428%/50% replicas=2  pods: 5452l(Running) 9vvv4(Running) gsv9t(Running) lv2wh(Running) s8j2k(Running) 
+16:44:03  load      cpu=428%/50% replicas=2  pods: 5452l(Running) 9vvv4(Running) gsv9t(Running) lv2wh(Running) s8j2k(Running) 
+16:44:13  load      cpu=428%/50% replicas=5  pods: 5452l(Running) 9vvv4(Running) gsv9t(Running) lv2wh(Running) s8j2k(Running) 
+16:44:23  load      cpu=428%/50% replicas=5  pods: 5452l(Running) 9vvv4(Running) gsv9t(Running) lv2wh(Running) s8j2k(Running) 
+16:44:33  load      cpu=428%/50% replicas=5  pods: 5452l(Running) 9vvv4(Running) gsv9t(Running) lv2wh(Running) s8j2k(Running) 
+16:44:44  load      cpu=428%/50% replicas=5  pods: 5452l(Running) 9vvv4(Running) gsv9t(Running) lv2wh(Running) s8j2k(Running) 

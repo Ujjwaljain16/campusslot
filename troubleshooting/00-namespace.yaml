@@ -1,0 +1,5 @@
+# Scratch namespace for the troubleshooting labs, kept apart from the real release.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ts-lab

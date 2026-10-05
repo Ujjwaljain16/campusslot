@@ -1,0 +1,22 @@
+# Lab 3: CrashLoopBackOff. RUN_MIGRATIONS=true makes the entrypoint run Alembic first, the
+# DATABASE_URL points at a host that does not exist, so after 15 failed attempts the container
+# exits with status 1 and Kubernetes keeps restarting it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-crashloop
+  namespace: ts-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: api-crashloop }
+  template:
+    metadata:
+      labels: { app: api-crashloop }
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/ujjwaljain16/campusslot-backend:786337172ac20bac858b3d31f46feeafd99fd8dc
+          env:
+            - { name: RUN_MIGRATIONS, value: "true" }
+            - { name: DATABASE_URL, value: "postgresql+psycopg://campusslot:wrong@no-such-db:5432/campusslot" }

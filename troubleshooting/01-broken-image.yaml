@@ -1,0 +1,19 @@
+# Lab 1: ImagePullBackOff. The tag does not exist in GHCR.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-badimage
+  namespace: ts-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: api-badimage }
+  template:
+    metadata:
+      labels: { app: api-badimage }
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/ujjwaljain16/campusslot-backend:v9.9.9-does-not-exist
+          env:
+            - { name: DATABASE_URL, value: "sqlite://" }

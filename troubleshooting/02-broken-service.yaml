@@ -1,0 +1,36 @@
+# Lab 2: a Service with no endpoints. The pod is healthy, but the Service selector has a typo
+# ("backned"), so no pod matches and the Service routes nowhere.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-svc
+  namespace: ts-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: api-svc }
+  template:
+    metadata:
+      labels: { app: api-svc, tier: backend }
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/ujjwaljain16/campusslot-backend:786337172ac20bac858b3d31f46feeafd99fd8dc
+          env:
+            - { name: DATABASE_URL, value: "sqlite://" }
+          ports:
+            - { name: http, containerPort: 8000 }
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-svc
+  namespace: ts-lab
+spec:
+  selector:
+    app: api-svc
+    tier: backned
+  ports:
+    - { port: 8000, targetPort: http }

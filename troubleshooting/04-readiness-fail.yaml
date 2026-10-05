@@ -1,0 +1,29 @@
+# Lab 4: Running but never Ready. Same unreachable database as lab 3, but without migrations,
+# so the process starts and stays alive (liveness passes) while /ready returns 503 and the pod
+# is kept out of the Service endpoints.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-notready
+  namespace: ts-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: api-notready }
+  template:
+    metadata:
+      labels: { app: api-notready }
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/ujjwaljain16/campusslot-backend:786337172ac20bac858b3d31f46feeafd99fd8dc
+          env:
+            - { name: DATABASE_URL, value: "postgresql+psycopg://campusslot:wrong@no-such-db:5432/campusslot" }
+          ports:
+            - { name: http, containerPort: 8000 }
+          readinessProbe:
+            httpGet: { path: /ready, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
