@@ -1,0 +1,16 @@
+### 1. alembic upgrade head (SQLite, the PostgreSQL-only constraint migration is skipped)
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001, create rooms and bookings tables
+INFO  [alembic.runtime.migration] Running upgrade 0001 -> 0002, prevent overlapping confirmed bookings at the database level
+INFO  [alembic.runtime.migration] Running upgrade 0002 -> 0003, seed the campus rooms so a fresh install is usable immediately
+
+### 2. start the API
+GET /health -> {"status":"ok"}
+GET /ready  -> {"status":"ready"}
+GET /api/rooms -> 6 rooms
+GET /api/info  -> {"name":"CampusSlot","version":"1.0.0","git_sha":"dev","environment":"development","day_open_hour":8,"day_close_hour":20}
+
+### 3. Frontend dev server (npm run dev) proxying /api to the API on port 8000
+VITE v8.3.2 ready, Local: http://localhost:5173/
+GET http://localhost:5173/api/info -> {"name":"CampusSlot","version":"1.0.0","git_sha":"dev","environment":"development","day_open_hour":8,"day_close_hour":20}
