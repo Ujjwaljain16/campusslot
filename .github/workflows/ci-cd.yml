@@ -44,6 +44,8 @@ jobs:
           ruff format --check .
       - name: Static security analysis (bandit, medium severity and above)
         run: bandit -r app -ll
+      - name: Dependency audit (pip-audit, software composition analysis)
+        run: pip-audit -r requirements.txt --progress-spinner off
       - name: Run pytest with a coverage floor
         run: pytest -v --cov=app --cov-report=term-missing --cov-fail-under=85
 
