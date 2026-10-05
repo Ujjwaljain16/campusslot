@@ -1,0 +1,15 @@
+### Logs in Loki, queried through the Grafana datasource (uid loki)
+
+# datasources known to Grafana:
+[('Alertmanager', 'alertmanager', 'alertmanager'), ('Loki', 'loki', 'loki'), ('Prometheus', 'prometheus', 'prometheus')]
+
+# labels Alloy attached to the log streams:
+['app', 'component', 'container', 'instance', 'job', 'namespace', 'pod', 'service_name']
+
+# LogQL: rejected bookings per layer in the last 10 minutes
+[({'layer': 'application'}, '105')]
+
+# LogQL: three raw log lines of the backend (JSON written by the application)
+  c8f8-vcwwp {"time": "2026-10-05T14:24:07.264+00:00", "level": "INFO", "logger": "campusslot", "message": "request", "method": "POST", "path": "/api/bookings", "status": 409, "durati
+  c8f8-vcwwp {"time": "2026-10-05T14:24:07.204+00:00", "level": "INFO", "logger": "campusslot", "message": "request", "method": "POST", "path": "/api/bookings", "status": 201, "durati
+  c8f8-pjk24 {"time": "2026-10-05T14:24:07.313+00:00", "level": "INFO", "logger": "campusslot", "message": "request", "method": "GET", "path": "/api/bookings/999999", "status": 404, "
