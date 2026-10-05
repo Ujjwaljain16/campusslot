@@ -1,0 +1,29 @@
+### Result of scripts/bootstrap-gitops.sh on the Minikube cluster
+The script created the namespace, the database Secret with a random password, Argo CD and the Application.
+
+### namespaces and labels (Pod Security restricted is enforced on campusslot)
+NAME         STATUS   AGE   LABELS
+campusslot   Active   30m   app.kubernetes.io/name=campusslot,kubernetes.io/metadata.name=campusslot,pod-security.kubernetes.io/enforce=restricted,pod-security.kubernetes.io/warn=restricted
+argocd       Active   17m   kubernetes.io/metadata.name=argocd,name=argocd
+
+### the database Secret exists outside Git (key names only, values are never printed)
+key: DATABASE_URL (136 bytes encoded)
+key: POSTGRES_PASSWORD (44 bytes encoded)
+
+### Argo CD pods (the ApplicationSet controller is scaled to zero, it is not needed)
+NAME                                 READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0      1/1     Running   0          8m48s
+argocd-redis-567ff8c97-cld9f         1/1     Running   0          17m
+argocd-repo-server-79f98944c-4zc7w   1/1     Running   0          8m50s
+argocd-server-798bc5886b-fdtq6       1/1     Running   0          8m49s
+
+### The Application
+NAME         SYNC STATUS   HEALTH STATUS
+campusslot   Synced        Healthy
+
+### Source and destination of the Application
+repo: https://github.com/Ujjwaljain16/campusslot.git
+path: helm/campusslot
+valueFiles: ["values-dev.yaml","../../gitops/values.yaml"]
+destination: campusslot
+auto sync: {"prune":true,"selfHeal":true}

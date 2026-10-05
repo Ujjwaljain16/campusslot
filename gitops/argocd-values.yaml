@@ -24,5 +24,6 @@ dex:
   enabled: false
 notifications:
   enabled: false
+# This version of the chart has no enabled switch for the ApplicationSet controller, so it is scaled to zero.
 applicationSet:
-  enabled: false
+  replicas: 0

@@ -1,0 +1,79 @@
+### GitOps demo on Minikube with Argo CD (all times local)
+
+### 1. Before: Argo CD state and the image the cluster runs
+NAME         SYNC STATUS   HEALTH STATUS
+campusslot   Synced        Healthy
+desired image tag in Git (gitops/values.yaml): 5e03c9a4a1737e481928aafb15b0ff6a0adbc3c2
+running backend image: 5e03c9a4a1737e481928aafb15b0ff6a0adbc3c2
+ConfigMap LOG_LEVEL in the cluster: INFO
+
+### 2. Promote by changing Git only: gitops/values.yaml now points at cd14c5a
+pushed at 19:46:09
+19:46:09  argocd=Synced/Healthy  backend image=5e03c9a
+19:46:18  argocd=Synced/Progressing  backend image=cd14c5a
+19:46:26  argocd=Synced/Progressing  backend image=cd14c5a
+19:46:34  argocd=Synced/Healthy  backend image=cd14c5a
+NAME                                  READY   STATUS      RESTARTS   AGE
+campusslot-backend-5dc8cdc8f8-kj649   1/1     Running     0          7s
+campusslot-backend-5dc8cdc8f8-zczws   1/1     Running     0          19s
+campusslot-frontend-6559d7d7f-8fxb2   1/1     Running     0          6s
+campusslot-frontend-6559d7d7f-b2k88   1/1     Running     0          19s
+campusslot-migrate-1-mmb9w            0/1     Completed   0          19s
+campusslot-postgres-0                 1/1     Running     0          4m12s
+api/info git_sha after the rollout:
+{"name":"CampusSlot","version":"1.0.0","git_sha":"cd14c5a2029738b444485baeb853dc914f8b3b69","environment":"development","day_open_hour":8,"day_close_hour":20}
+
+### 3. A configuration change through Git: LOG_LEVEL INFO -> DEBUG in gitops/values.yaml
+pushed at 19:46:49
+19:46:49  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=INFO
+19:46:57  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:47:06  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:47:14  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:47:22  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:47:30  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:47:39  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:47:47  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:47:55  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:48:03  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:48:12  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:48:20  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:48:28  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:48:36  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:48:45  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:48:53  argocd=Synced/Degraded  ConfigMap LOG_LEVEL=DEBUG
+19:49:01  argocd=Synced/Healthy  ConfigMap LOG_LEVEL=DEBUG
+backend pods before: pod/campusslot-backend-5dc8cdc8f8-kj649 pod/campusslot-backend-5dc8cdc8f8-zczws 
+backend pods after:  pod/campusslot-backend-5f9558df96-hnnks pod/campusslot-backend-5f9558df96-vgtps 
+(different pod names show that the checksum annotation rolled the pods)
+LOG_LEVEL seen by a running pod: DEBUG
+
+### 4. After the health check fix: LOG_LEVEL DEBUG -> INFO through Git again
+pushed at 19:50:22
+19:50:22  argocd=Synced/Healthy  operation=Succeeded  LOG_LEVEL=DEBUG
+19:50:31  argocd=Synced/Progressing  operation=Running  LOG_LEVEL=INFO
+19:50:39  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:50:48  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:50:56  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:51:04  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:51:13  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:51:21  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:51:29  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:51:38  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:51:46  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:51:54  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:52:03  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:52:11  argocd=Synced/Progressing  operation=Succeeded  LOG_LEVEL=INFO
+19:52:19  argocd=Synced/Healthy  operation=Succeeded  LOG_LEVEL=INFO
+operation message: successfully synced (no more tasks)
+retry count: 
+migration Job completions seen in events: 7
+(The migration count above is cumulative since the demo started. The earlier DEBUG rollout, which retried before the health check fix, accounts for four of those.)
+
+### 5. Self-healing: change the cluster by hand and delete a resource
+Manual drift 1: kubectl patch configmap, LOG_LEVEL INFO -> TRACE_BY_HAND
+configmap/campusslot-backend-config patched
+Manual drift 2: kubectl delete service campusslot-frontend
+service "campusslot-frontend" deleted from campusslot namespace
+19:52:31 (+1s)  ConfigMap LOG_LEVEL=TRACE_BY_HAND  frontend Service=missing
+19:52:34 (+4s)  ConfigMap LOG_LEVEL=INFO  frontend Service=campusslot-frontend
+argocd: Synced/Healthy
