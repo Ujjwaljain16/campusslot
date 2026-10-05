@@ -22,3 +22,8 @@ hpa:
 postgres:
   persistence:
     size: 1Gi
+
+# Needs the kube-prometheus-stack CRDs: run scripts/install-monitoring.sh before deploying.
+serviceMonitor:
+  enabled: true
+  interval: 15s

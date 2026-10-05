@@ -59,7 +59,7 @@
     {
       "id": 2,
       "type": "timeseries",
-      "title": "p95 latency by route",
+      "title": "Latency percentiles, all routes (seconds)",
       "datasource": {
         "type": "prometheus"
       },
@@ -94,8 +94,24 @@
           "datasource": {
             "type": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, sum by (le, handler) (rate(http_request_duration_seconds_bucket{namespace=\"campusslot\"}[1m])))",
-          "legendFormat": "{{handler}}"
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket{namespace=\"campusslot\"}[1m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_request_duration_highr_seconds_bucket{namespace=\"campusslot\"}[1m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_highr_seconds_bucket{namespace=\"campusslot\"}[1m])))",
+          "legendFormat": "p99"
         }
       ]
     },
@@ -137,7 +153,7 @@
           "datasource": {
             "type": "prometheus"
           },
-          "expr": "sum(rate(http_requests_total{namespace=\"campusslot\",status=\"5xx\"}[1m]))",
+          "expr": "sum(rate(http_requests_total{namespace=\"campusslot\",status=\"5xx\"}[1m])) or vector(0)",
           "legendFormat": "5xx per second"
         }
       ]

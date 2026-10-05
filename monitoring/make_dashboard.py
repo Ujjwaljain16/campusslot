@@ -28,14 +28,14 @@ panels = [
     panel(1, "Request rate by route", f'sum by (handler) (rate(http_requests_total{{{NS}}}[1m]))', "{{handler}}", 0, 0, unit="reqps"),
     panel(
         2,
-        "p95 latency by route",
-        f"histogram_quantile(0.95, sum by (le, handler) (rate(http_request_duration_seconds_bucket{{{NS}}}[1m])))",
-        "{{handler}}",
+        "Latency percentiles, all routes (seconds)",
+        f"histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket{{{NS}}}[1m])))",
+        "p95",
         12,
         0,
         unit="s",
     ),
-    panel(3, "5xx error rate", f'sum(rate(http_requests_total{{{NS},status="5xx"}}[1m]))', "5xx per second", 0, 8, unit="reqps"),
+    panel(3, "5xx error rate", f'sum(rate(http_requests_total{{{NS},status="5xx"}}[1m])) or vector(0)', "5xx per second", 0, 8, unit="reqps"),
     panel(
         4,
         "Booking conflicts rejected (409), by layer",
@@ -61,6 +61,17 @@ panels = [
         16,
     ),
 ]
+# The high-resolution histogram has fine buckets, so p50 and p99 sit next to p95 on the same panel.
+for refId, q in (("B", 0.5), ("C", 0.99)):
+    panels[1]["targets"].append(
+        {
+            "refId": refId,
+            "datasource": DS,
+            "expr": f"histogram_quantile({q}, sum by (le) (rate(http_request_duration_highr_seconds_bucket{{{NS}}}[1m])))",
+            "legendFormat": f"p{int(q * 100)}",
+        }
+    )
+
 # Second query on the HPA panel: the replica count the autoscaler wants.
 panels[5]["targets"].append(
     {

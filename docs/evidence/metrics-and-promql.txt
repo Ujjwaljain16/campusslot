@@ -1,0 +1,24 @@
+### GET /metrics from a backend pod (selected series)
+campusslot_bookings_total{action="created"} 72.0
+campusslot_bookings_total{action="deleted"} 3.0
+campusslot_booking_conflicts_total{layer="application"} 68.0
+http_requests_total{handler="/api/info",method="GET",status="2xx"} 74.0
+http_requests_total{handler="/api/rooms",method="GET",status="2xx"} 48024.0
+http_requests_total{handler="/api/bookings",method="GET",status="2xx"} 97.0
+http_requests_total{handler="/api/bookings",method="POST",status="2xx"} 72.0
+http_requests_total{handler="/api/bookings",method="POST",status="4xx"} 68.0
+http_requests_total{handler="/api/bookings/stats",method="GET",status="2xx"} 102.0
+http_requests_total{handler="/api/bookings/{booking_id}",method="DELETE",status="2xx"} 3.0
+http_requests_total{handler="/api/bookings/{booking_id}",method="GET",status="4xx"} 75.0
+
+### PromQL results from Prometheus (queried over its HTTP API)
+# sum by (layer) (campusslot_booking_conflicts_total)
+   {'layer': 'application'} 142.0
+# sum by (action) (campusslot_bookings_total)
+   {'action': 'created'} 151.0
+   {'action': 'deleted'} 6.0
+# histogram_quantile(0.95, sum by (le) (rate(http_request_duration_highr_seconds_bucket{namespace="campusslot"}[30m])))
+   {} 0.01
+# sum by (status) (http_requests_total{namespace="campusslot"})
+   {'status': '2xx'} 96680.0
+   {'status': '4xx'} 282.0
