@@ -1,0 +1,12 @@
+### Database pod killed, with the handled 503 (backend image: campusslot-backend-local:db503)
+5xx requests counted by the backend so far: 0
+event at +10s (15:57:35): kubectl delete pod campusslot-postgres-0
+pod "campusslot-postgres-0" deleted from campusslot namespace
+[database killed] requests: 900, failed: 17 (1.89 percent)
+[database killed] latency of successful requests: median 17.7 ms, p95 34.9 ms, slowest 1147.5 ms
+[database killed] first failure at +10.1 s, last at +15.7 s
+[database killed] kinds: {'HTTP 503': 16, 'TimeoutError': 1}
+5xx requests counted by the backend after: 16
+highest 1 minute 5xx rate seen by Prometheus: 0.2179733333333333
+rooms after: 6
+done 15:59:16

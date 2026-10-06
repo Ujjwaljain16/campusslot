@@ -27,3 +27,12 @@ postgres:
 serviceMonitor:
   enabled: true
   interval: 15s
+
+prometheusRule:
+  enabled: true
+
+# A short schedule so the backup drill does not wait a day. Production would use the daily default.
+backup:
+  enabled: true
+  schedule: "*/5 * * * *"
+  keep: 3

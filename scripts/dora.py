@@ -50,8 +50,19 @@ def human(delta: timedelta) -> str:
 def load_runs() -> list[dict]:
     raw = run(
         [
-            "gh", "run", "list", "-R", REPO, "--limit", "500", "--event", "push", "--branch", "main",
-            "--json", "databaseId,headSha,conclusion,status,createdAt,updatedAt",
+            "gh",
+            "run",
+            "list",
+            "-R",
+            REPO,
+            "--limit",
+            "500",
+            "--event",
+            "push",
+            "--branch",
+            "main",
+            "--json",
+            "databaseId,headSha,conclusion,status,createdAt,updatedAt",
         ]
     )
     runs = [r for r in json.loads(raw) if r["status"] == "completed"]
@@ -63,7 +74,9 @@ def deployed(run_id: int) -> bool:
     """A deployment is a run in which the kind deploy job really succeeded. Since the pipeline skips
     the heavy jobs for documentation-only changes, a green run is not always a deployment."""
     jobs = json.loads(run(["gh", "run", "view", str(run_id), "-R", REPO, "--json", "jobs"]))["jobs"]
-    return any(j["name"] == "Deploy with Helm (kind)" and j["conclusion"] == "success" for j in jobs)
+    return any(
+        j["name"] == "Deploy with Helm (kind)" and j["conclusion"] == "success" for j in jobs
+    )
 
 
 def commit_time(sha: str) -> datetime:
@@ -106,15 +119,15 @@ def main() -> int:
     lines = [
         "# DORA metrics",
         "",
-        f"Computed by `scripts/dora.py` from the Actions history of `{REPO}` on {datetime.now().date().isoformat()}. "
+        f"Computed by `scripts/dora.py` from the Actions history of `{REPO}` on {datetime.now().date().isoformat()}. "  # noqa: E501
         f"Window: {first.date()} to {last.date()} ({days} calendar days).",
         "",
         "| Metric | Value | How it is measured |",
         "|---|---|---|",
-        f"| Deployment frequency | {len(green)} deployments in {days} days, {len(green) / days:.1f} per day | Runs on main in which the kind deployment job succeeded, {skipped_docs} green runs without a deployment left out (earlier than the deploy job, or documentation only) |",
-        f"| Lead time for changes | median {human(statistics.median(lead))}, longest {human(max(lead))} | Commit time of the pushed head commit to the end of its green run |",
-        f"| Change failure rate | {len(red)} of {len(finished)} finished runs, {100 * len(red) / len(finished):.0f} percent | Failed runs divided by finished runs, {len(cancelled)} cancelled runs left out |",
-        f"| Time to restore | median {human(statistics.median(restore)) if restore else 'n/a'}, longest {human(max(restore)) if restore else 'n/a'} | End of a failed run to the end of the next green run |",
+        f"| Deployment frequency | {len(green)} deployments in {days} days, {len(green) / days:.1f} per day | Runs on main in which the kind deployment job succeeded, {skipped_docs} green runs without a deployment left out (earlier than the deploy job, or documentation only) |",  # noqa: E501
+        f"| Lead time for changes | median {human(statistics.median(lead))}, longest {human(max(lead))} | Commit time of the pushed head commit to the end of its green run |",  # noqa: E501
+        f"| Change failure rate | {len(red)} of {len(finished)} finished runs, {100 * len(red) / len(finished):.0f} percent | Failed runs divided by finished runs, {len(cancelled)} cancelled runs left out |",  # noqa: E501
+        f"| Time to restore | median {human(statistics.median(restore)) if restore else 'n/a'}, longest {human(max(restore)) if restore else 'n/a'} | End of a failed run to the end of the next green run |",  # noqa: E501
         "",
         "## Green runs per day",
         "",

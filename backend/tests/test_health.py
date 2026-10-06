@@ -73,3 +73,25 @@ def test_metrics_endpoint_serves_prometheus_text(client):
     assert response.status_code == 200
     assert "text/plain" in response.headers["content-type"]
     assert "# HELP" in response.text
+
+
+def test_database_outage_is_a_handled_503_and_is_counted_in_the_metrics(client):
+    """An unreachable database must not escape as a bare 500: clients get Retry-After, and the
+    availability SLI (which reads the request metrics) sees the failure."""
+
+    def broken_db():
+        raise OperationalError("SELECT 1", {}, Exception("connection refused"))
+        yield  # pragma: no cover
+
+    app.dependency_overrides[get_db] = broken_db
+    response = client.get("/api/rooms")
+    assert response.status_code == 503
+    assert response.headers["Retry-After"] == "5"
+
+    metrics = client.get("/metrics").text
+    counted = [
+        line
+        for line in metrics.splitlines()
+        if line.startswith("http_requests_total") and 'status="5xx"' in line
+    ]
+    assert any('handler="/api/rooms"' in line for line in counted)

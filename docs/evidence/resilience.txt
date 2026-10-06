@@ -1,0 +1,72 @@
+### Resilience measurements, 2026-10-06 15:36:48
+replicas: backend=2 frontend=2
+rollout strategy: {"rollingUpdate":{"maxSurge":1,"maxUnavailable":0},"type":"RollingUpdate"}
+rooms before: 6
+
+### A. rolling update of the backend (rollout restart)
+event at +10s (15:37:00): kubectl rollout restart deployment/campusslot-backend -n campusslot > /dev/null; kubectl rollout status deployment/campusslot-backend -n campusslot --timeout=120s
+Waiting for deployment "campusslot-backend" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "campusslot-backend" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "campusslot-backend" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "campusslot-backend" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "campusslot-backend" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "campusslot-backend" rollout to finish: 1 old replicas are pending termination...
+deployment "campusslot-backend" successfully rolled out
+[A. rolling update of the backend (rollout restart)] requests: 700, failed: 2 (0.29 percent)
+[A. rolling update of the backend (rollout restart)] latency of successful requests: median 20.6 ms, p95 34.7 ms, slowest 96.6 ms
+[A. rolling update of the backend (rollout restart)] first failure at +14.0 s, last at +17.2 s
+[A. rolling update of the backend (rollout restart)] kinds: {'TimeoutError': 2}
+  campusslot-backend-6776fff4d5-4wstk 1/1 Running restarts=0
+  campusslot-backend-6776fff4d5-djvvl 1/1 Running restarts=0
+  campusslot-frontend-6559d7d7f-m9znp 1/1 Running restarts=2
+  campusslot-frontend-6559d7d7f-q57jj 1/1 Running restarts=2
+  campusslot-postgres-0 1/1 Running restarts=1
+
+### B. rolling update of the frontend (rollout restart)
+event at +10s (15:38:11): kubectl rollout restart deployment/campusslot-frontend -n campusslot > /dev/null; kubectl rollout status deployment/campusslot-frontend -n campusslot --timeout=120s
+Waiting for deployment "campusslot-frontend" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "campusslot-frontend" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "campusslot-frontend" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "campusslot-frontend" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "campusslot-frontend" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "campusslot-frontend" rollout to finish: 1 old replicas are pending termination...
+deployment "campusslot-frontend" successfully rolled out
+[B. rolling update of the frontend (rollout restart)] requests: 700, failed: 2 (0.29 percent)
+[B. rolling update of the frontend (rollout restart)] latency of successful requests: median 13.4 ms, p95 29.8 ms, slowest 191.1 ms
+[B. rolling update of the frontend (rollout restart)] first failure at +11.8 s, last at +14.8 s
+[B. rolling update of the frontend (rollout restart)] kinds: {'TimeoutError': 2}
+  campusslot-backend-6776fff4d5-4wstk 1/1 Running restarts=0
+  campusslot-backend-6776fff4d5-djvvl 1/1 Running restarts=0
+  campusslot-frontend-565b7769cf-7sl4m 1/1 Running restarts=0
+  campusslot-frontend-565b7769cf-7zc96 1/1 Running restarts=0
+  campusslot-postgres-0 1/1 Running restarts=1
+
+### C. one backend pod killed
+event at +10s (15:39:22): kubectl delete pod -n campusslot $(kubectl get pod -n campusslot -l app.kubernetes.io/component=backend -o jsonpath='{.items[0].metadata.name}') --wait=false
+pod "campusslot-backend-6776fff4d5-4wstk" deleted from campusslot namespace
+[C. one backend pod killed] requests: 600, failed: 0 (0.00 percent)
+[C. one backend pod killed] latency of successful requests: median 18.4 ms, p95 35.1 ms, slowest 96.3 ms
+  campusslot-backend-6776fff4d5-4pgwl 1/1 Running restarts=0
+  campusslot-backend-6776fff4d5-djvvl 1/1 Running restarts=0
+  campusslot-frontend-565b7769cf-7sl4m 1/1 Running restarts=0
+  campusslot-frontend-565b7769cf-7zc96 1/1 Running restarts=0
+  campusslot-postgres-0 1/1 Running restarts=1
+
+### D. the database pod killed
+event at +10s (15:40:23): kubectl delete pod campusslot-postgres-0 -n campusslot --wait=false
+pod "campusslot-postgres-0" deleted from campusslot namespace
+[D. the database pod killed] requests: 900, failed: 19 (2.11 percent)
+[D. the database pod killed] latency of successful requests: median 16.9 ms, p95 34.7 ms, slowest 1127.8 ms
+[D. the database pod killed] first failure at +10.0 s, last at +15.7 s
+[D. the database pod killed] kinds: {'HTTP 500': 18, 'TimeoutError': 1}
+  campusslot-backend-6776fff4d5-4pgwl 1/1 Running restarts=0
+  campusslot-backend-6776fff4d5-djvvl 1/1 Running restarts=0
+  campusslot-frontend-565b7769cf-7sl4m 1/1 Running restarts=0
+  campusslot-frontend-565b7769cf-7zc96 1/1 Running restarts=0
+  campusslot-postgres-0 1/1 Running restarts=0
+
+### Data check: rooms before=6 after=6
+
+### What Prometheus saw (highest 5 minute error ratio in the last 15 minutes)
+0
+done 15:41:45

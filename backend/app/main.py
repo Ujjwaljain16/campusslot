@@ -5,7 +5,8 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import inspect, text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import InterfaceError, OperationalError, SQLAlchemyError
+from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 from sqlalchemy.orm import Session
 
 from .config import get_settings
@@ -44,6 +45,20 @@ def create_app() -> FastAPI:
                 },
             )
         return response
+
+    # A database that cannot be reached is a known failure, not a bug. A handled 503 tells clients
+    # to retry, and it keeps the response inside the metrics middleware, so the availability SLI
+    # counts it. A bare exception escapes as a 500 that the request metrics never see.
+    @app.exception_handler(OperationalError)
+    @app.exception_handler(InterfaceError)
+    @app.exception_handler(PoolTimeoutError)
+    async def database_unavailable(request: Request, exc: Exception) -> JSONResponse:
+        logger.error("database unavailable: %s", exc.__class__.__name__)
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "database unavailable, retry shortly"},
+            headers={"Retry-After": "5"},
+        )
 
     app.include_router(rooms.router)
     app.include_router(bookings.router)

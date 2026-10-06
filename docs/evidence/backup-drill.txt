@@ -1,0 +1,44 @@
+### Backup and restore drill, 2026-10-06
+backup schedule in this cluster: */5 * * * *, keep tail -n +4
+
+### 1. Known data: 40 bookings written to the live database
+DELETE 0
+INSERT 0 40
+[16:00:19] 40 rows, checksum a8892dcdb4a8aa3b9c97c8201a76894a
+
+### 2. Take a backup now (a Job created from the CronJob)
+[16:00:24] backup finished in 4 s
+wrote /backups/campusslot-20261006T103023Z.dump (9138 bytes)
+kept: 3 backup(s)
+
+### 3. More writes after the backup (this is the data a restore cannot bring back)
+INSERT 0 5
+[16:00:25] 45 rows, checksum 898136da81c5cb07dd7f971d6a3f6126
+
+### 4. Disaster: someone runs DELETE FROM bookings without a WHERE clause
+DELETE 45
+[16:00:25] 0 rows, checksum none
+API still answers: rooms=200, bookings listed: []
+
+### 5. Restore with scripts/restore-backup.sh
+restoring /backups/campusslot-20261006T103023Z.dump
+restore finished
+[16:00:29] 40 rows, checksum a8892dcdb4a8aa3b9c97c8201a76894a
+
+### 6. Verify
+state at the backup : 40 rows, checksum a8892dcdb4a8aa3b9c97c8201a76894a
+state after restore : 40 rows, checksum a8892dcdb4a8aa3b9c97c8201a76894a
+RESULT: identical (count and checksum)
+restore time (RTO of this procedure): 4 s, from the disaster to a verified database
+constraints survived the restore:
+bookings_pkey
+bookings_room_id_fkey
+ck_bookings_end_after_start
+ck_bookings_status
+ex_bookings_no_overlap
+overlap protection still works (expect an error):
+ERROR:  conflicting key value violates exclusion constraint "ex_bookings_no_overlap"
+DETAIL:  Key (room_id, tstzrange(start_time, end_time, '[)'::text))=(1, ["2026-11-01 01:10:00+00","2026-11-01 01:20:00+00")) conflicts with existing key (room_id, tstzrange(start_time, end_time, '[)'::text))=(1, ["2026-11-01 01:00:00+00","2026-11-01 01:30:00+00")).
+data written after the backup: 0 rows survived (5 were written, so 5 are lost: that is the RPO)
+DELETE 40
+cleaned up the drill data at 16:00:30
