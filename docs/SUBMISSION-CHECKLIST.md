@@ -7,7 +7,7 @@ This maps every item of the instructor's grading rubric (`session21-python/GRADI
 | Item | Link |
 |---|---|
 | Repository | https://github.com/Ujjwaljain16/campusslot |
-| Latest green pipeline on `main` | https://github.com/Ujjwaljain16/campusslot/actions/runs/37468505189 |
+| Pipeline runs, all green on `main` | https://github.com/Ujjwaljain16/campusslot/actions |
 | Container images, tagged with the commit SHA | [backend](https://github.com/Ujjwaljain16/campusslot/pkgs/container/campusslot-backend), [frontend](https://github.com/Ujjwaljain16/campusslot/pkgs/container/campusslot-frontend) |
 | README (20 sections, then the engineering results) | [`README.md`](../README.md) |
 | Presentation (15 slides with speaker notes, and a PDF copy) | [`CampusSlot-final-presentation.pptx`](presentation/CampusSlot-final-presentation.pptx) |
@@ -38,7 +38,7 @@ This maps every item of the instructor's grading rubric (`session21-python/GRADI
 | Criterion | Evidence |
 |---|---|
 | Public repository | public, default branch `main` |
-| Meaningful commit messages | 77 commits on `main`, none of them a bare "update", "fix" or "test" (checked with `git log`) |
+| Meaningful commit messages | more than 80 commits on `main`, none of them a bare "update", "fix" or "test" (checked with `git log`) |
 | `.gitignore` for `.env`, `__pycache__`, `node_modules`, `.venv` | all four are in [`.gitignore`](../.gitignore) |
 | Commit history screenshot, at least 10 commits | [`github-commit-history.png`](evidence/github-commit-history.png) |
 
@@ -114,7 +114,7 @@ This maps every item of the instructor's grading rubric (`session21-python/GRADI
 | Criterion | Evidence |
 |---|---|
 | `README.md` explaining the application | [`README.md`](../README.md) |
-| Live demo: commit, pipeline, deployment | rehearsed end to end: [`rehearsal.txt`](evidence/rehearsal.txt) and [`rehearsal-after-deploy.png`](evidence/rehearsal-after-deploy.png). The script for the live demo, including a failure drill with an automatic rollback, is [`docs/DEMO.md`](DEMO.md), and the drill itself is measured in [`bad-release-drill.md`](engineering/bad-release-drill.md) |
+| Live demo: commit, pipeline, deployment | rehearsed end to end: [`rehearsal.txt`](evidence/rehearsal.txt) and [`rehearsal-after-deploy.png`](evidence/rehearsal-after-deploy.png). A failure drill with an automatic rollback is measured in [`bad-release-drill.md`](engineering/bad-release-drill.md) |
 | Presentation | 15 slides with speaker notes, one slide per course topic, and three on the engineering results |
 
 ## Beyond the rubric

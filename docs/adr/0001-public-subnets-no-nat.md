@@ -19,7 +19,7 @@ Public subnets with `map_public_ip_on_launch = true`, no NAT gateway, the API en
 ## Consequences
 
 - The first apply failed on the node group because the subnets did not assign public IPs, and EKS refuses such a group when no NAT exists. The fix and the diagnosis are in `terraform/README.md`.
-- The whole 48 resource cluster cost about 10 US cents.
+- The whole 48 resource cluster used about 6 US cents of credit (the account credit went from 120 to 119.94 USD).
 
 ## What I would do in production
 
