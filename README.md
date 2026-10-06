@@ -4,7 +4,7 @@ CampusSlot is a room and lab booking service for a campus. Students and staff re
 
 ![CampusSlot day view](docs/evidence/app-desktop.png)
 
-**Grading:** [`docs/SUBMISSION-CHECKLIST.md`](docs/SUBMISSION-CHECKLIST.md) maps every item of the instructor's rubric to the file or screenshot that shows it.
+**Grading:** [`docs/SUBMISSION-CHECKLIST.md`](docs/SUBMISSION-CHECKLIST.md) maps every item of the instructor's rubric to the file or screenshot that shows it. **Demo:** [`docs/DEMO.md`](docs/DEMO.md) is the script for the live demo.
 
 ## 1. Overview
 
@@ -479,6 +479,7 @@ The sections above show that every part of the project works. This section shows
 | Query cost as data grows | The overlap check and the day view read the whole table: 2469 pages at 200 thousand bookings, growing with the table | A range query and a GiST index (migration 0004), with tests that fail if the slow form returns | 30 pages, flat from 1 thousand to 200 thousand rows. Day view through the API: 21 to 113 requests per second | [data-scale](docs/engineering/data-scale.md) |
 | Capacity of one pod | 153 requests per second, throttled in 96 to 100 percent of the periods | CPU limit 1000m. Two workers and an ETag were tried and rejected | 342 requests per second and half the p95. Two workers gave no gain and broke the metrics | [performance](docs/engineering/performance.md) |
 | Requests and autoscaling | A backend request of 100m, so 60 requests per second filled the maximum of 5 pods | Requests set from measured usage, autoscaler target 70 percent | 2 pods for the same load, the same CPU reserved, a third of the memory, no failed requests | [cost-and-sizing](docs/engineering/cost-and-sizing.md) |
+| Bad release | What happens when a deployment never becomes ready had never been tried | `helm upgrade --atomic` with a 60 s timeout, chosen from measured rollouts (9 s healthy, 17 s with a new image) | Rolled back by itself at 62 s and the previous release was alone again at 72 s, with 0 of 4800 user requests failed (3 runs). Without `--atomic` the broken pod stays until a person acts | [bad-release-drill](docs/engineering/bad-release-drill.md), [demo guide](docs/DEMO.md) |
 | Backup | None | A `pg_dump` CronJob and a restore script | A restore after a mass delete gave an identical checksum in 4 s. The 5 rows written after the backup were lost, which is the recovery point | [backup-drill](docs/engineering/backup-drill.md) |
 | Supply chain | Images were scanned, but nothing proved where they came from | Signed provenance and SBOM for each image, verified before the deploy, plus Dependabot | An unattested image is rejected. The pipeline takes about a minute longer (143 s without, 202 s and 214 s with) | [supply-chain](docs/engineering/supply-chain.md) |
 | Decisions | Reasons lived in my head | Fourteen short decision records | Each lists the options, the choice, the consequences and what I would do in production | [adr](docs/adr/README.md) |
@@ -487,7 +488,7 @@ The sections above show that every part of the project works. This section shows
 
 Part of the method is deciding what not to build. I listed these in my plan and left them out, and I do not claim them:
 
-- **A rollback drill** that compares a Git revert with an Argo CD rollback.
+- **Rollback through Git revert and Argo CD, compared.** The automatic Helm rollback of a bad release is measured, but I did not time the two GitOps ways of rolling back.
 - **Automated promotion.** Promotion is still a commit to `gitops/values.yaml` ([ADR 0008](docs/adr/0008-manual-promotion-via-git.md)).
 - **Network policies**, because the default Minikube network plugin does not enforce them, so I could not prove them.
 - **Alert delivery.** There is no Alertmanager, so an alert is visible in Prometheus and reaches nobody.
