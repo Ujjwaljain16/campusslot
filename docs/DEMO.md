@@ -28,15 +28,31 @@ kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80 &             
 | Prometheus alerts | http://localhost:9090/alerts |
 | The pipeline | https://github.com/Ujjwaljain16/campusslot/actions |
 
+Grafana asks for a login: the user is `admin` and the password comes from `kubectl get secret monitoring-grafana -n monitoring -o jsonpath='{.data.admin-password}' | base64 -d`. The dashboard is called "CampusSlot overview".
+
+A fresh database has no bookings, so the page would look empty. Add three for today (this is also what the demo shows in its first minute):
+
+```bash
+D=$(date -u +%F)
+post() { curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:8080/api/bookings -H 'Content-Type: application/json' -d "{\"room_id\":$1,\"purpose\":\"$2\",\"booked_by\":\"demo\",\"start_time\":\"${D}T$3:00Z\",\"end_time\":\"${D}T$4:00Z\"}"; }
+post 4 "Operating Systems lecture" 09:30 11:00      # 201
+post 1 "Docker workshop" 11:00 14:00                # 201
+post 6 "Project demo day" 14:30 16:30               # 201
+post 1 "Clashing booking" 12:00 13:00               # 409, the double booking is refused
+```
+
 Check that `kubectl get pods -n campusslot` shows every pod `Running`, and that `curl http://localhost:8080/api/info` answers.
+
+I rehearsed the parts that can be rehearsed on 6 October 2026: the pre-flight, the overview commands, the failure drill (3 minutes 13 seconds from start to finish, with the same numbers as the earlier runs), and the deploy of another commit and back (18 seconds forward, 10 seconds back, `/api/info` followed each time). I did not rehearse the pull request and merge on GitHub, to avoid leaving a closed pull request in the history. From the pull requests of that day: the checks take about 3 minutes and the pipeline after the merge about 4 minutes.
 
 ## The story
 
 | Minute | What you show | What you say |
 |---|---|---|
 | 0:00 | The application and the green run of the pipeline | "A campus room booking service. Every push runs the tests, scans the code and the images, builds, and deploys to a test cluster." |
+| 0:45 | On the page, book room 1 for 12:00 to 13:00 (or run the last `post` line above) | "The database refuses a double booking. That promise is protected in three places." |
 | 1:00 | `kubectl get pods,svc,ingress,hpa -n campusslot` and `helm list -n campusslot` | "Two copies of the backend and the frontend, behind an Ingress, with an autoscaler and metrics." |
-| 2:00 | **Commit a change.** Edit the subtitle in `frontend/src/App.jsx`, open a pull request, watch the checks, merge. Start it first, because the pipeline takes about 4 minutes | "Main is protected, so every change goes through a pull request with the same checks." Run the next step while it builds |
+| 2:00 | **Commit a change.** Edit the subtitle in `frontend/src/App.jsx` (line 84, "Book a lab or room in seconds..."), open a pull request, watch the checks, merge. Start it first, because the pipeline takes about 4 minutes | "Main is protected, so every change goes through a pull request with the same checks." Run the next step while it builds |
 | 2:30 | `scripts/bad-release-drill.sh broken` (see below) | "Now I will deploy a deliberately broken release." |
 | 6:00 | The pipeline is green. Deploy that commit with `scripts/deploy-local.sh <sha>` and reload the page | "The new version is live, and `/api/info` reports exactly this commit." |
 
