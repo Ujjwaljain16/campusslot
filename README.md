@@ -446,7 +446,7 @@ Known limitations, stated plainly:
 
 ## 20. Cleanup
 
-Everything that I created for the project has been shut down, and I verified each step. The local cluster was built and deleted twice, once for the Kubernetes and monitoring work and once for the GitOps and logging work.
+Everything that I created for the project has been shut down, and I verified each step. The local cluster was built and deleted three times: for the Kubernetes and monitoring work, for the GitOps and logging work, and for the engineering experiments (alert drill, rollout and failure measurements, backup drill).
 
 ```bash
 docker compose down                  # the Compose stack
@@ -457,7 +457,7 @@ terraform apply destroy.tfplan       # the 48 AWS resources, destroyed earlier
 
 I also stopped the port-forwards that I had started, and I removed the leftover test container, the Compose volume and the project images from Docker, by name, so that data of my other projects was not touched. A final listing shows no container, volume, image or network of this project, no Minikube profile and no kube context.
 
-On AWS, a final check of `ap-south-1` ([`final-cleanup-verification.txt`](docs/evidence/final-cleanup-verification.txt), run twice) reported no EKS cluster, no VPC other than the default one, and no NAT gateway, Elastic IP, internet gateway, instance, volume, load balancer or OIDC provider. The AWS account page still showed the full 120 USD credit at the second check, which was several hours after the destroy, because billing data arrives late. My estimate for the whole EKS run is about 10 US cents, and I will confirm the real figure in the billing console once it updates.
+On AWS, a final check of `ap-south-1` ([`final-cleanup-verification.txt`](docs/evidence/final-cleanup-verification.txt), run twice) reported no EKS cluster, no VPC other than the default one, and no NAT gateway, Elastic IP, internet gateway, instance, volume, load balancer or OIDC provider. The AWS account page still showed the full 120 USD credit at the second check, which was several hours after the destroy, because billing data arrives late. A third check, after the engineering experiments, showed a remaining credit of 119.94 USD, so the whole EKS run used about 6 US cents of credit (my estimate was 10 cents). That third check is appended to the same file.
 
 To rebuild any part of the project, the sections above give the exact commands. The Minikube demo is recreated with `minikube start`, `scripts/install-monitoring.sh` and either `scripts/deploy-local.sh <sha>` or `scripts/bootstrap-gitops.sh` for the GitOps variant.
 
