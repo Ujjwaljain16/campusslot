@@ -64,8 +64,8 @@ The control shows what the mechanism does and does not do. It does **not** prote
 
 ## Two other results, for completeness
 
-- **A different kind of bad release, a missing image** ([`bad-release-imagepull.txt`](../evidence/bad-release-imagepull.txt)): my first attempt did not run the planned scenario, because the script reported the broken image as built when it was not on the node (the build had failed without an error code). The new pod could not pull its image and the result was the same: rollback at 62.3 seconds and 0 of 1600 requests failed. The script now checks that the image exists before it starts. I kept the transcript as a second, unplanned example.
-- **The first run of the planned scenario** ([`bad-release-first-version-of-script.txt`](../evidence/bad-release-first-version-of-script.txt)) was made with the first version of the script. I then added the first failure signal, the difference between pending and firing, and the lowest ready replica count, and repeated the drill three times. The results did not change.
+- **A missing image is a second kind of bad release.** My first attempt did not run the planned scenario, because the script reported the broken image as built when it was not on the node (the build had failed without an error code). The new pod could not pull its image, and the result was the same: rollback at 62.3 seconds and 0 of 1600 requests failed. The script now checks that the image exists before it starts, and the transcript of that attempt is not kept in the repository.
+- **The report was improved before the three runs.** I added the first failure signal, the difference between pending and firing, and the lowest ready replica count, and then repeated the planned drill three times. The results did not change.
 
 ## Limits
 

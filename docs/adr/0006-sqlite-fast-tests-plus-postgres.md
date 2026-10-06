@@ -14,7 +14,7 @@ Tests that need a database server are slower and harder to run, but SQLite canno
 
 ## Decision
 
-46 tests run on in-memory SQLite through a dependency override, and 4 tests marked `postgres` run only when `POSTGRES_TEST_URL` is set, in a separate CI job with a service container. A custom `UTCDateTime` type makes both databases behave the same for time zones.
+47 tests run on in-memory SQLite through a dependency override, and 7 tests marked `postgres` run only when `POSTGRES_TEST_URL` is set, in a separate CI job with a service container. A custom `UTCDateTime` type makes both databases behave the same for time zones.
 
 ## Consequences
 
