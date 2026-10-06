@@ -54,27 +54,27 @@ The Dockerfiles are multi-stage and non-root, but I had never measured what that
 
 | Measure | Real image | Naive single stage |
 |---|---|---|
-| Backend size | **61 MB** | 432 MB (7 times larger) |
-| Frontend size | **25 MB** | 477 MB (19 times larger) |
-| Backend rebuild after a one-line code change | **3.3 s** | 22.2 s (6.7 times slower) |
-| Frontend rebuild after a one-line code change | **4.3 s** | 11.4 s (2.7 times slower) |
-| Backend build from nothing | 31.2 s | 24.9 s |
-| Frontend build from nothing | 8.9 s | 13.3 s |
-| Backend startup, from `docker run` to the first answer (median of 5) | 1.41 s | 1.13 s |
-| Frontend startup (median of 5) | **0.50 s** | 0.86 s |
+| Backend size, compressed (what a pull transfers) | **61 MB** | 432 MB (7 times larger) |
+| Backend size, unpacked (the files on the node) | **199 MB** | 1228 MB (6 times larger) |
+| Frontend size, compressed | **25 MB** | 477 MB (19 times larger) |
+| Frontend size, unpacked | **56 MB** | 1373 MB (25 times larger) |
+| Backend rebuild after a one-line code change | **3.2 s** | 25.6 s (8 times slower) |
+| Frontend rebuild after a one-line code change | **5.0 s** | 11.3 s (2.3 times slower) |
+| Backend startup, from `docker run` to the first answer (median of 5) | 1.50 s | 1.15 s |
+| Frontend startup (median of 5) | **0.49 s** | 0.84 s |
 
 What the numbers say:
 
-- **The slim base image does most of the work for the backend.** The build stage alone is 63 MB and the final image is 61 MB, so splitting the build into two stages saves only the 2 MB of `pip` that is removed. The 7 times difference comes from `python:3.12-slim` against `python:3.12`. I keep the two stages because they cost nothing and keep build tools out of the image, but the claim that "multi-stage made the backend small" would be wrong.
-- **The stage split matters a lot for the frontend.** The Node build stage is 117 MB and the final image, which only holds the compiled files and nginx, is 25 MB.
-- **Layer order pays off on every commit.** The dependencies are installed before the application code is copied, so changing a source file rebuilds only the last layers. That is the difference between 3 and 22 seconds for the backend, and nearly every commit changes only source files.
-- **Two costs of the real backend image.** A build from nothing is about 6 seconds slower, because the image runs `apt-get upgrade` to pick up security fixes. Startup is about 0.3 seconds slower than the naive image (1.41 against 1.13 seconds), and I did not find why. Both are small next to the probes, which check every 2 to 5 seconds, but they are real.
+- **The slim base image does most of the work for the backend.** The build stage alone is 63 MB compressed (203 MB unpacked) and the final image is 61 MB (199 MB), so splitting the build into two stages saves only the `pip` that is removed. The 6 to 7 times difference comes from `python:3.12-slim` against `python:3.12`. I keep the two stages because they cost nothing and keep build tools out of the image, but the claim that "multi-stage made the backend small" would be wrong.
+- **The stage split matters a lot for the frontend.** The Node build stage is 117 MB compressed (289 MB unpacked) and the final image, which only holds the compiled files and nginx, is 25 MB (56 MB).
+- **Layer order pays off on every commit.** The dependencies are installed before the application code is copied, so changing a source file rebuilds only the last layers. That is the difference between 3 and 26 seconds for the backend, and nearly every commit changes only source files.
+- **One cost of the real backend image.** Startup is about 0.35 seconds slower than the naive image (1.50 against 1.15 seconds in the last run, and the same direction in every run), and I did not find why. It is small next to the probes, which check every 2 to 5 seconds, but it is real. A build from nothing shows no consistent difference between the two (31 against 25 seconds in one run, 35 against 36 in the next), so I do not rank them.
 - **The frontend starts faster** than serving the build with a Node development server, because nginx does not boot a runtime.
 
 Limits of this measurement:
 
-- Sizes are the uncompressed sizes that Docker reports. The registry stores compressed layers, which I did not measure.
-- Build times include the package downloads, so they vary with the network: across the runs of the script, the backend build from nothing took 26 to 33 seconds. Only the comparison between the two images in the same run is meaningful.
+- Docker's `.Size` is the **compressed** size of the layers (with the containerd image store), which is what a pull transfers. The files inside add up to about three times as much once unpacked (199 MB for the backend), and that is what a node stores. The table gives both. My first version of this section called the compressed number "uncompressed", which was wrong, and I found it because python:3.12-slim alone is larger than the 61 MB that I had reported.
+- Build times include the package downloads, so they vary with the network: across the runs of the script, the backend build from nothing took 26 to 35 seconds and the frontend 9 to 22 seconds. Only the rebuild after a code change, which does not download anything, is a stable comparison.
 - The naive images are my own idea of a typical first Dockerfile, not a standard.
 - Both Dockerfiles start with `# syntax=docker/dockerfile:1`, which makes every build contact Docker Hub for the build frontend, even when every layer is cached. During this measurement a failed DNS lookup broke one build for that reason, so the script retries and times only the attempt that works. Removing the line, or pinning the frontend by digest, would take that network dependency out of the builds. I did not change it.
 - My first versions of the script had two bugs, which I fixed before using any number: Git Bash rewrote the `/health` argument into a Windows path, so the startup test polled a wrong address, and the same comment was added on every run, so the layer cache of the previous run answered the rebuild of the naive image (25 seconds became 2.5).
