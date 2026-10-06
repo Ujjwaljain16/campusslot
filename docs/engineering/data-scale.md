@@ -89,3 +89,5 @@ VARIANT=after scripts/scale-test.sh 1000 10000 50000 200000   # after migration 
 ```
 
 Run it only against a throw-away database: it empties the bookings table.
+
+The API numbers were measured from a pod inside the cluster with [`scripts/loadgen.py`](../../scripts/loadgen.py) for the reads and [`scripts/bookprobe.py`](../../scripts/bookprobe.py) for the writes (it creates 36 bookings in free slots and reports the latency of each request).
