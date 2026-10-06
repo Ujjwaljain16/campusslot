@@ -1,0 +1,30 @@
+### Image metrics, 2026-10-06 21:10:56, docker 29.0.1
+pulling the base images first, so that the build times do not include their download
+
+### 1. Build from nothing (--no-cache), seconds
+  backend                    31.2 s   (single stage: 24.9 s)
+  frontend                    8.9 s   (single stage: 13.3 s)
+
+### 2. Rebuild after a one-line change in the application code, with the layer cache, seconds
+# a comment is added to a source file, which is what most commits look like
+  backend                     3.3 s   (single stage, files copied first: 22.2 s)
+  frontend                    4.3 s   (single stage, files copied first: 11.4 s)
+
+### 3. Image size (uncompressed, as Docker reports it), MB
+  backend, the real image                61
+  backend, the build stage alone         63
+  backend, single stage, full python    432
+  frontend, the real image               25
+  frontend, the build stage alone       117
+  frontend, single stage, full node     477
+
+### 4. Startup: from "docker run" to the first 200 answer, 5 runs each (this includes creating the container)
+  backend, the real image            median 1.41 s, fastest 1.39 s, slowest 2.06 s (5 of 5 runs)
+  backend, single stage              median 1.13 s, fastest 1.05 s, slowest 1.23 s (5 of 5 runs)
+  frontend, the real image           median 0.50 s, fastest 0.47 s, slowest 0.52 s (5 of 5 runs)
+  frontend, single stage (vite preview) median 0.86 s, fastest 0.78 s, slowest 0.89 s (5 of 5 runs)
+
+### 5. What the real images are made of
+  cs-measure-backend: 12 layers, runs as user "10001:10001"
+  cs-measure-frontend: 12 layers, runs as user "101"
+done
