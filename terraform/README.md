@@ -13,6 +13,7 @@ The application itself is not deployed to EKS. Kubernetes, Helm, monitoring and 
 | `main.tf` | VPC module, EKS module, managed node group |
 | `outputs.tf` | VPC and subnet IDs, cluster name and endpoint, the `update-kubeconfig` command |
 | `terraform.tfvars.example` | Template for the local, git-ignored `terraform.tfvars` |
+| `terraform.tfvars.prod.example` | The same template with the three security switches turned on (the production profile) |
 
 ## Design decisions
 

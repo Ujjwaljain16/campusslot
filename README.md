@@ -220,7 +220,7 @@ npm test && npm audit --omit=dev --audit-level=high && npm run build
 | Backend, PostgreSQL 16 | 7 passed: migrations (including the range index), the overlap constraint, the database layer returning 409, a concurrent race that creates exactly one booking, and three tests of the range queries (same answer at every boundary, a booking that starts or ends exactly now, and no sequential scan on a large table) | [postgres-tests.txt](docs/evidence/postgres-tests.txt) |
 | Frontend | 12 passed, 0 audit vulnerabilities, production build succeeds | [frontend-tests.txt](docs/evidence/frontend-tests.txt) |
 
-![pytest -v, 42 passed](docs/evidence/terminal-pytest.png)
+![pytest -v, 47 passed (the 7 PostgreSQL tests run in the CI job against a real database)](docs/evidence/terminal-pytest.png)
 
 This screenshot was taken earlier, when the suite had 42 tests. It has 47 now, after the four logging tests in section 15 and a test of the database outage response. The transcript above is the current run.
 
@@ -246,7 +246,7 @@ The `backend-test` job also runs Bandit and `pip-audit`, so the code and the pin
 
 The deploy job creates a throw-away kind cluster, installs the ingress controller, installs the chart with the SHA tagged images, and tests the application through the ingress: the frontend health check, at least six rooms from the API, the deployed commit equal to the commit under test, a booking that returns 201, and the same slot that returns 409. A GitHub runner cannot reach my laptop cluster, so the persistent demo cluster is updated with `scripts/deploy-local.sh <sha>`, which uses the same chart and the same images.
 
-![A green pipeline run](docs/evidence/github-actions-run.png)
+![A green pipeline run: all eight jobs, including the Helm deploy to kind](docs/evidence/github-actions-run.png)
 ![Images in GHCR, tagged with commit SHAs](docs/evidence/ghcr-backend-package.png)
 
 The pipeline was not green on the first try, and three failures taught me something:
@@ -318,7 +318,7 @@ Public worker subnets and no NAT gateway are an intentional simplification for c
 ![Subnets](docs/evidence/aws-subnets.png)
 ![No NAT gateways](docs/evidence/aws-no-nat-gateways.png)
 
-I masked the AWS account number in the screenshots and the transcripts. The application itself is not deployed to EKS.
+I masked the AWS account number in the screenshots and the transcripts at `HEAD`. The application itself is not deployed to EKS.
 
 ## 13. Kubernetes
 
@@ -336,7 +336,7 @@ The release contains a StatefulSet for PostgreSQL with a PersistentVolumeClaim, 
 kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8080:80      # http://localhost:8080
 ```
 
-![kubectl get pods, svc, helm list, ingress and hpa](docs/evidence/terminal-kubectl-helm.png)
+![kubectl get pods, svc, helm list, ingress and hpa (taken before the right-sizing: the HPA target is 70 percent now, it was 50 percent then)](docs/evidence/terminal-kubectl-helm.png)
 ![The application through the Ingress](docs/evidence/app-desktop.png)
 
 ### Autoscaling

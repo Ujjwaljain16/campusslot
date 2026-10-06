@@ -410,7 +410,7 @@ jobs:
   # Deploy: install the Helm chart, with the SHA-tagged images just pushed, onto a throw-away
   # kind cluster and prove it works end to end through the Ingress. A laptop cluster cannot be
   # reached from a GitHub runner, so the persistent demo cluster is updated with
-  # "make deploy-local SHA=<sha>" using exactly the same chart and the same images.
+  # "scripts/deploy-local.sh <sha>" using exactly the same chart and the same images.
   # ------------------------------------------------------------------------------------------
   deploy:
     name: Deploy with Helm (kind)

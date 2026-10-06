@@ -129,7 +129,7 @@ Argo CD GitOps, Loki and Alloy logs, a ConfigMap, a Pod Security profile, four t
 | Backend, PostgreSQL and frontend tests, run again from a clean state | 47 passed (89.79 percent coverage), 7 passed against a real PostgreSQL 16, 12 passed. Transcripts refreshed in `docs/evidence` |
 | Pipeline | the last three runs on `main` are green, including the Helm deploy to a kind cluster |
 | Links | 166 local links in 38 Markdown files, none broken |
-| Secrets | no AWS key, private key or token pattern in any commit, and no state or variables file tracked |
+| Secrets | no AWS key, private key or token pattern in any commit, and no Terraform state, plan or variables file tracked at `HEAD`. An early commit briefly contained a saved Terraform plan with non-secret infrastructure metadata, and the next commit removed it. No credentials were committed |
 | AWS | every region (18) and every service that can bill was checked: nothing is running or stored ([`aws-final-sweep.txt`](evidence/aws-final-sweep.txt)). The free plan credit is 119.94 USD |
 
 ## What I could not fully show

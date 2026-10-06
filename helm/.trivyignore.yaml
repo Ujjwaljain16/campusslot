@@ -1,10 +1,5 @@
 # Findings of the chart scan that I accepted on purpose, each with its reason.
 misconfigurations:
-  - id: KSV-0014
-    paths:
-      - "templates/postgres.yaml"
-    expired_at: 2026-10-20
-    statement: "The postgres container writes to its data volume and to its socket directory. A read-only root file system needs two emptyDir mounts, which I will add and verify on a real cluster. The exception expires on 2026-10-20 so that it cannot be forgotten."
   - id: KSV-0020
     statement: "The nginx-unprivileged image runs as uid 101 and the postgres image as uid 70. These are the users that own the files inside those images. A uid above 10000 would mean rebuilding both images."
   - id: KSV-0021
