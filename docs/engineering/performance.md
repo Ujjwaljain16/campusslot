@@ -48,6 +48,37 @@ The **trade-off** is that the limit is not a reservation: a pod may now take up 
 - **The expected win is not always real.** Two of the three ideas on my list (workers and caching) did nothing, and one made things worse. Keeping them out of the code is as much a result as the CPU change.
 - **Measure the scaling signal too.** The autoscaler works on CPU as a percentage of the request, so the sizing below matters as much as the limit.
 
+## Container images: size, build time and startup
+
+The Dockerfiles are multi-stage and non-root, but I had never measured what that is worth. [`scripts/image-metrics.sh`](../../scripts/image-metrics.sh) builds the real images and, for comparison, naive single-stage versions (the full base image, everything copied before the dependencies are installed). It builds in a temporary copy and removes everything that it creates. The transcript is [`image-metrics.txt`](../evidence/image-metrics.txt).
+
+| Measure | Real image | Naive single stage |
+|---|---|---|
+| Backend size | **61 MB** | 432 MB (7 times larger) |
+| Frontend size | **25 MB** | 477 MB (19 times larger) |
+| Backend rebuild after a one-line code change | **3.3 s** | 22.2 s (6.7 times slower) |
+| Frontend rebuild after a one-line code change | **4.3 s** | 11.4 s (2.7 times slower) |
+| Backend build from nothing | 31.2 s | 24.9 s |
+| Frontend build from nothing | 8.9 s | 13.3 s |
+| Backend startup, from `docker run` to the first answer (median of 5) | 1.41 s | 1.13 s |
+| Frontend startup (median of 5) | **0.50 s** | 0.86 s |
+
+What the numbers say:
+
+- **The slim base image does most of the work for the backend.** The build stage alone is 63 MB and the final image is 61 MB, so splitting the build into two stages saves only the 2 MB of `pip` that is removed. The 7 times difference comes from `python:3.12-slim` against `python:3.12`. I keep the two stages because they cost nothing and keep build tools out of the image, but the claim that "multi-stage made the backend small" would be wrong.
+- **The stage split matters a lot for the frontend.** The Node build stage is 117 MB and the final image, which only holds the compiled files and nginx, is 25 MB.
+- **Layer order pays off on every commit.** The dependencies are installed before the application code is copied, so changing a source file rebuilds only the last layers. That is the difference between 3 and 22 seconds for the backend, and nearly every commit changes only source files.
+- **Two costs of the real backend image.** A build from nothing is about 6 seconds slower, because the image runs `apt-get upgrade` to pick up security fixes. Startup is about 0.3 seconds slower than the naive image (1.41 against 1.13 seconds), and I did not find why. Both are small next to the probes, which check every 2 to 5 seconds, but they are real.
+- **The frontend starts faster** than serving the build with a Node development server, because nginx does not boot a runtime.
+
+Limits of this measurement:
+
+- Sizes are the uncompressed sizes that Docker reports. The registry stores compressed layers, which I did not measure.
+- Build times include the package downloads, so they vary with the network: across the runs of the script, the backend build from nothing took 26 to 33 seconds. Only the comparison between the two images in the same run is meaningful.
+- The naive images are my own idea of a typical first Dockerfile, not a standard.
+- Both Dockerfiles start with `# syntax=docker/dockerfile:1`, which makes every build contact Docker Hub for the build frontend, even when every layer is cached. During this measurement a failed DNS lookup broke one build for that reason, so the script retries and times only the attempt that works. Removing the line, or pinning the frontend by digest, would take that network dependency out of the builds. I did not change it.
+- My first versions of the script had two bugs, which I fixed before using any number: Git Bash rewrote the `/health` argument into a Windows path, so the startup test polled a wrong address, and the same comment was added on every run, so the layer cache of the previous run answered the rebuild of the naive image (25 seconds became 2.5).
+
 ## How to repeat it
 
 ```bash
@@ -55,4 +86,4 @@ kubectl run loadgen ...        # any pod with python, for example the backend im
 kubectl exec -i loadgen -- python - http://campusslot-backend:8000/api/rooms --threads 16 --seconds 30 < scripts/loadgen.py
 ```
 
-Change one value, for example `--set backend.resources.limits.cpu=1000m`, redeploy with one replica and the autoscaler off, and run it again.
+Change one value, for example `--set backend.resources.limits.cpu=1000m`, redeploy with one replica and the autoscaler off, and run it again. The image measurements run with `scripts/image-metrics.sh` and need only Docker.

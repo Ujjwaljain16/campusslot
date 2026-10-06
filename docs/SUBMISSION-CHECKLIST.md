@@ -49,6 +49,7 @@ This maps every item of the instructor's grading rubric (`session21-python/GRADI
 | Backend Dockerfile builds | [`backend/Dockerfile`](../backend/Dockerfile), built on every pipeline run |
 | Frontend multi-stage build (Node, then Nginx) | [`frontend/Dockerfile`](../frontend/Dockerfile): `node:26-alpine` build stage, `nginx-unprivileged` runtime |
 | Non-root users | backend `USER 10001`, frontend `USER 101`, proof in [`terminal-docker-nonroot-id.png`](evidence/terminal-docker-nonroot-id.png) |
+| Also measured | image sizes (61 MB and 25 MB), rebuild time and startup time against naive single-stage builds: [`image-metrics.txt`](evidence/image-metrics.txt) |
 | `docker compose up --build` starts three services | [`terminal-docker-compose-up-build.png`](evidence/terminal-docker-compose-up-build.png) and [`terminal-docker-compose-ps.png`](evidence/terminal-docker-compose-ps.png): postgres, backend and frontend, all healthy, frontend on port 3000 |
 
 ## M5 CI/CD (15 points)
