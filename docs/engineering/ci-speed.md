@@ -32,7 +32,7 @@ A second measurement, from the history rather than a run: **13 of the 28 finishe
 | The push to the registry waits for every gate (`.github/scripts/wait-for-jobs.sh`) | The guarantee is unchanged: nothing is pushed unless all gates succeeded |
 | The deploy job waits for the build job before it installs the images | A deployment still follows a successful push |
 | Both images are built by one `docker buildx bake` | One command, built in parallel |
-| `Detect changes` skips the heavy jobs for documentation-only changes | 46 percent of the past runs would not have run the pipeline at all |
+| `Detect changes` skips the heavy jobs for documentation-only changes | 46 percent of the past runs would not have run the pipeline at all. The secret scan is the exception: a final audit found that it was skipped for a documentation-only change that added transcripts, so it now runs on every change (about 6 seconds) |
 
 ## Result
 
