@@ -1,0 +1,118 @@
+### Q1 day view of one room
+                                                                    QUERY PLAN                                                                    
+--------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=205.49..205.52 rows=11 width=58) (actual time=0.360..0.361 rows=11 loops=1)
+   Buffers: shared hit=137
+   ->  Sort  (cost=205.49..205.52 rows=11 width=58) (actual time=0.359..0.360 rows=11 loops=1)
+         Sort Key: start_time, id
+         Sort Method: quicksort  Memory: 26kB
+         Buffers: shared hit=137
+         ->  Bitmap Heap Scan on bookings  (cost=48.96..205.30 rows=11 width=58) (actual time=0.324..0.328 rows=11 loops=1)
+               Recheck Cond: ((room_id = 1) AND (start_time < ('2026-10-06 00:00:00+00'::timestamp with time zone + '1 day'::interval)))
+               Filter: (end_time > '2026-10-06 00:00:00+00'::timestamp with time zone)
+               Rows Removed by Filter: 1656
+               Heap Blocks: exact=123
+               Buffers: shared hit=131
+               ->  Bitmap Index Scan on ix_bookings_room_start  (cost=0.00..48.96 rows=1667 width=0) (actual time=0.059..0.060 rows=1668 loops=1)
+                     Index Cond: ((room_id = 1) AND (start_time < ('2026-10-06 00:00:00+00'::timestamp with time zone + '1 day'::interval)))
+                     Buffers: shared hit=8
+ Planning:
+   Buffers: shared hit=168
+ Planning Time: 0.886 ms
+ Execution Time: 0.426 ms
+(19 rows)
+
+### Q2 day view of all rooms
+                                                                                     QUERY PLAN                                                                                      
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=299.88..300.04 rows=63 width=58) (actual time=0.422..0.426 rows=64 loops=1)
+   Buffers: shared hit=123
+   ->  Sort  (cost=299.88..300.04 rows=63 width=58) (actual time=0.421..0.423 rows=64 loops=1)
+         Sort Key: start_time, id
+         Sort Method: quicksort  Memory: 33kB
+         Buffers: shared hit=123
+         ->  Seq Scan on bookings  (cost=0.00..298.00 rows=63 width=58) (actual time=0.398..0.405 rows=64 loops=1)
+               Filter: ((end_time > '2026-10-06 00:00:00+00'::timestamp with time zone) AND (start_time < ('2026-10-06 00:00:00+00'::timestamp with time zone + '1 day'::interval)))
+               Rows Removed by Filter: 9936
+               Buffers: shared hit=123
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.081 ms
+ Execution Time: 0.443 ms
+(14 rows)
+
+### Q3 overlap check, slot is free
+                                                                                                                              QUERY PLAN                                                                                                                              
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.00..37.30 rows=1 width=58) (actual time=0.495..0.495 rows=0 loops=1)
+   Buffers: shared hit=123
+   ->  Seq Scan on bookings  (cost=0.00..373.00 rows=10 width=58) (actual time=0.495..0.495 rows=0 loops=1)
+         Filter: ((room_id = 1) AND ((status)::text = 'confirmed'::text) AND (start_time < ('2026-10-06 00:00:00+00'::timestamp with time zone + '00:30:00'::interval)) AND (end_time > ('2026-10-06 00:00:00+00'::timestamp with time zone + '00:20:00'::interval)))
+         Rows Removed by Filter: 10000
+         Buffers: shared hit=123
+ Planning:
+   Buffers: shared hit=14
+ Planning Time: 0.124 ms
+ Execution Time: 0.502 ms
+(10 rows)
+
+### Q4 statistics, total confirmed
+                                                    QUERY PLAN                                                    
+------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=273.00..273.01 rows=1 width=8) (actual time=0.940..0.941 rows=1 loops=1)
+   Buffers: shared hit=123
+   ->  Seq Scan on bookings  (cost=0.00..248.00 rows=10000 width=0) (actual time=0.003..0.666 rows=10000 loops=1)
+         Filter: ((status)::text = 'confirmed'::text)
+         Buffers: shared hit=123
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.042 ms
+ Execution Time: 0.948 ms
+(9 rows)
+
+### Q5 statistics, the bookings of the day
+                                                                                                    QUERY PLAN                                                                                                    
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on bookings  (cost=0.00..323.00 rows=63 width=58) (actual time=0.375..0.383 rows=64 loops=1)
+   Filter: ((end_time > '2026-10-06 00:00:00+00'::timestamp with time zone) AND ((status)::text = 'confirmed'::text) AND (start_time < ('2026-10-06 00:00:00+00'::timestamp with time zone + '1 day'::interval)))
+   Rows Removed by Filter: 9936
+   Buffers: shared hit=123
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.066 ms
+ Execution Time: 0.388 ms
+(8 rows)
+
+### Q6 statistics, rooms in use right now
+                                                   QUERY PLAN                                                    
+-----------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=348.67..348.68 rows=1 width=8) (actual time=0.655..0.656 rows=1 loops=1)
+   Buffers: shared hit=123
+   ->  Sort  (cost=348.55..348.61 rows=24 width=4) (actual time=0.652..0.652 rows=6 loops=1)
+         Sort Key: room_id
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=123
+         ->  Seq Scan on bookings  (cost=0.00..348.00 rows=24 width=4) (actual time=0.643..0.646 rows=6 loops=1)
+               Filter: (((status)::text = 'confirmed'::text) AND (start_time <= now()) AND (end_time > now()))
+               Rows Removed by Filter: 9994
+               Buffers: shared hit=123
+ Planning:
+   Buffers: shared hit=9
+ Planning Time: 0.090 ms
+ Execution Time: 0.672 ms
+(14 rows)
+
+### Q7 insert one booking
+                                           QUERY PLAN                                           
+------------------------------------------------------------------------------------------------
+ Insert on bookings  (cost=0.00..0.02 rows=0 width=0) (actual time=0.685..0.685 rows=0 loops=1)
+   Buffers: shared hit=79
+   ->  Result  (cost=0.00..0.02 rows=1 width=518) (actual time=0.057..0.057 rows=1 loops=1)
+         Buffers: shared hit=13
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.038 ms
+ Trigger for constraint bookings_room_id_fkey: time=0.468 calls=1
+ Execution Time: 1.173 ms
+(9 rows)
+

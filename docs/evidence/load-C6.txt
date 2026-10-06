@@ -1,0 +1,9 @@
+### C6 two workers at 2000m (can two workers use more than one core?)  (cpu limit 2000m, uvicorn workers 2, 16 threads, repeats 2)
+rooms run 1: threads=16 requests=8719 errors=0 throughput=290 req/s p50=48.1ms p95=95.8ms p99=180.4ms status={200: 8719}
+    throttled periods: 0%   peak cpu: 0.86 cores   peak memory: 166 MiB
+rooms run 2: threads=16 requests=10047 errors=0 throughput=334 req/s p50=47.9ms p95=53.0ms p99=72.0ms status={200: 10047}
+    throttled periods: 0%   peak cpu: 0.84 cores   peak memory: 165 MiB
+day run 1: threads=16 requests=8954 errors=0 throughput=298 req/s p50=47.0ms p95=129.1ms p99=176.8ms status={200: 8954}
+    throttled periods: 0%   peak cpu: 1.15 cores   peak memory: 169 MiB
+day run 2: threads=16 requests=8421 errors=0 throughput=280 req/s p50=54.0ms p95=122.0ms p99=189.2ms status={200: 8421}
+    throttled periods: 0%   peak cpu: 0.93 cores   peak memory: 173 MiB

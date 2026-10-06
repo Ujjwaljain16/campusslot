@@ -1,0 +1,10 @@
+### after the right-sizing (requests 250m/96Mi, limit 1000m): preStop = ["sleep","8"]
+[backend rollout 1] requests: 600, failed: 0 (0.00 percent)
+[backend rollout 1] latency of successful requests: median 19.4 ms, p95 38.9 ms, slowest 154.4 ms
+[backend rollout 2] requests: 600, failed: 0 (0.00 percent)
+[backend rollout 2] latency of successful requests: median 19.7 ms, p95 35.2 ms, slowest 188.3 ms
+[frontend rollout 1] requests: 600, failed: 0 (0.00 percent)
+[frontend rollout 1] latency of successful requests: median 15.5 ms, p95 29.4 ms, slowest 101.5 ms
+[frontend rollout 2] requests: 600, failed: 0 (0.00 percent)
+[frontend rollout 2] latency of successful requests: median 14.9 ms, p95 29.7 ms, slowest 165.9 ms
+done 18:19:30

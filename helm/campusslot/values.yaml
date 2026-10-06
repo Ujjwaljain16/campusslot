@@ -25,9 +25,13 @@ backend:
     MAX_BOOKING_HOURS: "12"
     DAY_OPEN_HOUR: "8"
     DAY_CLOSE_HOUR: "20"
+  # Sized from measurements, see docs/engineering/cost-and-sizing.md. The request is what one pod
+  # uses at about 50 requests per second (p95 264m, 70 MiB). The CPU limit is where one Python
+  # process stops getting faster (about one core). The memory limit stays well above the usage,
+  # because a process that exceeds it is killed.
   resources:
-    requests: { cpu: 100m, memory: 128Mi }
-    limits: { cpu: 500m, memory: 256Mi }
+    requests: { cpu: 250m, memory: 96Mi }
+    limits: { cpu: 1000m, memory: 256Mi }
 
 frontend:
   image:
@@ -36,8 +40,9 @@ frontend:
     pullPolicy: IfNotPresent
   replicaCount: 2
   port: 8080
+  # Static files only: 9 MiB and 14m of CPU at 150 requests per second.
   resources:
-    requests: { cpu: 25m, memory: 32Mi }
+    requests: { cpu: 10m, memory: 16Mi }
     limits: { cpu: 200m, memory: 128Mi }
 
 # Seconds a pod keeps serving after it is told to stop, so a rolling update does not send requests
@@ -57,8 +62,10 @@ postgres:
   persistence:
     size: 1Gi
     storageClass: ""
+  # 30 MiB and 144m of CPU (p95) at 50 requests per second. The memory it uses grows with the page
+  # cache of a bigger database, so the limit keeps its headroom.
   resources:
-    requests: { cpu: 100m, memory: 128Mi }
+    requests: { cpu: 150m, memory: 64Mi }
     limits: { cpu: 500m, memory: 256Mi }
 
 # Scheduled pg_dump of the in-cluster database to its own volume (see docs/engineering/backup-drill.md).
@@ -99,7 +106,9 @@ hpa:
   enabled: true
   minReplicas: 2
   maxReplicas: 5
-  targetCPUUtilizationPercentage: 50
+  # A share of the CPU request, so it only means something once the request is realistic. With the
+  # old request of 100m, 50 percent meant 50m, and 60 requests per second filled 5 pods.
+  targetCPUUtilizationPercentage: 70
   scaleDownStabilizationSeconds: 300
 
 pdb:

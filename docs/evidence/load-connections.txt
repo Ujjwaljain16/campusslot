@@ -1,0 +1,10 @@
+### Is the 2 worker result an artifact of long-lived connections? (limit 2000m, /api/rooms, 16 threads, 25 s)
+-- two workers (current deployment), long-lived connections
+2 workers keep-alive: threads=16 requests=7953 errors=0 throughput=318 req/s p50=48.0ms p95=59.7ms p99=113.8ms status={200: 7953}
+-- two workers, a new connection for every request
+2 workers fresh conn: threads=16 requests=6837 errors=0 throughput=273 req/s p50=68.8ms p95=103.8ms p99=159.2ms status={200: 6837}
+1 replica(s), image campusslot-backend-local:range3
+-- one worker, long-lived connections
+1 worker keep-alive: threads=16 requests=9603 errors=0 throughput=384 req/s p50=38.0ms p95=66.9ms p99=89.6ms status={200: 9603}
+-- one worker, a new connection for every request
+1 worker fresh conn: threads=16 requests=7569 errors=0 throughput=302 req/s p50=52.6ms p95=80.8ms p99=94.9ms status={200: 7569}

@@ -1,0 +1,9 @@
+### C5 CPU limit 2000m, one worker (where does one process stop scaling)  (cpu limit 2000m, uvicorn workers 1, 16 threads, repeats 2)
+rooms run 1: threads=16 requests=11851 errors=0 throughput=394 req/s p50=37.2ms p95=64.9ms p99=80.1ms status={200: 11851}
+    throttled periods: 0%   peak cpu: 0.89 cores   peak memory: 74 MiB
+rooms run 2: threads=16 requests=11686 errors=0 throughput=389 req/s p50=37.8ms p95=64.7ms p99=82.2ms status={200: 11686}
+    throttled periods: 0%   peak cpu: 1.08 cores   peak memory: 74 MiB
+day run 1: threads=16 requests=7509 errors=0 throughput=250 req/s p50=54.2ms p95=118.5ms p99=220.8ms status={200: 7509}
+    throttled periods: 0%   peak cpu: 0.94 cores   peak memory: 77 MiB
+day run 2: threads=16 requests=8883 errors=0 throughput=296 req/s p50=50.6ms p95=83.3ms p99=99.7ms status={200: 8883}
+    throttled periods: 0%   peak cpu: 1.13 cores   peak memory: 77 MiB

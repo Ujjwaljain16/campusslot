@@ -1,0 +1,9 @@
+### C0 baseline  (cpu limit 500m, uvicorn workers 1, 16 threads, repeats 2)
+rooms run 1: threads=16 requests=4600 errors=0 throughput=153 req/s p50=100.0ms p95=182.1ms p99=195.3ms status={200: 4600}
+    throttled periods: 100%   peak cpu: 0.50 cores   peak memory: 75 MiB
+rooms run 2: threads=16 requests=4600 errors=0 throughput=153 req/s p50=100.0ms p95=174.2ms p99=200.4ms status={200: 4600}
+    throttled periods: 99%   peak cpu: 0.49 cores   peak memory: 76 MiB
+day run 1: threads=16 requests=3153 errors=0 throughput=105 req/s p50=134.5ms p95=229.9ms p99=294.7ms status={200: 3153}
+    throttled periods: 96%   peak cpu: 0.43 cores   peak memory: 77 MiB
+day run 2: threads=16 requests=2950 errors=0 throughput=98 req/s p50=154.9ms p95=266.3ms p99=311.0ms status={200: 2950}
+    throttled periods: 100%   peak cpu: 0.45 cores   peak memory: 78 MiB

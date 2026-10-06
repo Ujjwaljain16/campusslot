@@ -1,0 +1,37 @@
+=== 1000 bookings
+loaded in 1 s; table 120 kB table, 232 kB indexes, 1000 rows
+  Q1 day view of one room                     0.156 ms    Bitmap Heap Scan on bookings                shared hit=20
+  Q2 day view of all rooms                    0.088 ms    Seq Scan on bookings                        shared hit=12
+  Q3 overlap check, slot is free              0.054 ms    Seq Scan on bookings                        shared hit=12
+  Q4 statistics, total confirmed              0.102 ms    Seq Scan on bookings                        shared hit=12
+  Q5 statistics, the bookings of the day      0.049 ms   Seq Scan on bookings                         shared hit=12
+  Q6 statistics, rooms in use right now       0.086 ms    Seq Scan on bookings                        shared hit=12
+  Q7 insert one booking                       1.114 ms   Insert on bookings                           shared hit=79
+=== 10000 bookings
+loaded in 1 s; table 1008 kB table, 1592 kB indexes, 10000 rows
+  Q1 day view of one room                     0.426 ms    Bitmap Heap Scan on bookings                shared hit=137
+  Q2 day view of all rooms                    0.443 ms    Seq Scan on bookings                        shared hit=123
+  Q3 overlap check, slot is free              0.502 ms    Seq Scan on bookings                        shared hit=123
+  Q4 statistics, total confirmed              0.948 ms    Seq Scan on bookings                        shared hit=123
+  Q5 statistics, the bookings of the day      0.388 ms   Seq Scan on bookings                         shared hit=123
+  Q6 statistics, rooms in use right now       0.672 ms    Seq Scan on bookings                        shared hit=123
+  Q7 insert one booking                       1.173 ms   Insert on bookings                           shared hit=79
+=== 50000 bookings
+loaded in 7 s; table 4960 kB table, 7528 kB indexes, 50000 rows
+  Q1 day view of one room                     2.233 ms    Bitmap Heap Scan on bookings                shared hit=656
+  Q2 day view of all rooms                    1.942 ms    Seq Scan on bookings                        shared hit=617
+  Q3 overlap check, slot is free              2.333 ms    Seq Scan on bookings                        shared hit=617
+  Q4 statistics, total confirmed              4.798 ms    Seq Scan on bookings                        shared hit=617
+  Q5 statistics, the bookings of the day      2.011 ms   Seq Scan on bookings                         shared hit=617
+  Q6 statistics, rooms in use right now       3.377 ms    Seq Scan on bookings                        shared hit=617
+  Q7 insert one booking                       1.248 ms   Insert on bookings                           shared hit=81
+=== 200000 bookings
+loaded in 27 s; table 19 MB table, 29 MB indexes, 200000 rows
+  Q1 day view of one room                     9.356 ms    Bitmap Heap Scan on bookings                shared hit=2605
+  Q2 day view of all rooms                   14.702 ms    Parallel Seq Scan on bookings               shared hit=2515
+  Q3 overlap check, slot is free              8.951 ms    Seq Scan on bookings                        shared hit=2469
+  Q4 statistics, total confirmed             75.073 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q5 statistics, the bookings of the day     20.287 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q6 statistics, rooms in use right now      79.440 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q7 insert one booking                       1.327 ms   Insert on bookings                           shared hit=83
+bookings table emptied again

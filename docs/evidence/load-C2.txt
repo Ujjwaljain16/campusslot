@@ -1,0 +1,9 @@
+### C2 two workers at 1000m (limit and workers both changed, to see if they add up)  (cpu limit 1000m, uvicorn workers 2, 16 threads, repeats 2)
+rooms run 1: threads=16 requests=9091 errors=0 throughput=303 req/s p50=48.0ms p95=84.4ms p99=151.0ms status={200: 9091}
+    throttled periods: 9%   peak cpu: 0.90 cores   peak memory: 167 MiB
+rooms run 2: threads=16 requests=9861 errors=0 throughput=328 req/s p50=48.0ms p95=56.0ms p99=88.2ms status={200: 9861}
+    throttled periods: 7%   peak cpu: 0.74 cores   peak memory: 168 MiB
+day run 1: threads=16 requests=6884 errors=0 throughput=229 req/s p50=76.1ms p95=119.2ms p99=187.6ms status={200: 6884}
+    throttled periods: 94%   peak cpu: 0.99 cores   peak memory: 173 MiB
+day run 2: threads=16 requests=6663 errors=0 throughput=222 req/s p50=75.8ms p95=153.7ms p99=201.1ms status={200: 6663}
+    throttled periods: 59%   peak cpu: 0.75 cores   peak memory: 174 MiB

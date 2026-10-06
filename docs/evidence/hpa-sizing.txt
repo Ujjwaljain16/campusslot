@@ -1,0 +1,43 @@
+### A before: the original sizing: backend request 100m / 128Mi, cpu limit 1000m, scale out at 50 percent of the request, 2 to 5 replicas
+load: 60 requests per second (mixed API traffic) for 240 s
+  +15 s  replicas=2 (wanted 2)  cpu=4% of request
+  +30 s  replicas=2 (wanted 2)  cpu=4% of request
+  +45 s  replicas=2 (wanted 2)  cpu=4% of request
+  +60 s  replicas=2 (wanted 2)  cpu=4% of request
+  +75 s  replicas=2 (wanted 5)  cpu=111% of request
+  +90 s  replicas=5 (wanted 5)  cpu=111% of request
+  +105 s  replicas=5 (wanted 5)  cpu=111% of request
+  +120 s  replicas=5 (wanted 5)  cpu=111% of request
+  +135 s  replicas=5 (wanted 5)  cpu=154% of request
+  +150 s  replicas=5 (wanted 5)  cpu=154% of request
+  +165 s  replicas=5 (wanted 5)  cpu=154% of request
+  +180 s  replicas=5 (wanted 5)  cpu=154% of request
+  +195 s  replicas=5 (wanted 5)  cpu=154% of request
+  +210 s  replicas=5 (wanted 5)  cpu=59% of request
+  +225 s  replicas=5 (wanted 5)  cpu=59% of request
+  +240 s  replicas=5 (wanted 5)  cpu=59% of request
+  +255 s  replicas=5 (wanted 5)  cpu=59% of request
+api: threads=8 requests=14400 errors=0 throughput=60 req/s p50=9.8ms p95=29.6ms p99=76.7ms status={200: 14400}
+replicas at the end: 5, backend CPU reserved by requests: 500 m
+
+### B after: sized from the measurements: backend request 250m / 96Mi, cpu limit 1000m, scale out at 70 percent of the request, 2 to 5 replicas
+load: 60 requests per second (mixed API traffic) for 240 s
+  +15 s  replicas=2 (wanted 5)  cpu=% of request
+  +30 s  replicas=2 (wanted 5)  cpu=% of request
+  +45 s  replicas=2 (wanted 5)  cpu=% of request
+  +60 s  replicas=2 (wanted 2)  cpu=21% of request
+  +75 s  replicas=2 (wanted 2)  cpu=21% of request
+  +90 s  replicas=2 (wanted 2)  cpu=21% of request
+  +105 s  replicas=2 (wanted 2)  cpu=21% of request
+  +120 s  replicas=2 (wanted 2)  cpu=50% of request
+  +135 s  replicas=2 (wanted 2)  cpu=50% of request
+  +150 s  replicas=2 (wanted 2)  cpu=50% of request
+  +165 s  replicas=2 (wanted 2)  cpu=50% of request
+  +180 s  replicas=2 (wanted 2)  cpu=50% of request
+  +195 s  replicas=2 (wanted 2)  cpu=51% of request
+  +210 s  replicas=2 (wanted 2)  cpu=51% of request
+  +225 s  replicas=2 (wanted 2)  cpu=51% of request
+  +240 s  replicas=2 (wanted 2)  cpu=51% of request
+  +255 s  replicas=2 (wanted 2)  cpu=47% of request
+api: threads=8 requests=14400 errors=0 throughput=60 req/s p50=7.8ms p95=23.7ms p99=37.8ms status={200: 14400}
+replicas at the end: 2, backend CPU reserved by requests: 500 m
