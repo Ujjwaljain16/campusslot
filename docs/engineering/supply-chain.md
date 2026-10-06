@@ -26,11 +26,11 @@ The pipeline scanned the images for known vulnerabilities, but nothing answered 
 
 | | Without | With |
 |---|---|---|
-| Wall clock of a full run | 143 s | 202 s |
+| Wall clock of a full run | 143 s | 202 s and 214 s |
 | Build, scan and push job | 102 s | 140 s |
 | Verification in the deploy job | none | about 7 s per image |
 
-This is one pair of runs with warm caches, so the real difference may be a little higher or lower. The cost is real: about a minute on every push to `main`. I accepted it because the check protects the step where an attack or a mistake is hardest to see afterwards. The cheaper variants are listed in [ADR 0012](../adr/0012-attest-images-and-verify-before-deploy.md).
+This is one run without attestations and two with them (a manual run and the first push to `main` after the merge), all with warm caches, so the numbers are an estimate. The cost is real: roughly one minute, between 59 and 71 seconds, on every push to `main`. I accepted it because the check protects the step where an attack or a mistake is hardest to see afterwards. The cheaper variants are listed in [ADR 0012](../adr/0012-attest-images-and-verify-before-deploy.md).
 
 ## What I found while building it
 

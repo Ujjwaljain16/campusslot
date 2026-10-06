@@ -475,7 +475,7 @@ The sections above show that every part of the project works. This section shows
 | Rolling updates | All 8 measured rollouts lost 1 or 2 requests, although the chart allows no unavailable replicas | A `preStop` delay of 8 s | 0 lost requests in 6 repeated rollouts | [resilience](docs/engineering/resilience.md) |
 | Database outage | Users got 18 errors. Prometheus counted 0, so the availability alerts could not see it | A handled 503 with `Retry-After`, and a test | All 16 errors counted. The outage itself still lasts about 6 s (one database pod) | [resilience](docs/engineering/resilience.md) |
 | Backup | None | A `pg_dump` CronJob and a restore script | A restore after a mass delete gave an identical checksum in 4 s. The 5 rows written after the backup were lost, which is the recovery point | [backup-drill](docs/engineering/backup-drill.md) |
-| Supply chain | Images were scanned, but nothing proved where they came from | Signed provenance and SBOM for each image, verified before the deploy, plus Dependabot | An unattested image is rejected. The pipeline takes about 59 s longer (one pair of runs) | [supply-chain](docs/engineering/supply-chain.md) |
+| Supply chain | Images were scanned, but nothing proved where they came from | Signed provenance and SBOM for each image, verified before the deploy, plus Dependabot | An unattested image is rejected. The pipeline takes about a minute longer (143 s without, 202 s and 214 s with) | [supply-chain](docs/engineering/supply-chain.md) |
 | Decisions | Reasons lived in my head | Twelve short decision records | Each lists the options, the choice, the consequences and what I would do in production | [adr](docs/adr/README.md) |
 
 ### What I chose not to do
