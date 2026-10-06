@@ -6,6 +6,19 @@ CampusSlot is a room and lab booking service for a campus. Students and staff re
 
 **Grading:** [`docs/SUBMISSION-CHECKLIST.md`](docs/SUBMISSION-CHECKLIST.md) maps every item of the instructor's rubric to the file or screenshot that shows it.
 
+## Demo
+
+**[Watch the recorded demo](docs/demo/CampusSlot-demo.mp4)** (4 minutes 22 seconds, with captions and no audio, 3 MB). GitHub plays the file in the browser when the link is opened.
+
+It shows, in this order:
+
+1. The application, and a real double booking that the system refuses with `409 Conflict`.
+2. The pipeline: the green runs of GitHub Actions.
+3. **A deliberately broken release, deployed live** with `helm upgrade --atomic --timeout 60s`. The new pod starts but never becomes ready, because the container listens on the wrong port. A counter on the right sends a request through the Ingress about every 120 ms the whole time. In this take, Kubernetes reported the first failed probe at 5.7 s, Helm rolled back by itself at 63.3 s, only the previous release was left at 73.6 s, and no user request failed (0 of 1600 in the drill's own probe, 0 of 1179 in the page's counter).
+4. Prometheus, which saw one backend replica unavailable during the failed deployment.
+
+The recording captures only the browser viewport. The drill in it ran for real on a local Minikube cluster, and the numbers on the result card are the output of that run. They differ by about a second from the three runs in [bad-release-drill](docs/engineering/bad-release-drill.md), which explains the method, the control without `--atomic`, and the limits.
+
 ## 1. Overview
 
 | Area | What I built |
