@@ -8,7 +8,9 @@ CampusSlot is a room and lab booking service for a campus. Students and staff re
 
 ## Demo
 
-**[Watch the recorded demo](docs/demo/CampusSlot-demo.mp4)** (4 minutes 22 seconds, with captions and no audio, 3 MB). GitHub plays the file in the browser when the link is opened.
+[![Demo: a broken release is rolled back by itself and no user request fails](docs/demo/CampusSlot-demo.gif)](docs/demo/CampusSlot-demo.mp4)
+
+The animation is a 33 second highlight of the recorded demo, with the failure drill sped up about ten times. **[Watch the full recording](docs/demo/CampusSlot-demo.mp4)** (4 minutes 22 seconds, with captions and no audio, 3 MB). GitHub plays the file in the browser when the link is opened.
 
 It shows, in this order:
 
