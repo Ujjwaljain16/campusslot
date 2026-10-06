@@ -415,7 +415,7 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 
 | Topic | Evidence |
 |---|---|
-| Presentation | [`docs/presentation/CampusSlot-final-presentation.pptx`](docs/presentation/CampusSlot-final-presentation.pptx) and the [PDF copy](docs/presentation/CampusSlot-final-presentation.pdf): 14 slides for a non-technical viewer, the first 11 in the order of the course checklist and the last three on the engineering decisions and the results, with speaker notes in the PowerPoint file |
+| Presentation | [`docs/presentation/CampusSlot-final-presentation.pptx`](docs/presentation/CampusSlot-final-presentation.pptx) and the [PDF copy](docs/presentation/CampusSlot-final-presentation.pdf): 14 slides for a non-technical viewer, the first 11 in the order of the course checklist, then two on the engineering decisions and the results, and the final rehearsal, with speaker notes in the PowerPoint file |
 | Application | `app-desktop.png`, `app-mobile.png`, `app-compose.png`, `api-docs.png`, `postgres-data-proof.txt` (tables, Alembic version 0003, seeded rooms, bookings and the `EXCLUDE` constraint, read with `psql` inside the database pod) |
 | Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt`, `terminal-pytest.png` |
 | Docker | `docker-proof.txt`, three `terminal-docker-*.png` screenshots |
