@@ -1,0 +1,23 @@
+account: ************   checked at 2026-10-06 13:14:55 UTC
+regions checked: 18
+
+### Per region, anything that is not zero
+(every counter is zero in every region)
+
+### Per region, counters that could not be read (permission or service not available)
+regions with at least one unreadable counter: 0
+
+### Global services
+s3 buckets: 0
+iam users: 1
+   user terraform-devops-labs: access keys: AKIA**************** Active 2026-10-01T07:24:30+00:00;
+iam roles that are not AWS service-linked: 0
+oidc providers: 0
+cloudfront distributions: 0
+route53 hosted zones: 0
+
+### Credits and plan
+{ "accountId": "************", "accountPlanType": "FREE", "accountPlanStatus": "ACTIVE", "accountPlanRemainingCredits": { "amount": 119.94, "unit": "USD" }, "accountPlanExpirationDate": "2027-04-01T07:21:45.503000+00:00"}
+
+### Cost recorded by AWS for this month so far (Cost Explorer)
+   not available:  aws: [ERROR]: An error occurred (AccessDeniedException) when calling the GetCostAndUsage operation: User not enabled for cost explorer access 
