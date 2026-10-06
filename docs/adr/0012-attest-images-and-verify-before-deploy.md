@@ -19,7 +19,7 @@ GitHub artifact attestations (`actions/attest-build-provenance` and `actions/att
 
 ## Consequences
 
-- Measured cost: one pair of runs on the same code, 143 seconds without and 202 seconds with attestations (about 59 seconds more, 41 percent). The build job grew from 102 to 140 seconds and the verification takes about 7 seconds per image. This is one pair of runs, so treat it as an estimate.
+- Measured cost: 143 seconds without attestations and 202 and 214 seconds with them, so roughly one minute more (59 to 71 seconds, about 40 to 50 percent). The build job grew from 102 to 140 seconds and the verification takes about 7 seconds per image. Three runs are a small sample, so treat it as an estimate.
 - An image that was not attested is rejected: an image from before this change fails verification (exit code 1, evidence in `docs/evidence/supply-chain.txt`).
 - The first end to end run found a bug in my own check, which used the predicate type `https://spdx.dev/Spec/v2.3/` while the stored attestation has `https://spdx.dev/Document/v2.3`.
 - Verification proves where the image came from. It does not prove that the code is free of vulnerabilities, which is the job of the scans.

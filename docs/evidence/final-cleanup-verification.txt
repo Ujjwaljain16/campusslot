@@ -71,3 +71,40 @@ vpc-059e4a2d567f5c5d5	True	None
         "unit": "USD"
     }
 ]
+
+======== Third check, after the engineering experiments (6 October 2026) ========
+﻿checked at: 10:46:01 UTC
+### EKS clusters
+{
+    "clusters": []
+}
+### VPCs (default VPC is expected; no campusslot VPC)
+vpc-059e4a2d567f5c5d5	True	None
+### campusslot-tagged VPCs
+0
+### subnets tagged campusslot
+0
+### NAT gateways not deleted
+0
+### Elastic IPs
+0
+### internet gateways tagged campusslot
+0
+### running or pending EC2 instances
+0
+### EBS volumes
+0
+### load balancers
+0
+### IAM roles created by Terraform (name starts with campusslot or default-eks)
+### OIDC providers
+0
+### credits
+[
+    "FREE",
+    "ACTIVE",
+    {
+        "amount": 119.94,
+        "unit": "USD"
+    }
+]
