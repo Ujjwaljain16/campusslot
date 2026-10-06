@@ -278,6 +278,8 @@ jobs:
       contents: read
       packages: write
       actions: read
+      id-token: write      # keyless signing with the identity of this workflow run
+      attestations: write  # store the provenance and the SBOM attestations
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
@@ -340,6 +342,70 @@ jobs:
             echo "- \`${{ env.IMAGE_PREFIX }}-frontend:${{ github.sha }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # Supply chain: record where each image came from and what is inside it, signed with the identity
+      # of this workflow run (no key to store). The deploy job verifies both before it installs anything.
+      - name: Resolve the digests of the pushed images
+        id: digest
+        if: github.event_name != 'pull_request'
+        run: |
+          for image in backend frontend; do
+            digest="$(docker buildx imagetools inspect "${IMAGE_PREFIX}-${image}:${GITHUB_SHA}" --format '{{ .Manifest.Digest }}')"
+            echo "${image}=${digest}" >> "$GITHUB_OUTPUT"
+            echo "${image}: ${digest}"
+          done
+
+      - name: Generate the SBOM of the backend image
+        if: github.event_name != 'pull_request'
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE_PREFIX }}-backend@${{ steps.digest.outputs.backend }}
+          format: spdx-json
+          output-file: sbom-backend.spdx.json
+          artifact-name: sbom-backend.spdx.json
+
+      - name: Generate the SBOM of the frontend image
+        if: github.event_name != 'pull_request'
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE_PREFIX }}-frontend@${{ steps.digest.outputs.frontend }}
+          format: spdx-json
+          output-file: sbom-frontend.spdx.json
+          artifact-name: sbom-frontend.spdx.json
+
+      - name: Attest the build provenance of the backend image
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ env.IMAGE_PREFIX }}-backend
+          subject-digest: ${{ steps.digest.outputs.backend }}
+          push-to-registry: true
+
+      - name: Attest the build provenance of the frontend image
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ env.IMAGE_PREFIX }}-frontend
+          subject-digest: ${{ steps.digest.outputs.frontend }}
+          push-to-registry: true
+
+      - name: Attest the SBOM of the backend image
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-sbom@v4
+        with:
+          subject-name: ${{ env.IMAGE_PREFIX }}-backend
+          subject-digest: ${{ steps.digest.outputs.backend }}
+          sbom-path: sbom-backend.spdx.json
+          push-to-registry: true
+
+      - name: Attest the SBOM of the frontend image
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-sbom@v4
+        with:
+          subject-name: ${{ env.IMAGE_PREFIX }}-frontend
+          subject-digest: ${{ steps.digest.outputs.frontend }}
+          sbom-path: sbom-frontend.spdx.json
+          push-to-registry: true
+
   # ------------------------------------------------------------------------------------------
   # Deploy: install the Helm chart, with the SHA-tagged images just pushed, onto a throw-away
   # kind cluster and prove it works end to end through the Ingress. A laptop cluster cannot be
@@ -357,6 +423,7 @@ jobs:
       contents: read
       packages: read
       actions: read
+      attestations: read
     env:
       NAMESPACE: campusslot
     steps:
@@ -410,6 +477,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash .github/scripts/wait-for-jobs.sh 2400 "Build, scan and push images"
+
+      # Only images that this workflow built, with signed provenance, may be installed.
+      - name: Verify the signed provenance and the SBOM of both images
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for image in backend frontend; do
+            ref="oci://${IMAGE_PREFIX}-${image}:${{ github.sha }}"
+            echo "== ${image}: build provenance"
+            gh attestation verify "$ref" --repo "${{ github.repository }}" \
+              --signer-workflow "${{ github.repository }}/.github/workflows/ci-cd.yml"
+            echo "== ${image}: SBOM"
+            gh attestation verify "$ref" --repo "${{ github.repository }}" \
+              --predicate-type https://spdx.dev/Document/v2.3
+          done
 
       - name: helm upgrade --install with the commit SHA tags
         run: |

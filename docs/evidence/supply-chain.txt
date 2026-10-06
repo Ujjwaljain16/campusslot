@@ -1,0 +1,18 @@
+### Supply chain check, 2026-10-06
+
+### 1. The image that CI built and attested (commit 09f6fad): build provenance
+exit code: 0
+
+### 2. The same image: SBOM
+exit code: 0
+
+### 3. An image built before attestations existed (commit cd14c5a): must be rejected
+
+Error: HTTP 404: Not Found (https://api.github.com/repos/Ujjwaljain16/campusslot/attestations/sha256:00a7865c59c30de36f4944bc38225ef4281875f4e5a4b9615df037dcdf32c52e?per_page=30&predicate_type=https%3
+exit code: 1
+
+### 4. What the verified provenance says (from the signed certificate)
+signed by workflow : Ujjwaljain16/campusslot/.github/workflows/ci-cd.yml
+triggered by       : github-hosted runner, event workflow_dispatch
+source commit      : 09f6fad on refs/heads/ci/supply-chain
+repository         : Ujjwaljain16/campusslot
