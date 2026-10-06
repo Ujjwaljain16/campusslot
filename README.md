@@ -237,7 +237,7 @@ The pipeline was not green on the first try, and three failures taught me someth
 
 ### Final rehearsal
 
-I rehearsed the live demo end to end and recorded it in [`rehearsal.txt`](docs/evidence/rehearsal.txt): I changed the page subtitle in `frontend/src/App.jsx`, ran the frontend tests and build, committed with a meaningful message and pushed to `main`. The pipeline built and scanned both images and pushed them with the commit SHA. I then ran `scripts/deploy-local.sh <sha>`, and Kubernetes rolled both Deployments to the new images while the migration Job completed. The chart allows no unavailable replicas during a rollout, but I did not measure downtime during this run. I verified three things from the outside: `/api/info` reported exactly the commit that I had pushed, the rendered page showed the new subtitle with the footer `Build 5e03c9a`, and all existing bookings were still in the database.
+I rehearsed the live demo end to end and recorded it in [`rehearsal.txt`](docs/evidence/rehearsal.txt): I changed the page subtitle in `frontend/src/App.jsx`, ran the frontend tests and build, committed with a meaningful message and pushed to `main`. The pipeline built and scanned both images and pushed them with the commit SHA. I then ran `scripts/deploy-local.sh <sha>`, and Kubernetes rolled both Deployments to the new images while the migration Job completed. The chart allows no unavailable replicas during a rollout, but I did not measure downtime during this run. I measured it separately, and the measurement found lost requests that I then fixed (see [Engineering decisions and results](#engineering-decisions-and-results)). I verified three things from the outside: `/api/info` reported exactly the commit that I had pushed, the rendered page showed the new subtitle with the footer `Build 5e03c9a`, and all existing bookings were still in the database.
 
 The first push of this rehearsal failed in the smoke test described above, so the loop took about eleven minutes from the first push to the new version being live, including the diagnosis and the fix. A clean run takes about four minutes for the pipeline plus about one minute for the local deploy.
 
@@ -415,7 +415,7 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 
 | Topic | Evidence |
 |---|---|
-| Presentation | [`docs/presentation/CampusSlot-final-presentation.pptx`](docs/presentation/CampusSlot-final-presentation.pptx) and the [PDF copy](docs/presentation/CampusSlot-final-presentation.pdf): 12 slides for a non-technical viewer, in the order of the course checklist, with speaker notes in the PowerPoint file |
+| Presentation | [`docs/presentation/CampusSlot-final-presentation.pptx`](docs/presentation/CampusSlot-final-presentation.pptx) and the [PDF copy](docs/presentation/CampusSlot-final-presentation.pdf): 14 slides for a non-technical viewer, the first 11 in the order of the course checklist, then two on the engineering decisions and the results, and the final rehearsal, with speaker notes in the PowerPoint file |
 | Application | `app-desktop.png`, `app-mobile.png`, `app-compose.png`, `api-docs.png`, `postgres-data-proof.txt` (tables, Alembic version 0003, seeded rooms, bookings and the `EXCLUDE` constraint, read with `psql` inside the database pod) |
 | Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt`, `terminal-pytest.png` |
 | Docker | `docker-proof.txt`, three `terminal-docker-*.png` screenshots |
@@ -460,3 +460,36 @@ I also stopped the port-forwards that I had started, and I removed the leftover 
 On AWS, a final check of `ap-south-1` ([`final-cleanup-verification.txt`](docs/evidence/final-cleanup-verification.txt), run twice) reported no EKS cluster, no VPC other than the default one, and no NAT gateway, Elastic IP, internet gateway, instance, volume, load balancer or OIDC provider. The AWS account page still showed the full 120 USD credit at the second check, which was several hours after the destroy, because billing data arrives late. My estimate for the whole EKS run is about 10 US cents, and I will confirm the real figure in the billing console once it updates.
 
 To rebuild any part of the project, the sections above give the exact commands. The Minikube demo is recreated with `minikube start`, `scripts/install-monitoring.sh` and either `scripts/deploy-local.sh <sha>` or `scripts/bootstrap-gitops.sh` for the GitOps variant.
+
+## Engineering decisions and results
+
+The sections above show that every part of the project works. This section shows how I decided what to improve: I measured first, changed one thing, measured again and wrote down the trade-off. Every number comes from a command, and the transcripts are in [`docs/evidence`](docs/evidence).
+
+| Area | Baseline (measured) | Change | Result | Details |
+|---|---|---|---|---|
+| Delivery metrics | Nobody knew how often the pipeline failed | [`scripts/dora.py`](scripts/dora.py) reads the Actions history | 22 green deployments in one day. Change failure rate 4 of 26 runs, all four in the kind deploy job (an ingress race), and 0 of 10 after the fix | [dora](docs/engineering/dora.md), [analysis](docs/engineering/dora-analysis.md) |
+| Pipeline speed | Median 238 s. 13 of 28 runs touched only documentation and ran everything | Image build and kind setup run in parallel with the tests. Documentation-only pushes skip the heavy jobs | Median 148 s (3 runs, range 115 to 205 s). A failing test proved that nothing is pushed when a gate fails | [ci-speed](docs/engineering/ci-speed.md) |
+| Infrastructure checks | Terraform and the Helm chart were never scanned | `trivy config` and `kubeconform` as a required check | 7 Terraform and 6 Helm rules fired. Each was fixed, made a switch, or given a written exception | [static-analysis](docs/engineering/static-analysis.md) |
+| Review process | Anyone could push to `main` | Pull requests and branch protection with six required checks | A direct push was rejected by GitHub | [repo-settings](docs/engineering/repo-settings.md) |
+| Alerting | Dashboards, no alerts | Two SLOs, burn rate alert rules in the chart and six runbooks | In a drill the alert fired after 185 s and resolved 52 s after the fix | [slo](docs/engineering/slo.md), [runbooks](docs/runbooks/README.md) |
+| Rolling updates | All 8 measured rollouts lost 1 or 2 requests, although the chart allows no unavailable replicas | A `preStop` delay of 8 s | 0 lost requests in 6 repeated rollouts | [resilience](docs/engineering/resilience.md) |
+| Database outage | Users got 18 errors. Prometheus counted 0, so the availability alerts could not see it | A handled 503 with `Retry-After`, and a test | All 16 errors counted. The outage itself still lasts about 6 s (one database pod) | [resilience](docs/engineering/resilience.md) |
+| Backup | None | A `pg_dump` CronJob and a restore script | A restore after a mass delete gave an identical checksum in 4 s. The 5 rows written after the backup were lost, which is the recovery point | [backup-drill](docs/engineering/backup-drill.md) |
+| Supply chain | Images were scanned, but nothing proved where they came from | Signed provenance and SBOM for each image, verified before the deploy, plus Dependabot | An unattested image is rejected. The pipeline takes about 59 s longer (one pair of runs) | [supply-chain](docs/engineering/supply-chain.md) |
+| Decisions | Reasons lived in my head | Twelve short decision records | Each lists the options, the choice, the consequences and what I would do in production | [adr](docs/adr/README.md) |
+
+### What I chose not to do
+
+Part of the method is deciding what not to build. I listed these in my plan and left them out, and I do not claim them:
+
+- **Load test and tuning** (worker count, caching, autoscaler target), so the capacity of one pod is unknown.
+- **`EXPLAIN ANALYZE` on a table with 200 thousand bookings.** The indexes exist, but I did not prove that they stay fast as the table grows.
+- **Right-sizing of the CPU and memory requests** from measured usage.
+- **A rollback drill** that compares a Git revert with an Argo CD rollback.
+- **Automated promotion.** Promotion is still a commit to `gitops/values.yaml` ([ADR 0008](docs/adr/0008-manual-promotion-via-git.md)).
+- **Network policies**, because the default Minikube network plugin does not enforce them, so I could not prove them.
+- **Alert delivery.** There is no Alertmanager, so an alert is visible in Prometheus and reaches nobody.
+- **Backups outside the cluster** and point in time recovery.
+- **Node failure and failover tests**, because the cluster has one node and one database pod.
+
+Each of these has a sentence about what I would do in production in the matching document or decision record.
