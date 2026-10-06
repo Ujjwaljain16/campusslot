@@ -33,10 +33,12 @@ The pipeline checks the claim on every run: it scans the production profile and 
 |---|---|---|
 | AWS-0040, AWS-0041 | The API endpoint is public but restricted to my own address. The rule treats any public address, even a single `/32`, as open | `terraform/.trivyignore.yaml` |
 | AWS-0104, AWS-0164 | Public IPs and open egress are the price of having no NAT gateway | `terraform/.trivyignore.yaml`, ADR 0001 |
-| KSV-0014 (PostgreSQL only) | Needs two `emptyDir` mounts, which I will add and test on a cluster. **The exception expires on 2026-10-20** | `helm/.trivyignore.yaml` |
 | KSV-0020, KSV-0021 | The nginx and postgres images run as uid 101 and uid 70, which own their files | `helm/.trivyignore.yaml` |
 | KSV-0125 | Images come from my own registry, pinned to a commit SHA, and are scanned before they are pushed | `helm/.trivyignore.yaml` |
 | KSV-0110 | An artefact of rendering the chart without a namespace | `helm/.trivyignore.yaml` |
+| KSV-01010 | False positive: the flagged key is `LOG_LEVEL`, which holds no secret | `helm/.trivyignore.yaml` |
+
+KSV-0014 (read-only root file system) used to be a fifth Helm exception for PostgreSQL, with an expiry date. I removed it instead of extending it: the PostgreSQL container now has `readOnlyRootFilesystem: true` with two `emptyDir` volumes (`/var/run/postgresql` and `/tmp`), and the deploy job in CI proves that the database starts and serves bookings in that mode.
 
 ### False positive (1)
 

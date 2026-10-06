@@ -318,7 +318,7 @@ Public worker subnets and no NAT gateway are an intentional simplification for c
 ![Subnets](docs/evidence/aws-subnets.png)
 ![No NAT gateways](docs/evidence/aws-no-nat-gateways.png)
 
-I masked the AWS account number in the screenshots and the transcripts. The application itself is not deployed to EKS.
+I masked the AWS account number in the screenshots and the transcripts at `HEAD`. The application itself is not deployed to EKS.
 
 ## 13. Kubernetes
 
