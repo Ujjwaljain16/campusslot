@@ -1,0 +1,88 @@
+{{- if and .Values.postgres.enabled .Values.backup.enabled }}
+# Logical backup of the in-cluster database: pg_dump in custom format, written to its own volume,
+# oldest files removed after backup.keep copies. How to restore: docs/engineering/backup-drill.md.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "campusslot.fullname" . }}-backups
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backup
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- with .Values.postgres.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.backup.size }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "campusslot.fullname" . }}-backup
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backup
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            {{- include "campusslot.selectorLabels" (dict "root" . "component" "backup") | nindent 12 }}
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ include "campusslot.fullname" . }}
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 70
+            runAsGroup: 70
+            fsGroup: 70
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: pg-dump
+              image: {{ .Values.postgres.image | quote }}
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  file="/backups/{{ .Values.postgres.database }}-$(date -u +%Y%m%dT%H%M%SZ).dump"
+                  pg_dump --format=custom --no-owner --file="$file.partial"
+                  mv "$file.partial" "$file"
+                  echo "wrote $file ($(wc -c < "$file") bytes)"
+                  ls -1t /backups/*.dump | tail -n +{{ add1 .Values.backup.keep }} | xargs -r rm -f
+                  echo "kept: $(ls -1 /backups/*.dump | wc -l) backup(s)"
+              env:
+                - name: PGHOST
+                  value: {{ include "campusslot.fullname" . }}-postgres
+                - name: PGDATABASE
+                  value: {{ .Values.postgres.database | quote }}
+                - name: PGUSER
+                  value: {{ .Values.postgres.username | quote }}
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "campusslot.databaseSecretName" . }}
+                      key: POSTGRES_PASSWORD
+              resources:
+                {{- toYaml .Values.backup.resources | nindent 16 }}
+              securityContext:
+                {{- include "campusslot.containerSecurityContext" . | nindent 16 }}
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: {{ include "campusslot.fullname" . }}-backups
+{{- end }}

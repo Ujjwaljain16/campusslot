@@ -1,0 +1,14 @@
+### after (preStop sleep 8): preStop = ["sleep","8"]
+[backend rollout 1] requests: 600, failed: 0 (0.00 percent)
+[backend rollout 1] latency of successful requests: median 15.9 ms, p95 37.0 ms, slowest 157.8 ms
+[backend rollout 2] requests: 600, failed: 0 (0.00 percent)
+[backend rollout 2] latency of successful requests: median 18.3 ms, p95 36.8 ms, slowest 182.2 ms
+[backend rollout 3] requests: 600, failed: 0 (0.00 percent)
+[backend rollout 3] latency of successful requests: median 17.6 ms, p95 34.8 ms, slowest 136.6 ms
+[frontend rollout 1] requests: 600, failed: 0 (0.00 percent)
+[frontend rollout 1] latency of successful requests: median 13.9 ms, p95 30.7 ms, slowest 120.2 ms
+[frontend rollout 2] requests: 600, failed: 0 (0.00 percent)
+[frontend rollout 2] latency of successful requests: median 13.7 ms, p95 29.8 ms, slowest 128.0 ms
+[frontend rollout 3] requests: 600, failed: 0 (0.00 percent)
+[frontend rollout 3] latency of successful requests: median 12.7 ms, p95 29.1 ms, slowest 166.8 ms
+done 15:55:55

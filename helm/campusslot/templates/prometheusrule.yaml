@@ -1,0 +1,123 @@
+{{- if .Values.prometheusRule.enabled }}
+{{- $ns := .Release.Namespace }}
+{{- $budget := subf 1.0 .Values.prometheusRule.availabilityTarget }}
+{{- $fast := printf "%.5f" (mulf 14.4 $budget) }}
+{{- $slow := printf "%.5f" (mulf 6.0 $budget) }}
+{{- $runbooks := .Values.prometheusRule.runbookBaseUrl }}
+# Service level objectives as alert rules. The error budget alerts use the multi-window burn rate
+# method: an alert fires only when the budget is being spent quickly in a short window AND in a longer
+# window, which keeps it fast for real outages and quiet for short blips.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "campusslot.fullname" . }}
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: campusslot.sli
+      rules:
+        # The share of requests that failed with a 5xx status, over several windows.
+        {{- range $window := list "5m" "30m" "1h" "6h" }}
+        - record: campusslot:http_error_ratio:rate{{ $window }}
+          expr: |
+            (sum(rate(http_requests_total{namespace="{{ $ns }}", status="5xx"}[{{ $window }}])) or vector(0))
+            / sum(rate(http_requests_total{namespace="{{ $ns }}"}[{{ $window }}]))
+        {{- end }}
+        # The share of requests that finished within the latency threshold.
+        - record: campusslot:http_fast_ratio:rate10m
+          expr: |
+            sum(rate(http_request_duration_highr_seconds_bucket{namespace="{{ $ns }}", le="{{ .Values.prometheusRule.latencyThresholdSeconds }}"}[10m]))
+            / sum(rate(http_request_duration_highr_seconds_count{namespace="{{ $ns }}"}[10m]))
+
+    - name: campusslot.alerts
+      rules:
+        - alert: CampusSlotErrorBudgetFastBurn
+          # The traffic condition stops a single failed request on a quiet service from paging someone.
+          expr: |
+            campusslot:http_error_ratio:rate5m > {{ $fast }} and campusslot:http_error_ratio:rate1h > {{ $fast }}
+            and sum(rate(http_requests_total{namespace="{{ $ns }}"}[5m])) > 0.05
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: The error budget is burning 14 times faster than allowed
+            description: More than {{ printf "%.1f" (mulf 100.0 (mulf 14.4 $budget)) }} percent of requests fail in the last 5 minutes and the last hour. At this rate the 30 day budget of the availability objective is gone in about two days.
+            runbook_url: {{ $runbooks }}/error-budget-burn.md
+
+        - alert: CampusSlotErrorBudgetSlowBurn
+          expr: |
+            campusslot:http_error_ratio:rate30m > {{ $slow }} and campusslot:http_error_ratio:rate6h > {{ $slow }}
+            and sum(rate(http_requests_total{namespace="{{ $ns }}"}[30m])) > 0.05
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: The error budget is burning 6 times faster than allowed
+            description: A steady elevated error rate that would use up the 30 day budget in about five days.
+            runbook_url: {{ $runbooks }}/error-budget-burn.md
+
+        - alert: CampusSlotLatencySLOBreach
+          expr: |
+            campusslot:http_fast_ratio:rate10m < {{ .Values.prometheusRule.latencyTarget }}
+            and sum(rate(http_requests_total{namespace="{{ $ns }}"}[10m])) > 0.2
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Too many requests are slower than {{ .Values.prometheusRule.latencyThresholdSeconds }} seconds
+            description: Fewer than {{ mulf 100.0 .Values.prometheusRule.latencyTarget }} percent of requests finished within {{ .Values.prometheusRule.latencyThresholdSeconds }} seconds over the last 10 minutes.
+            runbook_url: {{ $runbooks }}/latency.md
+
+        - alert: CampusSlotBackendReplicasUnavailable
+          expr: kube_deployment_status_replicas_unavailable{namespace="{{ $ns }}", deployment="{{ include "campusslot.fullname" . }}-backend"} > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Some backend pods are running but not ready
+            description: A backend pod has been unavailable for 2 minutes. The readiness probe fails when the database is unreachable or not migrated.
+            runbook_url: {{ $runbooks }}/backend-not-ready.md
+
+        - alert: CampusSlotBackendDown
+          expr: kube_deployment_status_replicas_available{namespace="{{ $ns }}", deployment="{{ include "campusslot.fullname" . }}-backend"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: No backend pod is available
+            description: Every backend pod is unavailable, so every API request fails.
+            runbook_url: {{ $runbooks }}/backend-not-ready.md
+
+        - alert: CampusSlotDatabaseDown
+          expr: kube_statefulset_status_replicas_ready{namespace="{{ $ns }}", statefulset="{{ include "campusslot.fullname" . }}-postgres"} < 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: The PostgreSQL pod is not ready
+            description: The database has been unavailable for 2 minutes. The backend answers 503 on /ready and receives no traffic.
+            runbook_url: {{ $runbooks }}/database-down.md
+
+        - alert: CampusSlotAutoscalerAtMaximum
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{namespace="{{ $ns }}", horizontalpodautoscaler="{{ include "campusslot.fullname" . }}-backend"}
+            >= kube_horizontalpodautoscaler_spec_max_replicas{namespace="{{ $ns }}", horizontalpodautoscaler="{{ include "campusslot.fullname" . }}-backend"}
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: The backend autoscaler has been at its maximum for 10 minutes
+            description: Demand needs more pods than the autoscaler is allowed to create, so latency will rise.
+            runbook_url: {{ $runbooks }}/autoscaler-at-maximum.md
+
+        - alert: CampusSlotMetricsMissing
+          expr: absent(up{namespace="{{ $ns }}", service="{{ include "campusslot.fullname" . }}-backend"} == 1)
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Prometheus cannot scrape the backend
+            description: No backend target has been up for 5 minutes. Without metrics, the other alerts cannot fire.
+            runbook_url: {{ $runbooks }}/metrics-missing.md
+{{- end }}

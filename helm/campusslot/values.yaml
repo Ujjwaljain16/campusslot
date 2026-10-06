@@ -40,6 +40,10 @@ frontend:
     requests: { cpu: 25m, memory: 32Mi }
     limits: { cpu: 200m, memory: 128Mi }
 
+# Seconds a pod keeps serving after it is told to stop, so a rolling update does not send requests
+# to a pod that is already going away. Must stay below terminationGracePeriodSeconds (30). 0 disables it.
+preStopDelaySeconds: 8
+
 # In-cluster PostgreSQL (StatefulSet + PVC). Fine for a demo; for production prefer a managed
 # database such as Amazon RDS: set postgres.enabled=false and provide database.existingSecret.
 postgres:
@@ -56,6 +60,18 @@ postgres:
   resources:
     requests: { cpu: 100m, memory: 128Mi }
     limits: { cpu: 500m, memory: 256Mi }
+
+# Scheduled pg_dump of the in-cluster database to its own volume (see docs/engineering/backup-drill.md).
+# The time between two backups is the worst case data loss (RPO). This copy lives in the same
+# cluster, so it protects against mistakes and a lost database volume, not against losing the cluster.
+backup:
+  enabled: false
+  schedule: "0 2 * * *"
+  keep: 7
+  size: 1Gi
+  resources:
+    requests: { cpu: 25m, memory: 32Mi }
+    limits: { cpu: 200m, memory: 128Mi }
 
 # Use an existing Secret that already contains a DATABASE_URL key (for example one created by
 # External Secrets). When set, the chart does not create its own Secret.
@@ -95,3 +111,14 @@ serviceMonitor:
   enabled: false
   interval: 15s
   labels: {}
+
+# Alerting rules as code, evaluated by the Prometheus Operator (needs its CRDs). The thresholds follow
+# the service level objectives in docs/engineering/slo.md.
+prometheusRule:
+  enabled: false
+  # Share of requests that must not fail with a 5xx status, over 30 days.
+  availabilityTarget: 0.995
+  # Share of requests that must finish within latencyThresholdSeconds. 0.25 is one of the histogram buckets.
+  latencyTarget: 0.95
+  latencyThresholdSeconds: "0.25"
+  runbookBaseUrl: https://github.com/Ujjwaljain16/campusslot/blob/main/docs/runbooks

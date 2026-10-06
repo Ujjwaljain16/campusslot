@@ -46,6 +46,14 @@ spec:
               value: {{ include "campusslot.fullname" . }}-backend
             - name: BACKEND_PORT
               value: {{ .Values.backend.port | quote }}
+          # Keep serving for a few seconds after the pod is marked for deletion. The ingress controller
+          # learns about the removal a moment later, and until then it still sends requests here.
+          {{- with .Values.preStopDelaySeconds }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", {{ . | quote }}]
+          {{- end }}
           readinessProbe:
             httpGet: { path: /healthz, port: http }
             periodSeconds: 5

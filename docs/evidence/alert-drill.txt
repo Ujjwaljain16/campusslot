@@ -1,0 +1,57 @@
+### SLO alert drill: CampusSlotBackendReplicasUnavailable
+start: 15:30:54
+
+### 1. Before: everything healthy
+NAME                                  READY   STATUS    RESTARTS      AGE
+campusslot-backend-8486957645-nbq2f   1/1     Running   1 (32s ago)   14h
+campusslot-backend-8486957645-wl66g   1/1     Running   1 (32s ago)   14h
+alert state: inactive
+
+### 2. Break it: point the backend at a database that does not exist
+deployment.apps/campusslot-backend env updated
+broken at 15:30:54
+
+### 3. Watch the alert
+15:30:55 (+1s)  alert=inactive  unavailable replicas=1
+15:31:10 (+16s)  alert=inactive  unavailable replicas=1
+15:31:25 (+31s)  alert=inactive  unavailable replicas=1
+15:31:40 (+46s)  alert=inactive  unavailable replicas=1
+15:31:56 (+62s)  alert=pending  unavailable replicas=1
+15:32:11 (+77s)  alert=pending  unavailable replicas=1
+15:32:26 (+92s)  alert=pending  unavailable replicas=1
+15:32:41 (+107s)  alert=pending  unavailable replicas=1
+15:32:57 (+123s)  alert=pending  unavailable replicas=1
+15:33:13 (+139s)  alert=pending  unavailable replicas=1
+15:33:28 (+154s)  alert=pending  unavailable replicas=1
+15:33:44 (+170s)  alert=pending  unavailable replicas=1
+15:33:59 (+185s)  alert=firing  unavailable replicas=1
+>>> firing after 185s
+saved D:/Projects/Hack/campusslot/docs/evidence/alert-firing.png
+
+### 4. What the pods say (the readiness probe is what the alert watches)
+NAME                                  READY   STATUS    RESTARTS        AGE
+campusslot-backend-59686b7759-nbk7k   0/1     Running   0               3m14s
+campusslot-backend-8486957645-nbq2f   1/1     Running   1 (3m46s ago)   14h
+campusslot-backend-8486957645-wl66g   1/1     Running   1 (3m46s ago)   14h
+2m59s       Warning   Unhealthy   pod/campusslot-backend-59686b7759-nbk7k   Readiness probe failed: HTTP probe failed with statuscode: 503
+63s         Warning   Unhealthy   pod/campusslot-backend-59686b7759-nbk7k   Readiness probe failed: Get "http://10.244.0.16:8000/ready": context deadline exceed
+
+### 5. Fix it: roll the change back
+deployment.apps/campusslot-backend rolled back
+deployment "campusslot-backend" successfully rolled out
+fixed at 15:34:09
+
+### 6. Watch the alert resolve
+15:34:09 (+1s after the fix)  alert=firing
+15:34:19 (+11s after the fix)  alert=firing
+15:34:29 (+21s after the fix)  alert=firing
+15:34:39 (+31s after the fix)  alert=firing
+15:34:50 (+42s after the fix)  alert=firing
+15:35:00 (+52s after the fix)  alert=inactive
+>>> resolved 246s
+saved D:/Projects/Hack/campusslot/docs/evidence/alert-resolved.png
+
+### 7. What the users experienced during the whole drill
+[users during the drill] requests: 1650, failed: 0 (0.00 percent)
+[users during the drill] latency of successful requests: median 17.8 ms, p95 36.3 ms, slowest 190.4 ms
+end: 15:36:25

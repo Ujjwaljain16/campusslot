@@ -1,0 +1,20 @@
+### baseline (no preStop): preStop = 
+[backend rollout 1] requests: 600, failed: 2 (0.33 percent)
+[backend rollout 1] latency of successful requests: median 16.5 ms, p95 35.2 ms, slowest 183.7 ms
+[backend rollout 1] kinds: {'TimeoutError': 2}
+[backend rollout 2] requests: 600, failed: 1 (0.17 percent)
+[backend rollout 2] latency of successful requests: median 17.0 ms, p95 34.6 ms, slowest 144.1 ms
+[backend rollout 2] kinds: {'TimeoutError': 1}
+[backend rollout 3] requests: 600, failed: 2 (0.33 percent)
+[backend rollout 3] latency of successful requests: median 16.7 ms, p95 35.1 ms, slowest 142.7 ms
+[backend rollout 3] kinds: {'TimeoutError': 2}
+[frontend rollout 1] requests: 600, failed: 1 (0.17 percent)
+[frontend rollout 1] latency of successful requests: median 14.0 ms, p95 31.2 ms, slowest 188.5 ms
+[frontend rollout 1] kinds: {'TimeoutError': 1}
+[frontend rollout 2] requests: 600, failed: 1 (0.17 percent)
+[frontend rollout 2] latency of successful requests: median 11.7 ms, p95 29.2 ms, slowest 108.2 ms
+[frontend rollout 2] kinds: {'TimeoutError': 1}
+[frontend rollout 3] requests: 600, failed: 2 (0.33 percent)
+[frontend rollout 3] latency of successful requests: median 13.5 ms, p95 30.8 ms, slowest 172.3 ms
+[frontend rollout 3] kinds: {'TimeoutError': 2}
+done 15:49:29

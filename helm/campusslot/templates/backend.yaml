@@ -64,6 +64,14 @@ spec:
             periodSeconds: 2
             failureThreshold: 30
           # Readiness: only receive traffic when the database is reachable and migrated.
+          # Keep serving for a few seconds after the pod is marked for deletion. The ingress controller
+          # learns about the removal a moment later, and until then it still sends requests here.
+          {{- with .Values.preStopDelaySeconds }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", {{ . | quote }}]
+          {{- end }}
           readinessProbe:
             httpGet: { path: /ready, port: http }
             periodSeconds: 5
