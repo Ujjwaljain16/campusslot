@@ -1,0 +1,24 @@
+### Usage per pod type, one replica of the backend, 5000 bookings in the database
+### backend cpu limit: {"limits":{"cpu":"1","memory":"256Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}
+--- idle (60 s without traffic)
+    backend   cpu median     4 m   cpu p95     5 m   memory max    67 MiB
+    frontend  cpu median     0 m   cpu p95     0 m   memory max     9 MiB
+    postgres  cpu median     7 m   cpu p95    30 m   memory max   137 MiB
+--- 10 requests per second to the API and 10 to the frontend, 60 s
+api     : threads=8 requests=600 errors=0 throughput=10 req/s p50=10.6ms p95=44.7ms p99=63.0ms status={200: 600}
+frontend: threads=4 requests=600 errors=0 throughput=10 req/s p50=0.7ms p95=1.6ms p99=3.2ms status={200: 600}
+    backend   cpu median    39 m   cpu p95    51 m   memory max    69 MiB
+    frontend  cpu median     2 m   cpu p95     3 m   memory max     9 MiB
+    postgres  cpu median    21 m   cpu p95    29 m   memory max   140 MiB
+--- 50 requests per second to the API and 50 to the frontend, 60 s
+api     : threads=8 requests=3000 errors=0 throughput=50 req/s p50=20.4ms p95=40.2ms p99=59.1ms status={200: 3000}
+frontend: threads=4 requests=3000 errors=0 throughput=50 req/s p50=0.7ms p95=2.1ms p99=3.5ms status={200: 3000}
+    backend   cpu median   203 m   cpu p95   264 m   memory max    70 MiB
+    frontend  cpu median     5 m   cpu p95     8 m   memory max     9 MiB
+    postgres  cpu median   105 m   cpu p95   139 m   memory max   140 MiB
+--- 150 requests per second to the API and 150 to the frontend, 60 s
+api     : threads=8 requests=9000 errors=0 throughput=150 req/s p50=11.1ms p95=30.3ms p99=50.7ms status={200: 9000}
+frontend: threads=4 requests=9000 errors=0 throughput=150 req/s p50=0.3ms p95=1.1ms p99=2.4ms status={200: 9000}
+    backend   cpu median   493 m   cpu p95   579 m   memory max    71 MiB
+    frontend  cpu median    12 m   cpu p95    14 m   memory max     9 MiB
+    postgres  cpu median   244 m   cpu p95   260 m   memory max   140 MiB

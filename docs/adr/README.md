@@ -16,3 +16,5 @@ Short records of the choices that shaped this project, with the options that I r
 | [0010](0010-trivy-ignore-unfixed.md) | Gate on fixable HIGH and CRITICAL findings only |
 | [0011](0011-one-scanner-for-iac-and-manifests.md) | Use one scanner for the infrastructure code and the manifests |
 | [0012](0012-attest-images-and-verify-before-deploy.md) | Attest every image and verify it before the deploy |
+| [0013](0013-range-operator-for-overlap-queries.md) | Ask "what overlaps this period" with a range operator and a GiST index |
+| [0014](0014-one-worker-per-pod-scale-with-pods.md) | One uvicorn worker per pod, and more capacity from more pods |

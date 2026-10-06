@@ -1,0 +1,36 @@
+=== 1000 bookings
+loaded in 0 s; table 120 kB table, 304 kB indexes, 1000 rows
+  Q1 day view of one room                     0.172 ms    Bitmap Heap Scan on bookings                shared hit=10
+  Q2 day view of all rooms                    0.107 ms    Bitmap Heap Scan on bookings                shared hit=4
+  Q3 overlap check, slot is free              0.367 ms    Index Scan using ex_bookings_no_overlap on bookings shared hit=29
+  Q4 statistics, total confirmed              0.136 ms    Seq Scan on bookings                        shared hit=12
+  Q5 statistics, the bookings of the day      0.068 ms   Bitmap Heap Scan on bookings                 shared hit=4
+  Q6 statistics, rooms in use right now       0.087 ms    Bitmap Heap Scan on bookings                shared hit=3
+  Q7 insert one booking                       0.649 ms   Insert on bookings                           shared hit=43
+=== 10000 bookings
+loaded in 1 s; table 1008 kB table, 2296 kB indexes, 10000 rows
+  Q1 day view of one room                     0.244 ms    Bitmap Heap Scan on bookings                shared hit=18
+  Q2 day view of all rooms                    0.102 ms    Bitmap Heap Scan on bookings                shared hit=4
+  Q3 overlap check, slot is free              0.372 ms    Index Scan using ex_bookings_no_overlap on bookings shared hit=29
+  Q4 statistics, total confirmed              1.439 ms    Seq Scan on bookings                        shared hit=123
+  Q5 statistics, the bookings of the day      0.085 ms   Bitmap Heap Scan on bookings                 shared hit=4
+  Q6 statistics, rooms in use right now       0.129 ms    Bitmap Heap Scan on bookings                shared hit=3
+  Q7 insert one booking                       0.697 ms   Insert on bookings                           shared hit=43
+=== 50000 bookings
+loaded in 8 s; table 4960 kB table, 11 MB indexes, 50000 rows
+  Q1 day view of one room                     0.186 ms    Bitmap Heap Scan on bookings                shared hit=11
+  Q2 day view of all rooms                    0.110 ms    Bitmap Heap Scan on bookings                shared hit=5
+  Q3 overlap check, slot is free              0.389 ms    Index Scan using ex_bookings_no_overlap on bookings shared hit=30
+  Q4 statistics, total confirmed              6.910 ms    Seq Scan on bookings                        shared hit=617
+  Q5 statistics, the bookings of the day      0.153 ms   Bitmap Heap Scan on bookings                 shared hit=5
+  Q6 statistics, rooms in use right now       0.138 ms    Bitmap Heap Scan on bookings                shared hit=4
+  Q7 insert one booking                       0.910 ms   Insert on bookings                           shared hit=46
+=== 200000 bookings
+loaded in 37 s; table 19 MB table, 43 MB indexes, 200000 rows
+  Q1 day view of one room                     0.217 ms    Bitmap Heap Scan on bookings                shared hit=11
+  Q2 day view of all rooms                    0.118 ms    Bitmap Heap Scan on bookings                shared hit=5
+  Q3 overlap check, slot is free              0.485 ms    Index Scan using ex_bookings_no_overlap on bookings shared hit=30
+  Q4 statistics, total confirmed             63.461 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q5 statistics, the bookings of the day      0.107 ms   Bitmap Heap Scan on bookings                 shared hit=5
+  Q6 statistics, rooms in use right now       0.112 ms    Bitmap Heap Scan on bookings                shared hit=4
+  Q7 insert one booking                       0.879 ms   Insert on bookings                           shared hit=48

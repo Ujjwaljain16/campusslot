@@ -1,0 +1,127 @@
+### Q1 day view of one room
+                                                                                                                      QUERY PLAN                                                                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=84.25..84.28 rows=11 width=58) (actual time=0.138..0.140 rows=11 loops=1)
+   Buffers: shared hit=18
+   ->  Sort  (cost=84.25..84.28 rows=11 width=58) (actual time=0.137..0.138 rows=11 loops=1)
+         Sort Key: start_time, id
+         Sort Method: quicksort  Memory: 26kB
+         Buffers: shared hit=18
+         ->  Bitmap Heap Scan on bookings  (cost=49.69..84.06 rows=11 width=58) (actual time=0.102..0.108 rows=11 loops=1)
+               Recheck Cond: ((tstzrange(start_time, end_time, '[)'::text) && tstzrange('2026-10-06 00:00:00+00'::timestamp with time zone, ('2026-10-06 00:00:00+00'::timestamp with time zone + '1 day'::interval), '[)'::text)) AND (room_id = 1))
+               Heap Blocks: exact=2
+               Buffers: shared hit=12
+               ->  BitmapAnd  (cost=49.69..49.69 rows=11 width=0) (actual time=0.100..0.100 rows=0 loops=1)
+                     Buffers: shared hit=10
+                     ->  Bitmap Index Scan on ix_bookings_time_range  (cost=0.00..4.64 rows=65 width=0) (actual time=0.037..0.037 rows=65 loops=1)
+                           Index Cond: (tstzrange(start_time, end_time, '[)'::text) && tstzrange('2026-10-06 00:00:00+00'::timestamp with time zone, ('2026-10-06 00:00:00+00'::timestamp with time zone + '1 day'::interval), '[)'::text))
+                           Buffers: shared hit=2
+                     ->  Bitmap Index Scan on ix_bookings_room_start  (cost=0.00..44.79 rows=1667 width=0) (actual time=0.057..0.057 rows=1668 loops=1)
+                           Index Cond: (room_id = 1)
+                           Buffers: shared hit=8
+ Planning:
+   Buffers: shared hit=180
+ Planning Time: 0.841 ms
+ Execution Time: 0.244 ms
+(22 rows)
+
+### Q2 day view of all rooms
+                                                                                                              QUERY PLAN                                                                                                              
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=114.48..114.65 rows=65 width=58) (actual time=0.047..0.051 rows=64 loops=1)
+   Buffers: shared hit=4
+   ->  Sort  (cost=114.48..114.65 rows=65 width=58) (actual time=0.046..0.048 rows=64 loops=1)
+         Sort Key: start_time, id
+         Sort Method: quicksort  Memory: 33kB
+         Buffers: shared hit=4
+         ->  Bitmap Heap Scan on bookings  (cost=4.66..112.53 rows=65 width=58) (actual time=0.033..0.037 rows=64 loops=1)
+               Recheck Cond: (tstzrange(start_time, end_time, '[)'::text) && tstzrange('2026-10-06 00:00:00+00'::timestamp with time zone, ('2026-10-06 00:00:00+00'::timestamp with time zone + '1 day'::interval), '[)'::text))
+               Heap Blocks: exact=2
+               Buffers: shared hit=4
+               ->  Bitmap Index Scan on ix_bookings_time_range  (cost=0.00..4.64 rows=65 width=0) (actual time=0.028..0.029 rows=65 loops=1)
+                     Index Cond: (tstzrange(start_time, end_time, '[)'::text) && tstzrange('2026-10-06 00:00:00+00'::timestamp with time zone, ('2026-10-06 00:00:00+00'::timestamp with time zone + '1 day'::interval), '[)'::text))
+                     Buffers: shared hit=2
+ Planning Time: 0.067 ms
+ Execution Time: 0.102 ms
+(15 rows)
+
+### Q3 overlap check, slot is free
+                                                                                                                                QUERY PLAN                                                                                                                                
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.28..8.30 rows=1 width=58) (actual time=0.357..0.357 rows=0 loops=1)
+   Buffers: shared hit=29
+   ->  Index Scan using ex_bookings_no_overlap on bookings  (cost=0.28..8.30 rows=1 width=58) (actual time=0.356..0.357 rows=0 loops=1)
+         Index Cond: ((room_id = 1) AND (tstzrange(start_time, end_time, '[)'::text) && tstzrange(('2026-10-06 00:00:00+00'::timestamp with time zone + '00:20:00'::interval), ('2026-10-06 00:00:00+00'::timestamp with time zone + '00:30:00'::interval), '[)'::text)))
+         Buffers: shared hit=29
+ Planning:
+   Buffers: shared hit=11
+ Planning Time: 0.088 ms
+ Execution Time: 0.372 ms
+(9 rows)
+
+### Q4 statistics, total confirmed
+                                                    QUERY PLAN                                                    
+------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=273.00..273.01 rows=1 width=8) (actual time=1.428..1.429 rows=1 loops=1)
+   Buffers: shared hit=123
+   ->  Seq Scan on bookings  (cost=0.00..248.00 rows=10000 width=0) (actual time=0.004..1.147 rows=10000 loops=1)
+         Filter: ((status)::text = 'confirmed'::text)
+         Buffers: shared hit=123
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.041 ms
+ Execution Time: 1.439 ms
+(9 rows)
+
+### Q5 statistics, the bookings of the day
+                                                                                                        QUERY PLAN                                                                                                        
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on bookings  (cost=4.66..112.69 rows=65 width=58) (actual time=0.034..0.040 rows=64 loops=1)
+   Recheck Cond: (tstzrange(start_time, end_time, '[)'::text) && tstzrange('2026-10-06 00:00:00+00'::timestamp with time zone, ('2026-10-06 00:00:00+00'::timestamp with time zone + '1 day'::interval), '[)'::text))
+   Filter: ((status)::text = 'confirmed'::text)
+   Heap Blocks: exact=2
+   Buffers: shared hit=4
+   ->  Bitmap Index Scan on ix_bookings_time_range  (cost=0.00..4.64 rows=65 width=0) (actual time=0.031..0.031 rows=65 loops=1)
+         Index Cond: (tstzrange(start_time, end_time, '[)'::text) && tstzrange('2026-10-06 00:00:00+00'::timestamp with time zone, ('2026-10-06 00:00:00+00'::timestamp with time zone + '1 day'::interval), '[)'::text))
+         Buffers: shared hit=2
+ Planning Time: 0.119 ms
+ Execution Time: 0.085 ms
+(10 rows)
+
+### Q6 statistics, rooms in use right now
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=14.87..14.88 rows=1 width=8) (actual time=0.047..0.047 rows=1 loops=1)
+   Buffers: shared hit=3
+   ->  Sort  (cost=14.85..14.86 rows=3 width=4) (actual time=0.043..0.044 rows=6 loops=1)
+         Sort Key: room_id
+         Sort Method: quicksort  Memory: 25kB
+         Buffers: shared hit=3
+         ->  Bitmap Heap Scan on bookings  (cost=4.18..14.83 rows=3 width=4) (actual time=0.027..0.029 rows=6 loops=1)
+               Recheck Cond: (tstzrange(start_time, end_time, '[)'::text) @> now())
+               Filter: ((status)::text = 'confirmed'::text)
+               Heap Blocks: exact=1
+               Buffers: shared hit=3
+               ->  Bitmap Index Scan on ix_bookings_time_range  (cost=0.00..4.18 rows=3 width=0) (actual time=0.025..0.025 rows=6 loops=1)
+                     Index Cond: (tstzrange(start_time, end_time, '[)'::text) @> now())
+                     Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.118 ms
+ Execution Time: 0.129 ms
+(18 rows)
+
+### Q7 insert one booking
+                                           QUERY PLAN                                           
+------------------------------------------------------------------------------------------------
+ Insert on bookings  (cost=0.00..0.02 rows=0 width=0) (actual time=0.243..0.243 rows=0 loops=1)
+   Buffers: shared hit=43
+   ->  Result  (cost=0.00..0.02 rows=1 width=518) (actual time=0.057..0.057 rows=1 loops=1)
+         Buffers: shared hit=13
+ Planning:
+   Buffers: shared hit=6
+ Planning Time: 0.034 ms
+ Trigger for constraint bookings_room_id_fkey: time=0.434 calls=1
+ Execution Time: 0.697 ms
+(9 rows)
+

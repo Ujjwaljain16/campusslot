@@ -1,0 +1,11 @@
+### Do two uvicorn workers report consistent metrics? (no multiprocess directory configured)
+1 replica(s), image campusslot-backend-local:range3
+sent: threads=4 requests=1404 errors=0 throughput=233 req/s p50=8.2ms p95=61.4ms p99=81.1ms status={200: 1404}
+scrape 1: http_requests_total for /api/rooms = 736
+scrape 2: http_requests_total for /api/rooms = 736
+scrape 3: http_requests_total for /api/rooms = 736
+scrape 4: http_requests_total for /api/rooms = 736
+scrape 5: http_requests_total for /api/rooms = 736
+scrape 6: http_requests_total for /api/rooms = 736
+scrape 7: http_requests_total for /api/rooms = 736
+scrape 8: http_requests_total for /api/rooms = 668

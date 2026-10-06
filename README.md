@@ -415,7 +415,7 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 
 | Topic | Evidence |
 |---|---|
-| Presentation | [`docs/presentation/CampusSlot-final-presentation.pptx`](docs/presentation/CampusSlot-final-presentation.pptx) and the [PDF copy](docs/presentation/CampusSlot-final-presentation.pdf): 14 slides for a non-technical viewer, the first 11 in the order of the course checklist, then two on the engineering decisions and the results, and the final rehearsal, with speaker notes in the PowerPoint file |
+| Presentation | [`docs/presentation/CampusSlot-final-presentation.pptx`](docs/presentation/CampusSlot-final-presentation.pptx) and the [PDF copy](docs/presentation/CampusSlot-final-presentation.pdf): 15 slides for a non-technical viewer, the first 11 in the order of the course checklist, then three on the engineering decisions, the trade-offs and the scale measurements, and the final rehearsal, with speaker notes in the PowerPoint file |
 | Application | `app-desktop.png`, `app-mobile.png`, `app-compose.png`, `api-docs.png`, `postgres-data-proof.txt` (tables, Alembic version 0003, seeded rooms, bookings and the `EXCLUDE` constraint, read with `psql` inside the database pod) |
 | Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt`, `terminal-pytest.png` |
 | Docker | `docker-proof.txt`, three `terminal-docker-*.png` screenshots |
@@ -446,7 +446,7 @@ Known limitations, stated plainly:
 
 ## 20. Cleanup
 
-Everything that I created for the project has been shut down, and I verified each step. The local cluster was built and deleted three times: for the Kubernetes and monitoring work, for the GitOps and logging work, and for the engineering experiments (alert drill, rollout and failure measurements, backup drill).
+Everything that I created for the project has been shut down, and I verified each step. The local cluster was built and deleted four times: for the Kubernetes and monitoring work, for the GitOps and logging work, and twice for the engineering experiments (first the alert drill, the rollout and failure measurements and the backup drill, then the query scale test, the load test and the sizing).
 
 ```bash
 docker compose down                  # the Compose stack
@@ -474,22 +474,24 @@ The sections above show that every part of the project works. This section shows
 | Alerting | Dashboards, no alerts | Two SLOs, burn rate alert rules in the chart and six runbooks | In a drill the alert fired after 185 s and resolved 52 s after the fix | [slo](docs/engineering/slo.md), [runbooks](docs/runbooks/README.md) |
 | Rolling updates | All 8 measured rollouts lost 1 or 2 requests, although the chart allows no unavailable replicas | A `preStop` delay of 8 s | 0 lost requests in 6 repeated rollouts | [resilience](docs/engineering/resilience.md) |
 | Database outage | Users got 18 errors. Prometheus counted 0, so the availability alerts could not see it | A handled 503 with `Retry-After`, and a test | All 16 errors counted. The outage itself still lasts about 6 s (one database pod) | [resilience](docs/engineering/resilience.md) |
+| Query cost as data grows | The overlap check and the day view read the whole table: 2469 pages at 200 thousand bookings, growing with the table | A range query and a GiST index (migration 0004), with tests that fail if the slow form returns | 30 pages, flat from 1 thousand to 200 thousand rows. Day view through the API: 21 to 113 requests per second | [data-scale](docs/engineering/data-scale.md) |
+| Capacity of one pod | 153 requests per second, throttled in 96 to 100 percent of the periods | CPU limit 1000m. Two workers and an ETag were tried and rejected | 342 requests per second and half the p95. Two workers gave no gain and broke the metrics | [performance](docs/engineering/performance.md) |
+| Requests and autoscaling | A backend request of 100m, so 60 requests per second filled the maximum of 5 pods | Requests set from measured usage, autoscaler target 70 percent | 2 pods for the same load, the same CPU reserved, a third of the memory, no failed requests | [cost-and-sizing](docs/engineering/cost-and-sizing.md) |
 | Backup | None | A `pg_dump` CronJob and a restore script | A restore after a mass delete gave an identical checksum in 4 s. The 5 rows written after the backup were lost, which is the recovery point | [backup-drill](docs/engineering/backup-drill.md) |
 | Supply chain | Images were scanned, but nothing proved where they came from | Signed provenance and SBOM for each image, verified before the deploy, plus Dependabot | An unattested image is rejected. The pipeline takes about a minute longer (143 s without, 202 s and 214 s with) | [supply-chain](docs/engineering/supply-chain.md) |
-| Decisions | Reasons lived in my head | Twelve short decision records | Each lists the options, the choice, the consequences and what I would do in production | [adr](docs/adr/README.md) |
+| Decisions | Reasons lived in my head | Fourteen short decision records | Each lists the options, the choice, the consequences and what I would do in production | [adr](docs/adr/README.md) |
 
 ### What I chose not to do
 
 Part of the method is deciding what not to build. I listed these in my plan and left them out, and I do not claim them:
 
-- **Load test and tuning** (worker count, caching, autoscaler target), so the capacity of one pod is unknown.
-- **`EXPLAIN ANALYZE` on a table with 200 thousand bookings.** The indexes exist, but I did not prove that they stay fast as the table grows.
-- **Right-sizing of the CPU and memory requests** from measured usage.
 - **A rollback drill** that compares a Git revert with an Argo CD rollback.
 - **Automated promotion.** Promotion is still a commit to `gitops/values.yaml` ([ADR 0008](docs/adr/0008-manual-promotion-via-git.md)).
 - **Network policies**, because the default Minikube network plugin does not enforce them, so I could not prove them.
 - **Alert delivery.** There is no Alertmanager, so an alert is visible in Prometheus and reaches nobody.
 - **Backups outside the cluster** and point in time recovery.
+- **A write-heavy load test.** The load test sent reads. Writes were timed separately (create a booking: 16.7 ms to 4.9 ms at 200 thousand rows) but never under saturation.
+- **The reason why two workers gave no gain.** I ruled out the load generator, the node and long-lived connections and did not find the cause, so the result is reported without an explanation.
 - **Node failure and failover tests**, because the cluster has one node and one database pod.
 
 Each of these has a sentence about what I would do in production in the matching document or decision record.

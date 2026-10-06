@@ -1,0 +1,40 @@
+### Verification of the new defaults (chart values only, no overrides of resources or autoscaler target)
+--- what the pods reserve (requests) and may use (limits)
+POD                                    CPU_REQ   MEM_REQ   CPU_LIM   MEM_LIM
+campusslot-backend-54d8bbcd46-bthzz    250m      96Mi      1         256Mi
+campusslot-backend-54d8bbcd46-xrhx8    250m      96Mi      1         256Mi
+campusslot-frontend-5cbfcf9954-28c2p   10m       16Mi      200m      128Mi
+campusslot-frontend-5cbfcf9954-nk9tb   10m       16Mi      200m      128Mi
+campusslot-postgres-0                  150m      64Mi      500m      256Mi
+--- node: requests committed by everything on it
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests      Limits
+  --------           --------      ------
+  cpu                1995m (49%)   4500m (112%)
+  memory             1714Mi (28%)  3510Mi (59%)
+  ephemeral-storage  0 (0%)        0 (0%)
+  hugepages-1Gi      0 (0%)        0 (0%)
+  hugepages-2Mi      0 (0%)        0 (0%)
+--- 150 requests per second for 150 s (mixed API traffic), autoscaler on (2 to 5 pods, scale out at 70 percent)
+  +15 s  replicas=2  cpu=1% of request
+  +30 s  replicas=2  cpu=1% of request
+  +45 s  replicas=2  cpu=1% of request
+  +60 s  replicas=2  cpu=1% of request
+  +75 s  replicas=2  cpu=1% of request
+  +90 s  replicas=2  cpu=102% of request
+  +105 s  replicas=3  cpu=102% of request
+  +120 s  replicas=3  cpu=102% of request
+  +135 s  replicas=3  cpu=102% of request
+  +150 s  replicas=3  cpu=119% of request
+api: threads=8 requests=22504 errors=0 throughput=150 req/s p50=11.4ms p95=30.9ms p99=68.2ms status={200: 22504}
+--- restarts and out-of-memory kills after the run
+  campusslot-backend-54d8bbcd46-bthzz restarts=0
+  campusslot-backend-54d8bbcd46-q4gtr restarts=0
+  campusslot-backend-54d8bbcd46-xrhx8 restarts=0
+  campusslot-backend-54d8bbcd46-xzncm restarts=0
+  campusslot-frontend-5cbfcf9954-28c2p restarts=0
+  campusslot-frontend-5cbfcf9954-nk9tb restarts=0
+  campusslot-postgres-0 restarts=0
+  loadgen restarts=0
+  OOMKilled containers: 0

@@ -2,7 +2,7 @@ import logging
 from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from sqlalchemy import func, select
+from sqlalchemy import DateTime, and_, cast, func, literal_column, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -31,6 +31,32 @@ def _local_day_start_utc(day: date, tz_offset_minutes: int) -> datetime:
     return midnight - timedelta(minutes=tz_offset_minutes)
 
 
+def _overlaps(db: Session, start: datetime, end: datetime):
+    """Condition: the booking's period overlaps [start, end). Back-to-back bookings do not.
+
+    On PostgreSQL this uses the range overlap operator, which the GiST indexes (the exclusion
+    constraint and ix_bookings_time_range) can answer without reading the whole table. Written
+    as two comparisons, the same question matches almost every old row and forces a full scan, so
+    the cost grew with the table (docs/engineering/data-scale.md). The bound characters must be
+    written into the SQL text, not sent as a parameter, or the planner cannot match the index
+    expression.
+    SQLite, used for the fast tests, has no range types and keeps the two comparisons.
+    """
+    if db.get_bind().dialect.name == "postgresql":
+        bounds = literal_column("'[)'")
+        stored = func.tstzrange(Booking.start_time, Booking.end_time, bounds)
+        return stored.op("&&")(func.tstzrange(start, end, bounds))
+    return and_(Booking.start_time < end, Booking.end_time > start)
+
+
+def _contains(db: Session, instant: datetime):
+    """Condition: the booking is running at `instant` (it has started and has not yet ended)."""
+    if db.get_bind().dialect.name == "postgresql":
+        stored = func.tstzrange(Booking.start_time, Booking.end_time, literal_column("'[)'"))
+        return stored.op("@>")(cast(instant, DateTime(timezone=True)))
+    return and_(Booking.start_time <= instant, Booking.end_time > instant)
+
+
 def _find_conflict(
     db: Session,
     room_id: int,
@@ -46,8 +72,7 @@ def _find_conflict(
     stmt = select(Booking).where(
         Booking.room_id == room_id,
         Booking.status == "confirmed",
-        Booking.start_time < end,
-        Booking.end_time > start,
+        _overlaps(db, start, end),
     )
     if exclude_id is not None:
         stmt = stmt.where(Booking.id != exclude_id)
@@ -108,9 +133,7 @@ def list_bookings(
         stmt = stmt.where(Booking.status == status)
     if day is not None:
         day_start = _local_day_start_utc(day, tz_offset_minutes)
-        stmt = stmt.where(
-            Booking.start_time < day_start + timedelta(days=1), Booking.end_time > day_start
-        )
+        stmt = stmt.where(_overlaps(db, day_start, day_start + timedelta(days=1)))
     return db.scalars(stmt.limit(limit).offset(offset)).all()
 
 
@@ -135,8 +158,7 @@ def booking_stats(
     day_bookings = db.scalars(
         select(Booking).where(
             Booking.status == "confirmed",
-            Booking.start_time < midnight + timedelta(days=1),
-            Booking.end_time > midnight,
+            _overlaps(db, midnight, midnight + timedelta(days=1)),
         )
     ).all()
 
@@ -172,7 +194,7 @@ def booking_stats(
     )
     in_use_now = db.scalar(
         select(func.count(func.distinct(Booking.room_id))).where(
-            Booking.status == "confirmed", Booking.start_time <= now, Booking.end_time > now
+            Booking.status == "confirmed", _contains(db, now)
         )
     )
 

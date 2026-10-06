@@ -1,0 +1,49 @@
+### Three repeats at 200000 bookings, 2026-10-06
+--- before, repeat 1
+  Q1 day view of one room                     8.205 ms    Bitmap Heap Scan on bookings                shared hit=2605
+  Q2 day view of all rooms                   52.274 ms    Parallel Seq Scan on bookings               shared hit=2515
+  Q3 overlap check, slot is free             32.165 ms    Seq Scan on bookings                        shared hit=2469
+  Q4 statistics, total confirmed             87.766 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q5 statistics, the bookings of the day      8.792 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q6 statistics, rooms in use right now      87.095 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q7 insert one booking                       1.606 ms   Insert on bookings                           shared hit=83
+--- before, repeat 2
+  Q1 day view of one room                     7.052 ms    Bitmap Heap Scan on bookings                shared hit=2605
+  Q2 day view of all rooms                    9.275 ms    Parallel Seq Scan on bookings               shared hit=2515
+  Q3 overlap check, slot is free              9.205 ms    Seq Scan on bookings                        shared hit=2469
+  Q4 statistics, total confirmed             79.729 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q5 statistics, the bookings of the day     17.209 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q6 statistics, rooms in use right now      81.948 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q7 insert one booking                       1.369 ms   Insert on bookings                           shared hit=83
+--- before, repeat 3
+  Q1 day view of one room                     6.838 ms    Bitmap Heap Scan on bookings                shared hit=2605
+  Q2 day view of all rooms                    8.045 ms    Parallel Seq Scan on bookings               shared hit=2515
+  Q3 overlap check, slot is free             19.466 ms    Seq Scan on bookings                        shared hit=2469
+  Q4 statistics, total confirmed             14.687 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q5 statistics, the bookings of the day     84.214 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q6 statistics, rooms in use right now      74.137 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q7 insert one booking                       2.941 ms   Insert on bookings                           shared hit=83
+--- after, repeat 1
+  Q1 day view of one room                     0.203 ms    Bitmap Heap Scan on bookings                shared hit=11
+  Q2 day view of all rooms                    0.114 ms    Bitmap Heap Scan on bookings                shared hit=5
+  Q3 overlap check, slot is free              0.409 ms    Index Scan using ex_bookings_no_overlap on bookings shared hit=30
+  Q4 statistics, total confirmed             42.354 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q5 statistics, the bookings of the day      0.087 ms   Bitmap Heap Scan on bookings                 shared hit=5
+  Q6 statistics, rooms in use right now       0.092 ms    Bitmap Heap Scan on bookings                shared hit=4
+  Q7 insert one booking                       0.772 ms   Insert on bookings                           shared hit=48
+--- after, repeat 2
+  Q1 day view of one room                     0.180 ms    Bitmap Heap Scan on bookings                shared hit=11
+  Q2 day view of all rooms                    0.114 ms    Bitmap Heap Scan on bookings                shared hit=5
+  Q3 overlap check, slot is free              0.411 ms    Index Scan using ex_bookings_no_overlap on bookings shared hit=30
+  Q4 statistics, total confirmed             56.892 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q5 statistics, the bookings of the day      0.100 ms   Bitmap Heap Scan on bookings                 shared hit=5
+  Q6 statistics, rooms in use right now       0.107 ms    Bitmap Heap Scan on bookings                shared hit=4
+  Q7 insert one booking                       1.156 ms   Insert on bookings                           shared hit=50
+--- after, repeat 3
+  Q1 day view of one room                     0.201 ms    Bitmap Heap Scan on bookings                shared hit=11
+  Q2 day view of all rooms                    0.119 ms    Bitmap Heap Scan on bookings                shared hit=5
+  Q3 overlap check, slot is free              0.426 ms    Index Scan using ex_bookings_no_overlap on bookings shared hit=30
+  Q4 statistics, total confirmed             59.525 ms    Parallel Seq Scan on bookings               shared hit=2469
+  Q5 statistics, the bookings of the day      0.203 ms   Bitmap Heap Scan on bookings                 shared hit=5
+  Q6 statistics, rooms in use right now       0.206 ms    Bitmap Heap Scan on bookings                shared hit=4
+  Q7 insert one booking                       1.846 ms   Insert on bookings                           shared hit=48

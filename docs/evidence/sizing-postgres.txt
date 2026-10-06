@@ -1,0 +1,4 @@
+### PostgreSQL after a pod restart (page cache from the 200k row load is gone), 5000 bookings
+idle after restart: memory 30 MiB
+api 50 rps: threads=8 requests=3000 errors=0 throughput=50 req/s p50=19.9ms p95=35.7ms p99=50.4ms status={200: 3000}
+50 rps: cpu median 111 m, cpu p95 144 m, memory max 32 MiB

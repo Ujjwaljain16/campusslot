@@ -1,0 +1,9 @@
+### C1 CPU limit 1000m (one variable changed: limit 500m to 1000m)  (cpu limit 1000m, uvicorn workers 1, 16 threads, repeats 2)
+rooms run 1: threads=16 requests=10098 errors=0 throughput=336 req/s p50=45.5ms p95=76.6ms p99=93.5ms status={200: 10098}
+    throttled periods: 67%   peak cpu: 0.83 cores   peak memory: 73 MiB
+rooms run 2: threads=16 requests=10460 errors=0 throughput=348 req/s p50=43.8ms p95=71.9ms p99=87.4ms status={200: 10460}
+    throttled periods: 75%   peak cpu: 0.99 cores   peak memory: 74 MiB
+day run 1: threads=16 requests=7712 errors=0 throughput=257 req/s p50=61.5ms p95=94.2ms p99=109.3ms status={200: 7712}
+    throttled periods: 72%   peak cpu: 0.85 cores   peak memory: 76 MiB
+day run 2: threads=16 requests=7554 errors=0 throughput=251 req/s p50=62.0ms p95=96.8ms p99=118.7ms status={200: 7554}
+    throttled periods: 87%   peak cpu: 1.00 cores   peak memory: 76 MiB

@@ -14,7 +14,8 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, func, select, text
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
@@ -22,6 +23,7 @@ from sqlalchemy.orm import sessionmaker
 from app.config import get_settings
 from app.db import get_db
 from app.main import app
+from app.models import Booking
 from app.routes import bookings as bookings_routes
 
 pytestmark = pytest.mark.postgres
@@ -115,7 +117,12 @@ def test_migrations_create_the_schema_the_constraint_and_the_seed_rooms(pg_engin
     assert {"rooms", "bookings", "alembic_version"} <= tables
     assert constraint == "x"  # 'x' is PostgreSQL's code for an EXCLUDE constraint
     assert seeded >= 6
-    assert version == "0003"
+    assert version == "0004"
+    with pg_engine.connect() as connection:
+        range_index = connection.execute(
+            text("SELECT indexdef FROM pg_indexes WHERE indexname = 'ix_bookings_time_range'")
+        ).scalar_one_or_none()
+    assert range_index is not None and "gist" in range_index
 
 
 def test_database_rejects_overlapping_rows_even_without_the_application_check(pg_engine):
@@ -187,3 +194,130 @@ def test_simultaneous_identical_requests_create_exactly_one_booking(pg_client, p
             text("SELECT count(*) FROM bookings WHERE room_id = :r"), {"r": room_id}
         ).scalar_one()
     assert stored == 1
+
+
+def test_range_overlap_gives_the_same_answer_as_two_comparisons_at_every_boundary(pg_engine):
+    """The faster predicate must not change what counts as an overlap, above all for bookings that
+    only touch: one that ends at 11:00 and one that starts at 11:00 are allowed."""
+    from datetime import UTC, datetime
+
+    room_id = first_room_id(pg_engine)
+    with pg_engine.begin() as connection:
+        connection.execute(text("DELETE FROM bookings"))
+        connection.execute(
+            text(
+                "INSERT INTO bookings (room_id, purpose, booked_by, start_time, end_time, status) "
+                "VALUES (:room, 'x', 'y', '2026-10-06 10:00+00', "
+                "'2026-10-06 11:00+00', 'confirmed')"
+            ),
+            {"room": room_id},
+        )
+
+    def at(hour, minute=0):
+        return datetime(2026, 10, 6, hour, minute, tzinfo=UTC)
+
+    cases = [  # (start, end, overlaps)
+        (at(9), at(10), False),  # ends exactly when the booking starts
+        (at(11), at(12), False),  # starts exactly when the booking ends
+        (at(8), at(9), False),
+        (at(12), at(13), False),
+        (at(9), at(10, 1), True),
+        (at(10, 59), at(12), True),
+        (at(10, 15), at(10, 45), True),  # inside
+        (at(9), at(12), True),  # around
+        (at(10), at(11), True),  # identical
+    ]
+    factory = sessionmaker(bind=pg_engine, autoflush=False)
+    with factory() as session:
+        for start, end, expected in cases:
+            ranged = session.scalar(
+                select(func.count())
+                .select_from(Booking)
+                .where(bookings_routes._overlaps(session, start, end))
+            )
+            comparisons = session.scalar(
+                select(func.count())
+                .select_from(Booking)
+                .where(Booking.start_time < end, Booking.end_time > start)
+            )
+            assert ranged == comparisons == (1 if expected else 0), (start, end)
+
+
+def test_running_now_includes_the_start_and_excludes_the_end(pg_engine):
+    from datetime import UTC, datetime
+
+    room_id = first_room_id(pg_engine)
+    with pg_engine.begin() as connection:
+        connection.execute(text("DELETE FROM bookings"))
+        connection.execute(
+            text(
+                "INSERT INTO bookings (room_id, purpose, booked_by, start_time, end_time, status) "
+                "VALUES (:room, 'x', 'y', '2026-10-06 10:00+00', "
+                "'2026-10-06 11:00+00', 'confirmed')"
+            ),
+            {"room": room_id},
+        )
+    factory = sessionmaker(bind=pg_engine, autoflush=False)
+    with factory() as session:
+
+        def running(hour, minute=0):
+            instant = datetime(2026, 10, 6, hour, minute, tzinfo=UTC)
+            return session.scalar(
+                select(func.count())
+                .select_from(Booking)
+                .where(bookings_routes._contains(session, instant))
+            )
+
+        assert running(9, 59) == 0
+        assert running(10, 0) == 1  # a booking that starts now is running
+        assert running(10, 59) == 1
+        assert running(11, 0) == 0  # a booking that ends now is over
+
+
+def test_overlap_queries_are_answered_from_an_index_on_a_large_table(pg_engine):
+    """A regression guard for the scaling problem: with many rows, the overlap check and the day
+    view must not read the whole table (see docs/engineering/data-scale.md)."""
+    from datetime import UTC, datetime, timedelta
+
+    with pg_engine.begin() as connection:
+        connection.execute(text("DELETE FROM bookings"))
+        connection.execute(
+            text(
+                "INSERT INTO bookings (room_id, purpose, booked_by, start_time, end_time, status) "
+                "SELECT r.id, 'scale', 'u' || g, "
+                "  timestamptz '2020-01-01 08:00+00' + (g / 6) * interval '1 hour', "
+                "  timestamptz '2020-01-01 08:00+00' + (g / 6) * interval '1 hour' "
+                "    + interval '50 minutes', "
+                "  'confirmed' "
+                "FROM generate_series(0, 29999) g "
+                "JOIN (SELECT id, row_number() OVER (ORDER BY id) - 1 AS ri FROM rooms LIMIT 6) r "
+                "  ON r.ri = g % 6"
+            )
+        )
+        connection.execute(text("ANALYZE bookings"))
+
+    start = datetime(2024, 3, 1, 8, 20, tzinfo=UTC)
+    factory = sessionmaker(bind=pg_engine, autoflush=False)
+    with factory() as session:
+        room_id = first_room_id(pg_engine)
+        statements = {
+            "overlap check": select(Booking).where(
+                Booking.room_id == room_id,
+                Booking.status == "confirmed",
+                bookings_routes._overlaps(session, start, start + timedelta(minutes=10)),
+            ),
+            "day view": select(Booking).where(
+                bookings_routes._overlaps(session, start, start + timedelta(days=1))
+            ),
+        }
+        for name, statement in statements.items():
+            sql = str(
+                statement.compile(
+                    dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}
+                )
+            )
+            plan = "\n".join(row[0] for row in session.execute(text("EXPLAIN " + sql)).all())
+            assert "Seq Scan" not in plan, f"{name} reads the whole table:\n{plan}"
+
+    with pg_engine.begin() as connection:
+        connection.execute(text("DELETE FROM bookings"))

@@ -1,0 +1,14 @@
+1 replica(s), image campusslot-backend-local:range2
+### after (range operator + GiST index), backend: campusslot-backend-local:range2, rows: 200000
+day view, one room   : threads=4 requests=1657 errors=0 throughput=110 req/s p50=14.7ms p95=84.8ms p99=99.3ms status={200: 1657}
+day view, all rooms  : threads=4 requests=1707 errors=0 throughput=113 req/s p50=14.4ms p95=80.9ms p99=99.0ms status={200: 1707}
+statistics           : threads=4 requests=239 errors=0 throughput=16 req/s p50=210.5ms p95=400.5ms p99=422.2ms status={200: 239}
+create 36 bookings   : created=36 failed=0 median=4.9ms p95=28.5ms max=41.7ms
+
+--- switching to the CI image from before the change
+1 replica(s), image ghcr.io/ujjwaljain16/campusslot-backend:354b89ec2414dbc015da8254736ab50bcb0e4e57
+### before (two comparisons), backend: ghcr.io/ujjwaljain16/campusslot-backend:354b89ec2414dbc015da8254736ab50bcb0e4e57, rows: 200000
+day view, one room   : threads=4 requests=1052 errors=0 throughput=70 req/s p50=73.4ms p95=103.1ms p99=177.0ms status={200: 1052}
+day view, all rooms  : threads=4 requests=312 errors=0 throughput=21 req/s p50=197.2ms p95=305.1ms p99=403.6ms status={200: 312}
+statistics           : threads=4 requests=100 errors=0 throughput=7 req/s p50=592.9ms p95=897.3ms p99=1100.0ms status={200: 100}
+create 36 bookings   : created=36 failed=0 median=16.7ms p95=52.1ms max=91.7ms

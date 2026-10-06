@@ -1,0 +1,9 @@
+### C3 two workers at the same 500m limit (one variable changed: workers 1 to 2)  (cpu limit 500m, uvicorn workers 2, 16 threads, repeats 2)
+rooms run 1: threads=16 requests=2962 errors=0 throughput=98 req/s p50=115.9ms p95=315.6ms p99=467.6ms status={200: 2962}
+    throttled periods: 96%   peak cpu: 0.50 cores   peak memory: 233 MiB
+rooms run 2: threads=16 requests=3241 errors=0 throughput=107 req/s p50=108.3ms p95=296.0ms p99=408.2ms status={200: 3241}
+    throttled periods: 89%   peak cpu: 0.44 cores   peak memory: 171 MiB
+day run 1: threads=16 requests=2754 errors=0 throughput=92 req/s p50=187.2ms p95=312.8ms p99=411.0ms status={200: 2754}
+    throttled periods: 83%   peak cpu: 0.42 cores   peak memory: 174 MiB
+day run 2: threads=16 requests=2747 errors=0 throughput=91 req/s p50=186.0ms p95=384.1ms p99=422.2ms status={200: 2747}
+    throttled periods: 87%   peak cpu: 0.50 cores   peak memory: 175 MiB
