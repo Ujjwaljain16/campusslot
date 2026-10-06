@@ -61,6 +61,34 @@ A faster pipeline that stops protecting the registry is worse than a slow one, s
 
 I deleted the branch afterwards.
 
+## What went wrong on the first push to main
+
+The first push to `main` with the new pipeline (run 37362770499) failed, and the reason is a weakness that I introduced, even though a GitHub incident triggered it.
+
+| Time (UTC) | What happened |
+|---|---|
+| 19:21:10 | Change detection finished and seven jobs were released at once |
+| 19:21:35 to 19:22:08 | The tests, the secret scan and the frontend build finished normally |
+| 19:21:10 to 19:36:12 | The `Static analysis` and `Deploy` jobs never got a runner. They had no steps at all, and GitHub cancelled them after 15 minutes |
+| 19:22:42 to 19:32:45 | The build job had finished building and scanning, and waited for the static analysis. After 600 seconds it timed out and failed |
+
+GitHub reported an Actions incident ("degraded performance") from 19:11 UTC, which matches the queueing. So the cause was outside my control. My design made the effect worse, for two reasons:
+
+1. **The wait timeout was shorter than a bad queue.** In a serial pipeline a slow runner only delays the run. In my parallel pipeline a wait that expires turns a delay into a red build.
+2. **Waiting jobs occupy runners.** If runners are scarce, the jobs that wait can use up the capacity that the awaited job needs. On a public repository the concurrency limit is high, so this did not happen here, but it is the failure mode of this design.
+
+What went right is the part that matters most: **the build job failed safe.** It refused to push because it could not confirm the gate, and nothing unverified reached the registry.
+
+### The fix
+
+| Change | Reason |
+|---|---|
+| The gate wait is 1800 s and the deploy wait is 2400 s | A queue delay of tens of minutes no longer turns into a failure |
+| Every job has `timeout-minutes` (30, and 60 for the two jobs that wait) | The default is six hours, which is far too long for a hung job |
+| The failed run was re-run with `gh run rerun --failed` | `main` is green again for the same commit |
+
+I also recorded the lesson for the design: waiting is cheap when runners are plentiful and dangerous when they are not, so the waits must be bounded and generous, and the number of jobs that wait at the same time should stay well below the concurrency limit.
+
 ## Honest limits
 
 - **The samples are not independent.** The three runs used the same commit, so the layer caches were warm. Real pushes change code and may be a little slower. The baseline runs were real pushes, so the comparison favours the new pipeline slightly.
