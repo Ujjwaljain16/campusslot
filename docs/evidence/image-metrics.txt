@@ -1,28 +1,30 @@
-### Image metrics, 2026-10-06 21:10:56, docker 29.0.1
+### Image metrics, 2026-10-06 21:29:34, docker 29.0.1
 pulling the base images first, so that the build times do not include their download
+  could not pull python:3.12-slim now, the local copy is used if there is one
 
 ### 1. Build from nothing (--no-cache), seconds
-  backend                    31.2 s   (single stage: 24.9 s)
-  frontend                    8.9 s   (single stage: 13.3 s)
+  backend                    34.5 s   (single stage: 35.6 s)
+  frontend                   22.1 s   (single stage: 10.8 s)
 
 ### 2. Rebuild after a one-line change in the application code, with the layer cache, seconds
 # a comment is added to a source file, which is what most commits look like
-  backend                     3.3 s   (single stage, files copied first: 22.2 s)
-  frontend                    4.3 s   (single stage, files copied first: 11.4 s)
+  backend                     3.2 s   (single stage, files copied first: 25.6 s)
+  frontend                    5.0 s   (single stage, files copied first: 11.3 s)
 
-### 3. Image size (uncompressed, as Docker reports it), MB
-  backend, the real image                61
-  backend, the build stage alone         63
-  backend, single stage, full python    432
-  frontend, the real image               25
-  frontend, the build stage alone       117
-  frontend, single stage, full node     477
+### 3. Image size in MB: compressed (what a pull transfers, Docker's .Size) and unpacked (the files inside)
+                                        compressed  unpacked
+  backend, the real image                       61       199
+  backend, the build stage alone                63       203
+  backend, single stage, full python           432      1228
+  frontend, the real image                      25        56
+  frontend, the build stage alone              117       289
+  frontend, single stage, full node            477      1373
 
 ### 4. Startup: from "docker run" to the first 200 answer, 5 runs each (this includes creating the container)
-  backend, the real image            median 1.41 s, fastest 1.39 s, slowest 2.06 s (5 of 5 runs)
-  backend, single stage              median 1.13 s, fastest 1.05 s, slowest 1.23 s (5 of 5 runs)
-  frontend, the real image           median 0.50 s, fastest 0.47 s, slowest 0.52 s (5 of 5 runs)
-  frontend, single stage (vite preview) median 0.86 s, fastest 0.78 s, slowest 0.89 s (5 of 5 runs)
+  backend, the real image            median 1.50 s, fastest 1.46 s, slowest 1.99 s (5 of 5 runs)
+  backend, single stage              median 1.15 s, fastest 1.05 s, slowest 1.30 s (5 of 5 runs)
+  frontend, the real image           median 0.49 s, fastest 0.48 s, slowest 0.58 s (5 of 5 runs)
+  frontend, single stage (vite preview) median 0.84 s, fastest 0.83 s, slowest 0.94 s (5 of 5 runs)
 
 ### 5. What the real images are made of
   cs-measure-backend: 12 layers, runs as user "10001:10001"

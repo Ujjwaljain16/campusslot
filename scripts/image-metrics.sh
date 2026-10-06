@@ -89,13 +89,17 @@ printf '  %-22s %8s s   (single stage, files copied first: %s s)\n' "frontend" "
 docker build -q -t cs-measure-backend-builder --target builder -f "$WORK/backend/Dockerfile" "$WORK/backend" > /dev/null 2>&1
 docker build -q -t cs-measure-frontend-build --target build -f "$WORK/frontend/Dockerfile" "$WORK/frontend" > /dev/null 2>&1
 
-echo; echo "### 3. Image size (uncompressed, as Docker reports it), MB"
-printf '  %-34s %6s\n' "backend, the real image" "$(size_mb cs-measure-backend)"
-printf '  %-34s %6s\n' "backend, the build stage alone" "$(size_mb cs-measure-backend-builder)"
-printf '  %-34s %6s\n' "backend, single stage, full python" "$(size_mb cs-measure-backend-naive)"
-printf '  %-34s %6s\n' "frontend, the real image" "$(size_mb cs-measure-frontend)"
-printf '  %-34s %6s\n' "frontend, the build stage alone" "$(size_mb cs-measure-frontend-build)"
-printf '  %-34s %6s\n' "frontend, single stage, full node" "$(size_mb cs-measure-frontend-naive)"
+# Docker's .Size is the compressed size of the layers (with the containerd image store), which is what
+# a pull transfers. The files inside, once unpacked, are what a node stores, so both are reported.
+unpacked_mb() { docker run --rm --entrypoint sh "$1" -c 'du -sxm / 2>/dev/null | cut -f1'; }
+
+echo; echo "### 3. Image size in MB: compressed (what a pull transfers, Docker's .Size) and unpacked (the files inside)"
+printf '  %-36s %11s %9s\n' "" "compressed" "unpacked"
+for row in "backend, the real image|cs-measure-backend" "backend, the build stage alone|cs-measure-backend-builder" \
+           "backend, single stage, full python|cs-measure-backend-naive" "frontend, the real image|cs-measure-frontend" \
+           "frontend, the build stage alone|cs-measure-frontend-build" "frontend, single stage, full node|cs-measure-frontend-naive"; do
+  printf '  %-36s %11s %9s\n' "${row%%|*}" "$(size_mb "${row##*|}")" "$(unpacked_mb "${row##*|}")"
+done
 
 startup() { # image port path
   python - "$1" "$2" "$3" "$RUNS" <<'PY'
