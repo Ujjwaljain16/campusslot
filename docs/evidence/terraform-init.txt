@@ -1,0 +1,55 @@
+Note: the first attempt of this run failed with a network error while downloading a module from the registry. The transcript below is the second attempt, from a clean state.
+
+### terraform version
+Terraform v1.9.8
+on linux_amd64
++ provider registry.terraform.io/hashicorp/aws v6.67.0
+
+### terraform init (from a clean state, no credentials needed)
+Initializing the backend...
+Initializing modules...
+Downloading registry.terraform.io/terraform-aws-modules/eks/aws 21.26.0 for eks...
+- eks in .terraform/modules/eks
+- eks.eks_managed_node_group in .terraform/modules/eks/modules/eks-managed-node-group
+- eks.eks_managed_node_group.user_data in .terraform/modules/eks/modules/_user_data
+- eks.fargate_profile in .terraform/modules/eks/modules/fargate-profile
+Downloading registry.terraform.io/terraform-aws-modules/kms/aws 4.0.0 for eks.kms...
+- eks.kms in .terraform/modules/eks.kms
+- eks.self_managed_node_group in .terraform/modules/eks/modules/self-managed-node-group
+- eks.self_managed_node_group.user_data in .terraform/modules/eks/modules/_user_data
+Downloading registry.terraform.io/terraform-aws-modules/vpc/aws 6.7.3 for vpc...
+- vpc in .terraform/modules/vpc
+Initializing provider plugins...
+- Reusing previous version of hashicorp/null from the dependency lock file
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Reusing previous version of hashicorp/tls from the dependency lock file
+- Reusing previous version of hashicorp/time from the dependency lock file
+- Reusing previous version of hashicorp/cloudinit from the dependency lock file
+- Installing hashicorp/tls v4.4.1...
+- Installed hashicorp/tls v4.4.1 (signed by HashiCorp)
+- Installing hashicorp/time v0.14.2...
+- Installed hashicorp/time v0.14.2 (signed by HashiCorp)
+- Installing hashicorp/cloudinit v2.4.1...
+- Installed hashicorp/cloudinit v2.4.1 (signed by HashiCorp)
+- Installing hashicorp/null v3.3.2...
+- Installed hashicorp/null v3.3.2 (signed by HashiCorp)
+- Installing hashicorp/aws v6.67.0...
+- Installed hashicorp/aws v6.67.0 (signed by HashiCorp)
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+init exit code: 0
+
+### terraform fmt -check -recursive
+formatted: no changes needed
+
+### terraform validate
+Success! The configuration is valid.
+

@@ -4,12 +4,14 @@ CampusSlot is a room and lab booking service for a campus. Students and staff re
 
 ![CampusSlot day view](docs/evidence/app-desktop.png)
 
+**Grading:** [`docs/SUBMISSION-CHECKLIST.md`](docs/SUBMISSION-CHECKLIST.md) maps every item of the instructor's rubric to the file or screenshot that shows it.
+
 ## 1. Overview
 
 | Area | What I built |
 |---|---|
 | Application | FastAPI backend, React frontend, PostgreSQL database, Alembic migrations |
-| Tests | 46 backend tests on SQLite, 4 PostgreSQL integration tests, 12 frontend tests, coverage floor of 85 percent |
+| Tests | 47 backend tests on SQLite, 7 PostgreSQL integration tests, 12 frontend tests, coverage floor of 85 percent |
 | Containers | Two multi-stage, non-root images with health checks, and a Docker Compose stack |
 | CI/CD | GitHub Actions: lint, tests, dependency audits, secret scan, image build, Trivy gate, push to GHCR with commit SHA tags, Helm deploy to a kind cluster |
 | Kubernetes | A Helm chart deployed on Minikube with a ConfigMap, a Secret, ingress, a migration Job, an autoscaler, disruption budgets and a restricted pod security namespace |
@@ -199,13 +201,13 @@ npm test && npm audit --omit=dev --audit-level=high && npm run build
 
 | Suite | Result | Transcript |
 |---|---|---|
-| Backend, SQLite | 46 passed, coverage 90.57 percent against a floor of 85, no known vulnerabilities in the dependencies | [backend-tests.txt](docs/evidence/backend-tests.txt) |
-| Backend, PostgreSQL 16 | 4 passed: migrations, the overlap constraint, the database layer returning 409, and a concurrent race that creates exactly one booking | [postgres-tests.txt](docs/evidence/postgres-tests.txt) |
+| Backend, SQLite | 47 passed, coverage 89.79 percent against a floor of 85, no known vulnerabilities in the dependencies | [backend-tests.txt](docs/evidence/backend-tests.txt) |
+| Backend, PostgreSQL 16 | 7 passed: migrations (including the range index), the overlap constraint, the database layer returning 409, a concurrent race that creates exactly one booking, and three tests of the range queries (same answer at every boundary, a booking that starts or ends exactly now, and no sequential scan on a large table) | [postgres-tests.txt](docs/evidence/postgres-tests.txt) |
 | Frontend | 12 passed, 0 audit vulnerabilities, production build succeeds | [frontend-tests.txt](docs/evidence/frontend-tests.txt) |
 
 ![pytest -v, 42 passed](docs/evidence/terminal-pytest.png)
 
-This screenshot was taken before I added the four logging tests in section 15, so it shows 42 tests. The transcript above is the current run with 46.
+This screenshot was taken earlier, when the suite had 42 tests. It has 47 now, after the four logging tests in section 15 and a test of the database outage response. The transcript above is the current run.
 
 The backend tests cover health, readiness with the database down and with an unmigrated schema, every route of rooms and bookings, and the rules from section 2, including the adjacent slot case in both directions and a booking that is extended without conflicting with itself. I ran the PostgreSQL tests against a throwaway container that I removed afterwards. Bandit reports no issue of medium or high severity, and one low severity note that the `-ll` flag filters out.
 
@@ -416,7 +418,7 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 | Topic | Evidence |
 |---|---|
 | Presentation | [`docs/presentation/CampusSlot-final-presentation.pptx`](docs/presentation/CampusSlot-final-presentation.pptx) and the [PDF copy](docs/presentation/CampusSlot-final-presentation.pdf): 15 slides for a non-technical viewer, the first 11 in the order of the course checklist, then three on the engineering decisions, the trade-offs and the scale measurements, and the final rehearsal, with speaker notes in the PowerPoint file |
-| Application | `app-desktop.png`, `app-mobile.png`, `app-compose.png`, `api-docs.png`, `postgres-data-proof.txt` (tables, Alembic version 0003, seeded rooms, bookings and the `EXCLUDE` constraint, read with `psql` inside the database pod) |
+| Application | `app-desktop.png`, `app-mobile.png`, `app-compose.png`, `api-docs.png`, `postgres-data-proof.txt` (tables, Alembic version 0003 at the time of that transcript, seeded rooms, bookings and the `EXCLUDE` constraint, read with `psql` inside the database pod) |
 | Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt`, `terminal-pytest.png` |
 | Docker | `docker-proof.txt`, three `terminal-docker-*.png` screenshots |
 | Git and CI/CD | `github-commit-history.png`, `github-actions-run.png`, `ghcr-backend-package.png`, `ghcr-frontend-package.png`, `trivy-ci-output.txt` and `trivy-*-report.png` (the Trivy report of both images from the pipeline log) |
