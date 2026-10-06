@@ -490,7 +490,7 @@ jobs:
               --signer-workflow "${{ github.repository }}/.github/workflows/ci-cd.yml"
             echo "== ${image}: SBOM"
             gh attestation verify "$ref" --repo "${{ github.repository }}" \
-              --predicate-type https://spdx.dev/Spec/v2.3/
+              --predicate-type https://spdx.dev/Document/v2.3
           done
 
       - name: helm upgrade --install with the commit SHA tags
