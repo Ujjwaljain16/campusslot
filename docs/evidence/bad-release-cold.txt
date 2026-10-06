@@ -1,0 +1,3 @@
+### Rollout that has to pull a new image (cold), then back to the cached one
+backend image 354b89e: helm finished after 17.3 s (exit 0), ready replicas: 2
+backend image 58f286a: helm finished after 9.1 s (exit 0), ready replicas: 2

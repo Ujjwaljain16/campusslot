@@ -113,12 +113,12 @@ This maps every item of the instructor's grading rubric (`session21-python/GRADI
 | Criterion | Evidence |
 |---|---|
 | `README.md` explaining the application | [`README.md`](../README.md) |
-| Live demo: commit, pipeline, deployment | rehearsed end to end: [`rehearsal.txt`](evidence/rehearsal.txt) and [`rehearsal-after-deploy.png`](evidence/rehearsal-after-deploy.png) |
+| Live demo: commit, pipeline, deployment | rehearsed end to end: [`rehearsal.txt`](evidence/rehearsal.txt) and [`rehearsal-after-deploy.png`](evidence/rehearsal-after-deploy.png). The script for the live demo, including a failure drill with an automatic rollback, is [`docs/DEMO.md`](DEMO.md), and the drill itself is measured in [`bad-release-drill.md`](engineering/bad-release-drill.md) |
 | Presentation | 15 slides with speaker notes, one slide per course topic, and three on the engineering results |
 
 ## Beyond the rubric
 
-Argo CD GitOps, Loki and Alloy logs, a ConfigMap, a Pod Security profile, four troubleshooting labs, DORA metrics, 14 decision records, alert rules with runbooks, measured rollouts, a restored backup, signed image provenance, query scale tests, a load test and measured sizing. They are summarised in the README section [Engineering decisions and results](../README.md#engineering-decisions-and-results).
+Argo CD GitOps, Loki and Alloy logs, a ConfigMap, a Pod Security profile, four troubleshooting labs, DORA metrics, 14 decision records, alert rules with runbooks, measured rollouts, a bad release that rolls back by itself, a restored backup, signed image provenance, query scale tests, a load test and measured sizing. They are summarised in the README section [Engineering decisions and results](../README.md#engineering-decisions-and-results).
 
 ## What I rechecked on 6 October 2026
 

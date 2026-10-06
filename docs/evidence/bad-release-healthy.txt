@@ -1,0 +1,4 @@
+### Healthy rollouts with --atomic --timeout 120s (a harmless setting changes, so every pod is replaced)
+rollout 1: helm finished after 9.4 s (exit 0), ready replicas: 2
+rollout 2: helm finished after 9.2 s (exit 0), ready replicas: 2
+rollout 3: helm finished after 9.3 s (exit 0), ready replicas: 2

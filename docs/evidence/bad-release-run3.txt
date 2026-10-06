@@ -1,0 +1,54 @@
+### Bad release drill, 2026-10-06 19:58:24
+timeout for the automatic rollback: 60 s
+
+### 1. The broken change (never committed, never pushed)
+    23c23
+    < exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
+    ---
+    > exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8080}"
+broken image built in the cluster: campusslot-backend-local:broken
+
+### 2. Before: a healthy release is running
+helm revision: 20
+   campusslot-backend-6bd6dd694f-6sg6m 1/1 Running restarts=0
+   campusslot-backend-6bd6dd694f-sh246 1/1 Running restarts=0
+images: 2 ghcr.io/ujjwaljain16/campusslot-backend:58f286ab6ea1a3fe62cf997041019ef61df33aa2;
+
+### 3. Users keep calling the API through the Ingress during the whole drill
+
+### 4. Deploy the broken release: helm upgrade --atomic --timeout 60s
+T+0.0 s  upgrade started (19:59:12)
+T+0.3 s  6sg6m:1/1:Running:r0 sh246:1/1:Running:r0 
+T+1.7 s  6sg6m:1/1:Running:r0 sh246:1/1:Running:r0 6nh5v:0/1:Running:r0 
+T+62.4 s  helm exited with code 1
+    helm: Error: UPGRADE FAILED: release campusslot failed, and has been rolled back due to atomic being set: context deadline exceeded
+
+### 5. Wait until the previous release serves with all its pods
+T+72.5 s  only the previous release is left: 2 ready replicas, images: 2 ghcr.io/ujjwaljain16/campusslot-backend:58f286ab6ea1a3fe62cf997041019ef61df33aa2;
+lowest number of ready replicas seen while the broken release was failing: 2
+
+### 6. What Kubernetes reported about the broken pod (first and last time, relative to the start)
+   first T+  5.4 s, last T+ 56.4 s  Unhealthy 6nh5v (x25) Startup probe failed: Get "http://10.244.0.69:8000/health": dial tcp 10.244.0.69:8000: connect: conn
+
+### 7. What the monitoring saw
+   backend replicas unavailable, highest in the last 6 minutes: 1
+   alert CampusSlotBackendReplicasUnavailable was pending (1 = yes): 1
+   alert CampusSlotBackendReplicasUnavailable was firing  (1 = yes): none
+
+### 8. Helm history (what the release looks like afterwards)
+REVISION	UPDATED                 	STATUS    	CHART           	APP VERSION	DESCRIPTION                                           
+19      	Tue Oct  6 19:55:38 2026	failed    	campusslot-1.0.0	1.0.0      	Upgrade "campusslot" failed: context deadline exceeded
+20      	Tue Oct  6 19:56:39 2026	superseded	campusslot-1.0.0	1.0.0      	Rollback to 18                                        
+21      	Tue Oct  6 19:59:12 2026	failed    	campusslot-1.0.0	1.0.0      	Upgrade "campusslot" failed: context deadline exceeded
+22      	Tue Oct  6 20:00:13 2026	deployed  	campusslot-1.0.0	1.0.0      	Rollback to 20                                        
+
+### 9. What the users experienced
+[users] requests: 1600, failed: 0 (0.00 percent)
+[users] latency of successful requests: median 18.0 ms, p95 34.2 ms, slowest 145.1 ms
+
+### Result
+first failure signal from Kubernetes (startup probe): T+5.4 s
+automatic decision by helm: T+62.3 s (the timeout was 60 s)
+only the previous release left, broken pod removed: T+72.5 s (10.1 s after the decision, which includes the pod's preStop delay)
+ready replicas never fell below: 2
+revision before: 20, after: 22; image running: 2 ghcr.io/ujjwaljain16/campusslot-backend:58f286ab6ea1a3fe62cf997041019ef61df33aa2; (expected: ghcr.io/ujjwaljain16/campusslot-backend:58f286ab6ea1a3fe62cf997041019ef61df33aa2)
