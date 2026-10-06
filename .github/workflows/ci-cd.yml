@@ -27,6 +27,7 @@ jobs:
   # ------------------------------------------------------------------------------------------
   changes:
     name: Detect changes
+    timeout-minutes: 30
     runs-on: ubuntu-24.04
     outputs:
       code: ${{ steps.detect.outputs.code }}
@@ -45,6 +46,7 @@ jobs:
   # ------------------------------------------------------------------------------------------
   backend-test:
     name: Backend tests
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
@@ -76,6 +78,7 @@ jobs:
   # ------------------------------------------------------------------------------------------
   frontend-build:
     name: Frontend build
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
@@ -102,6 +105,7 @@ jobs:
   # ------------------------------------------------------------------------------------------
   postgres-integration:
     name: PostgreSQL integration tests
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
@@ -140,6 +144,7 @@ jobs:
   # ------------------------------------------------------------------------------------------
   secret-scan:
     name: Secret scan (gitleaks)
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
@@ -161,6 +166,7 @@ jobs:
   # ------------------------------------------------------------------------------------------
   static-analysis:
     name: Static analysis (Terraform and Helm)
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
@@ -263,6 +269,8 @@ jobs:
   # ------------------------------------------------------------------------------------------
   build-scan-push:
     name: Build, scan and push images
+    # These jobs wait for others, so the limit has to be longer than the longest wait.
+    timeout-minutes: 60
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-24.04
@@ -311,7 +319,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: >
-          bash .github/scripts/wait-for-jobs.sh 600
+          bash .github/scripts/wait-for-jobs.sh 1800
           "Backend tests" "Frontend build" "PostgreSQL integration tests"
           "Secret scan (gitleaks)" "Static analysis (Terraform and Helm)"
 
@@ -406,6 +414,8 @@ jobs:
   # ------------------------------------------------------------------------------------------
   deploy:
     name: Deploy with Helm (kind)
+    # These jobs wait for others, so the limit has to be longer than the longest wait.
+    timeout-minutes: 60
     if: github.event_name != 'pull_request' && needs.changes.outputs.code == 'true'
     needs: changes
     runs-on: ubuntu-24.04
@@ -466,7 +476,7 @@ jobs:
       - name: Wait for the images that the build job publishes
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash .github/scripts/wait-for-jobs.sh 900 "Build, scan and push images"
+        run: bash .github/scripts/wait-for-jobs.sh 2400 "Build, scan and push images"
 
       # Only images that this workflow built, with signed provenance, may be installed.
       - name: Verify the signed provenance and the SBOM of both images
