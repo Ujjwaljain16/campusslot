@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import random
 import time
 
 from fastapi import Depends, FastAPI, Request
@@ -29,6 +31,29 @@ def create_app() -> FastAPI:
         description="Room and laboratory slot booking for a university campus. "
         "Overlapping bookings for the same room are rejected with 409 Conflict.",
     )
+
+    faults_allowed = settings.app_env != "production"
+    if settings.fault_error_rate or settings.fault_latency_ms:
+        if faults_allowed:
+            logger.warning(
+                "fault injection is ON: %.0f percent errors, %d ms extra latency",
+                settings.fault_error_rate * 100,
+                settings.fault_latency_ms,
+            )
+        else:
+            logger.error("FAULT_* settings are ignored because APP_ENV is production")
+
+    @app.middleware("http")
+    async def inject_faults(request: Request, call_next):
+        # The probes are never touched. That is the point: the pod stays Ready while it is bad,
+        # so only the request metrics can tell, which is what a canary analysis reads.
+        if faults_allowed and request.url.path not in QUIET_PATHS:
+            if settings.fault_latency_ms:
+                await asyncio.sleep(settings.fault_latency_ms / 1000)
+            # A drill needs a random share of failures, not an unpredictable secret.
+            if settings.fault_error_rate and random.random() < settings.fault_error_rate:  # nosec B311
+                return JSONResponse(status_code=500, content={"detail": "injected fault"})
+        return await call_next(request)
 
     @app.middleware("http")
     async def log_requests(request: Request, call_next):

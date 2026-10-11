@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +21,12 @@ class Settings(BaseSettings):
     max_booking_hours: int = 12
     day_open_hour: int = 8
     day_close_hour: int = 20
+
+    # Fault injection, for drills only: a release that passes its readiness probe and then fails
+    # a share of its requests, or answers slowly. Both are off by default, and they are ignored
+    # when APP_ENV is "production", so a production pod can never be switched into this mode.
+    fault_error_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+    fault_latency_ms: int = Field(default=0, ge=0, le=5000)
 
 
 @lru_cache
