@@ -259,7 +259,7 @@ jobs:
                         "-f helm/campusslot/values-dev.yaml" \
                         "-f helm/campusslot/values-dev.yaml -f gitops/values.yaml" \
                         "-f helm/campusslot/values-dev.yaml --set rollout.enabled=true" \
-                        "-f helm/campusslot/values-dev.yaml --set networkPolicy.enabled=true" \
+                        "-f helm/campusslot/values-dev.yaml --set networkPolicy.enabled=true --set tracing.enabled=true" \
                         "-f helm/campusslot/values-dev.yaml --set postgres.operator.enabled=true --set postgres.operator.backup.enabled=true --set postgres.operator.synchronous=true --set networkPolicy.enabled=true"; do
             echo "== helm template $values"
             helm template campusslot helm/campusslot $values \
@@ -269,6 +269,9 @@ jobs:
           # The admission policies of policies/. The Kyverno policy has no schema here, so it is only parsed.
           echo "== policies"
           ./kubeconform -strict -summary -ignore-missing-schemas -kubernetes-version 1.36.0 policies/admission policies/kyverno
+          # The Grafana dashboards must at least be valid JSON, because a broken file is only found when the sidecar fails to load it.
+          echo "== dashboards"
+          for f in monitoring/*.json; do python3 -c "import json,sys; json.load(open(sys.argv[1])); print('valid JSON:', sys.argv[1])" "$f"; done
 
   # ------------------------------------------------------------------------------------------
   # Build both images in parallel, scan them with Trivy, and push to GHCR only if both are clean AND

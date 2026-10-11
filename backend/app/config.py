@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     day_open_hour: int = 8
     day_close_hour: int = 20
 
+    # Tracing is off unless an OTLP endpoint is given, for example http://tempo.monitoring.svc:4318
+    # (the standard OTEL_* variables). The share of the traces that are kept is between 0 and 1.
+    otel_exporter_otlp_endpoint: str = ""
+    otel_service_name: str = "campusslot-backend"
+    otel_traces_sampler_arg: float = Field(default=1.0, ge=0.0, le=1.0)
+
     # Fault injection, for drills only: a release that passes its readiness probe and then fails
     # a share of its requests, or answers slowly. Both are off by default, and they are ignored
     # when APP_ENV is "production", so a production pod can never be switched into this mode.

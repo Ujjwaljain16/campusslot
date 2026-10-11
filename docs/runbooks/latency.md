@@ -15,6 +15,7 @@ Pages feel slow. This usually comes before errors.
 1. In Grafana, check the latency percentiles panel and the CPU per pod panel.
 2. `kubectl top pods -n campusslot`
 3. `kubectl get hpa -n campusslot`
+4. With tracing on (`tracing.enabled`), open the **CampusSlot SLO** dashboard: the table of slow traces and the log lines of the slow requests are on the same page. Open a trace and read where the time went: a long database span points at the database, a long request span with a short database part points at the application, and a gap in front of the handler points at a queue or a pause. The same `trace_id` opens the log lines of that request ([linked signals](../engineering/linked-signals.md)).
 
 ## Mitigate
 

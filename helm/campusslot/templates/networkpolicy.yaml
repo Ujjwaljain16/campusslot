@@ -97,6 +97,15 @@ spec:
               {{- $postgres | nindent 14 }}
       ports:
         - { protocol: TCP, port: 5432 }
+    {{- if .Values.tracing.enabled }}
+    # The traces go to Tempo (OTLP over HTTP).
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.tracing.namespace }}
+      ports:
+        - { protocol: TCP, port: 4318 }
+    {{- end }}
 {{- if .Values.postgres.enabled }}
 ---
 # The database receives the backend, the migration job and the backup job, and calls nothing.

@@ -39,13 +39,35 @@ prometheus:
 
 grafana:
   defaultDashboardsEnabled: false
-  # Logs are queried from Loki, which is installed by scripts/install-monitoring.sh.
+  # Logs are queried from Loki (scripts/install-monitoring.sh) and traces from Tempo (scripts/install-tracing.sh).
+  # The two data sources point at each other, so that one click goes from a log line to its trace and from a span to
+  # the log lines of the same request. A "$" has to be written "$$" in a provisioning file.
   additionalDataSources:
     - name: Loki
       uid: loki
       type: loki
       access: proxy
       url: http://loki.monitoring.svc.cluster.local:3100
+      jsonData:
+        derivedFields:
+          # The backend writes "trace_id": "<32 hex digits>" into the line of every traced request.
+          - name: trace_id
+            matcherRegex: '"trace_id": "(\w+)"'
+            url: '$${__value.raw}'
+            datasourceUid: tempo
+            urlDisplayLabel: Open the trace
+    - name: Tempo
+      uid: tempo
+      type: tempo
+      access: proxy
+      url: http://tempo.monitoring.svc.cluster.local:3200
+      jsonData:
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: -1m
+          spanEndTimeShift: 1m
+          customQuery: true
+          query: '{namespace="campusslot"} | json | trace_id="$${__trace.traceId}"'
   # The sidecar loads every ConfigMap labelled grafana_dashboard=1, in any namespace.
   sidecar:
     dashboards:

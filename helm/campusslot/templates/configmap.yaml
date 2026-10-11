@@ -10,3 +10,8 @@ data:
   {{- range $key, $value := .Values.backend.env }}
   {{ $key }}: {{ $value | quote }}
   {{- end }}
+  {{- if .Values.tracing.enabled }}
+  # The standard OpenTelemetry variables. The application starts tracing when the endpoint is set.
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.tracing.endpoint | quote }}
+  OTEL_TRACES_SAMPLER_ARG: {{ .Values.tracing.sampleRatio | quote }}
+  {{- end }}

@@ -12,6 +12,14 @@ class Base(DeclarativeBase):
 
 _engine: Engine | None = None
 _session_factory: sessionmaker[Session] | None = None
+_tracer_provider = None
+
+
+def set_tracer_provider(provider) -> None:
+    """Tracing is set up before the engine exists (it is created on the first request), so the
+    provider is remembered here and the engine is instrumented when it is created."""
+    global _tracer_provider
+    _tracer_provider = provider
 
 
 def get_engine() -> Engine:
@@ -23,6 +31,10 @@ def get_engine() -> Engine:
         if url.startswith("sqlite"):
             options["connect_args"] = {"check_same_thread": False}
         _engine = create_engine(url, **options)
+        if _tracer_provider is not None:
+            from .tracing import instrument_engine
+
+            instrument_engine(_engine, _tracer_provider)
         _session_factory = sessionmaker(bind=_engine, autoflush=False, expire_on_commit=False)
     return _engine
 

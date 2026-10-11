@@ -167,6 +167,19 @@ rollout:
     # Equal to the share of failures that the availability SLO already treats as a problem, with some margin.
     maxErrorRatio: 0.02
 
+# Distributed tracing: every API request becomes a trace in Tempo, and its trace id is written into the log lines of the
+# request and returned in the X-Trace-Id header. Needs Tempo (scripts/install-tracing.sh). Off by default, because the
+# CI cluster has no Tempo and the application then runs exactly as before.
+tracing:
+  enabled: false
+  # The OTLP over HTTP endpoint of Tempo, in the namespace of the monitoring stack.
+  endpoint: http://tempo.monitoring.svc.cluster.local:4318
+  # The share of the traces that are kept, between 0 and 1. All of them is right for a drill and a small service. A busy
+  # service keeps a fraction, and keeps every trace that failed or was slow by sampling in a collector.
+  sampleRatio: "1.0"
+  # The namespace of Tempo, for the network policy.
+  namespace: monitoring
+
 # Default deny and an allow list of the connections that the application needs (templates/networkpolicy.yaml).
 # Only enforced by a network plugin that supports NetworkPolicy (Calico, Cilium). Off by default, because
 # the CI cluster (kind) and a default Minikube do not enforce it.

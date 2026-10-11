@@ -21,3 +21,4 @@ Short records of the choices that shaped this project, with the options that I r
 | [0015](0015-canary-releases-judged-by-their-own-metrics.md) | Judge canary releases by their own metrics (v2) |
 | [0016](0016-admission-policy-and-default-deny-networking.md) | Enforce what may run, and what may talk, at the cluster (v2) |
 | [0017](0017-database-run-by-an-operator.md) | Let an operator run the database, with a replica and a continuous archive (v2) |
+| [0018](0018-link-metrics-traces-and-logs-by-trace-id.md) | Link metrics, traces and logs by one trace id (v2) |

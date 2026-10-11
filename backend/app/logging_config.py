@@ -10,6 +10,8 @@ import logging
 import sys
 from datetime import UTC, datetime
 
+from opentelemetry import trace
+
 # Attributes that every LogRecord has. Anything else came from ``extra=`` and is added to the line.
 _RESERVED = set(logging.makeLogRecord({}).__dict__) | {"message", "asctime"}
 
@@ -24,6 +26,12 @@ class JsonFormatter(logging.Formatter):
             "logger": record.name,
             "message": record.getMessage(),
         }
+        # A log line written while a span is active carries its ids, so Grafana can jump from the
+        # line to the trace in Tempo (a derived field on trace_id) and back from the trace.
+        context = trace.get_current_span().get_span_context()
+        if context.is_valid:
+            line["trace_id"] = format(context.trace_id, "032x")
+            line["span_id"] = format(context.span_id, "016x")
         for key, value in record.__dict__.items():
             if key not in _RESERVED and not key.startswith("_"):
                 line[key] = value

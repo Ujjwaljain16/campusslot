@@ -5,6 +5,7 @@ import time
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
+from opentelemetry import trace
 from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import InterfaceError, OperationalError, SQLAlchemyError
@@ -12,9 +13,10 @@ from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 from sqlalchemy.orm import Session
 
 from .config import get_settings
-from .db import get_db
+from .db import get_db, set_tracer_provider
 from .logging_config import configure_logging
 from .routes import bookings, rooms
+from .tracing import setup_tracing
 
 settings = get_settings()
 configure_logging(settings.log_level)
@@ -69,6 +71,10 @@ def create_app() -> FastAPI:
                     "duration_ms": round((time.perf_counter() - started) * 1000, 1),
                 },
             )
+        # The trace of this request, so that a user, a log line or a support ticket can quote it.
+        span_context = trace.get_current_span().get_span_context()
+        if span_context.is_valid:
+            response.headers["X-Trace-Id"] = format(span_context.trace_id, "032x")
         return response
 
     # A database that cannot be reached is a known failure, not a bug. A handled 503 tells clients
@@ -130,6 +136,12 @@ def create_app() -> FastAPI:
             "day_open_hour": settings.day_open_hour,
             "day_close_hour": settings.day_close_hour,
         }
+
+    # Tracing is off unless an OTLP endpoint is configured. The engine is created later, on the
+    # first request, so the provider is handed to the database module.
+    provider = setup_tracing(app, settings)
+    if provider is not None:
+        set_tracer_provider(provider)
 
     # Probes and the metrics endpoint are excluded so request-rate panels show real user traffic.
     Instrumentator(excluded_handlers=["/metrics", "/health", "/ready"]).instrument(app).expose(

@@ -1,0 +1,24 @@
+# Grafana Tempo as a single binary, trimmed to fit a 3.5 GB Minikube node next to the application.
+#
+#   helm upgrade --install tempo grafana/tempo -n monitoring --version 1.24.4 -f monitoring/tempo-values.yaml
+#
+# The application sends its traces here over OTLP/HTTP (port 4318, helm value tracing.endpoint). Grafana reads them
+# from port 3200, through the Tempo data source that monitoring/kube-prometheus-stack-values.yaml provisions.
+#
+# Traces are kept for 6 hours and live in memory and on the pod's own disk, not on a volume: they are for
+# finding out what a slow request did, not for an archive, and a restart of the pod starts with an empty store.
+tempo:
+  retention: 6h
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+        grpc:
+          endpoint: 0.0.0.0:4317
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 384Mi }
+
+persistence:
+  enabled: false
