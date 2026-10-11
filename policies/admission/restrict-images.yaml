@@ -1,7 +1,9 @@
 # Admission policy built into Kubernetes (ValidatingAdmissionPolicy, CEL, no controller to run).
 # In the campusslot namespace, a pod may only run:
 #   - the project's own images, from ghcr.io/ujjwaljain16/campusslot-*, or the pinned postgres image,
-#   - with an explicit tag that is not "latest", so that what runs can always be traced to a commit.
+#   - the images of the CloudNativePG operator and its PostgreSQL, from ghcr.io/cloudnative-pg/ (only needed when
+#     postgres.operator.enabled is on: the database pods, their bootstrap container and the backup sidecar),
+#   - with an explicit tag that is not "latest", so that what runs can always be traced to a version.
 # Everything else is refused at admission, before a pod exists.
 #
 #   kubectl apply -f policies/admission/restrict-images.yaml
@@ -18,18 +20,20 @@ spec:
         operations: ["CREATE", "UPDATE"]
         resources: ["pods"]
   variables:
+    - name: allowed
+      expression: >-
+        ['ghcr.io/ujjwaljain16/campusslot-', 'postgres:', 'ghcr.io/cloudnative-pg/']
     - name: images
       expression: >-
         object.spec.containers.map(c, c.image) +
         (has(object.spec.initContainers) ? object.spec.initContainers.map(c, c.image) : [])
   validations:
     - expression: >-
-        variables.images.all(i,
-          i.startsWith('ghcr.io/ujjwaljain16/campusslot-') || i.startsWith('postgres:'))
+        variables.images.all(i, variables.allowed.exists(p, i.startsWith(p)))
       messageExpression: >-
-        'image not allowed in this namespace: ' + variables.images.filter(i,
-          !(i.startsWith('ghcr.io/ujjwaljain16/campusslot-') || i.startsWith('postgres:'))).join(', ') +
-        '. Only ghcr.io/ujjwaljain16/campusslot-* and postgres are permitted.'
+        'image not allowed in this namespace: ' +
+        variables.images.filter(i, !variables.allowed.exists(p, i.startsWith(p))).join(', ') +
+        '. Allowed prefixes: ' + variables.allowed.join(', ')
       reason: Forbidden
     - expression: >-
         variables.images.all(i, i.contains(':') && !i.endsWith(':latest'))

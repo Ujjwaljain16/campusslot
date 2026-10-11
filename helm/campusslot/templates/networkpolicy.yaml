@@ -124,6 +124,42 @@ spec:
               {{- $backup | nindent 14 }}
       ports:
         - { protocol: TCP, port: 5432 }
+{{- if .Values.postgres.operator.enabled }}
+    # Operator mode: the replicas stream from the primary, and the operator talks to the status port of every
+    # instance. The operator pods run in their own namespace.
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- $postgres | nindent 14 }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.operatorNamespace }}
+      ports:
+        - { protocol: TCP, port: 5432 }
+        - { protocol: TCP, port: 8000 }
+  egress:
+    # The instances call each other, and the Kubernetes API (the instance manager updates the status of the
+    # cluster there). The API server address depends on the cluster, so only its ports are allowed.
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- $postgres | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: 5432 }
+        - { protocol: TCP, port: 8000 }
+    - ports:
+        - { protocol: TCP, port: 443 }
+        - { protocol: TCP, port: 6443 }
+    {{- if .Values.postgres.operator.backup.enabled }}
+    # The WAL and the base backups go to the object store.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.objectStoreNamespace }}
+      ports:
+        - { protocol: TCP, port: 9000 }
+    {{- end }}
+{{- end }}
 ---
 # The two jobs call the database and nothing else.
 apiVersion: networking.k8s.io/v1

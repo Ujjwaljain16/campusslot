@@ -1,0 +1,89 @@
+# A single node S3 compatible object store (RustFS) for the database backups of a LAPTOP cluster. In production
+# this is Amazon S3 or another managed object store, and none of this file is needed: only the endpoint and the
+# credentials in the chart values change.
+#
+# It lives in its own namespace, outside the application's namespace and its image policy, and it is installed by
+# scripts/install-objectstore.sh, which also creates the credentials. The image tag is a setting of that script
+# (OBJECTSTORE_IMAGE), because the project that publishes it changes its tags often and this one was not verified
+# on a cluster yet.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: object-store
+  labels:
+    # The image runs as the user that it was built for, so the restricted profile of the application namespace is
+    # not enforced here. It is warned about, so that the gap stays visible.
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rustfs-data
+  namespace: object-store
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rustfs
+  namespace: object-store
+  labels:
+    app.kubernetes.io/name: rustfs
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate   # one volume that cannot be mounted by two pods at once
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rustfs
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rustfs
+    spec:
+      containers:
+        - name: rustfs
+          image: ${OBJECTSTORE_IMAGE}
+          ports:
+            - name: s3
+              containerPort: 9000
+          env:
+            - name: RUSTFS_ACCESS_KEY
+              valueFrom: { secretKeyRef: { name: object-store-credentials, key: ACCESS_KEY_ID } }
+            - name: RUSTFS_SECRET_KEY
+              valueFrom: { secretKeyRef: { name: object-store-credentials, key: ACCESS_SECRET_KEY } }
+            - name: RUSTFS_VOLUMES
+              value: /data
+            - name: RUSTFS_ADDRESS
+              value: ":9000"
+          readinessProbe:
+            httpGet: { path: /health, port: s3 }
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 384Mi }
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: rustfs-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rustfs
+  namespace: object-store
+spec:
+  selector:
+    app.kubernetes.io/name: rustfs
+  ports:
+    - name: s3
+      port: 9000
+      targetPort: s3

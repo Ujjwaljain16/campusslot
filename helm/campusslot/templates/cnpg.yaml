@@ -1,0 +1,114 @@
+{{- if and .Values.postgres.enabled .Values.postgres.operator.enabled }}
+{{- $op := .Values.postgres.operator }}
+{{- $cluster := include "campusslot.pgClusterName" . }}
+{{- $password := required "postgres.password is required: pass it at install time with --set-string postgres.password=<value>" .Values.postgres.password }}
+# The database as a CloudNativePG Cluster: a primary and replicas, streaming replication, and automatic failover.
+# The operator creates the Services "<cluster>-rw" (always the primary), "-ro" (replicas) and "-r" (any instance).
+# The backend connects to "-rw", so after a failover it reconnects to the new primary without any change.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $cluster }}-app
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+type: kubernetes.io/basic-auth
+stringData:
+  username: {{ .Values.postgres.username | quote }}
+  password: {{ $password | quote }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ $cluster }}
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  instances: {{ $op.instances }}
+  imageName: {{ $op.imageName | quote }}
+  # The pods carry the labels of the "postgres" component, so the network policies and the alerts
+  # of the single pod database apply to them without a change.
+  inheritedMetadata:
+    labels:
+      {{- include "campusslot.selectorLabels" (dict "root" . "component" "postgres") | nindent 6 }}
+  bootstrap:
+    initdb:
+      database: {{ .Values.postgres.database | quote }}
+      owner: {{ .Values.postgres.username | quote }}
+      secret:
+        name: {{ $cluster }}-app
+  storage:
+    size: {{ .Values.postgres.persistence.size }}
+    {{- with .Values.postgres.persistence.storageClass }}
+    storageClass: {{ . | quote }}
+    {{- end }}
+  resources:
+    {{- toYaml $op.resources | nindent 4 }}
+  {{- if or $op.backup.enabled $op.synchronous }}
+  postgresql:
+    {{- if $op.backup.enabled }}
+    parameters:
+      archive_timeout: {{ $op.backup.archiveTimeout | quote }}
+    {{- end }}
+    {{- if $op.synchronous }}
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: required
+    {{- end }}
+  {{- end }}
+  {{- if $op.monitoring }}
+  monitoring:
+    enablePodMonitor: true
+  {{- end }}
+  {{- if $op.backup.enabled }}
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: {{ $cluster }}-store
+  {{- end }}
+{{- if $op.backup.enabled }}
+---
+# Where the WAL and the base backups go. The bucket has to exist (scripts/install-objectstore.sh creates it).
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: {{ $cluster }}-store
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  retentionPolicy: {{ $op.backup.retention | quote }}
+  configuration:
+    destinationPath: {{ $op.backup.destinationPath | quote }}
+    endpointURL: {{ $op.backup.endpointURL | quote }}
+    s3Credentials:
+      accessKeyId:
+        name: {{ $op.backup.credentialsSecret }}
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: {{ $op.backup.credentialsSecret }}
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
+---
+# A base backup on a schedule, and one at once when the object is created, so that point-in-time recovery has
+# a starting point from the first minute.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: {{ $cluster }}
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  schedule: {{ $op.backup.schedule | quote }}
+  immediate: true
+  backupOwnerReference: self
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+  cluster:
+    name: {{ $cluster }}
+{{- end }}
+{{- end }}

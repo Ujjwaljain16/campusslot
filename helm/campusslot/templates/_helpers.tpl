@@ -47,6 +47,21 @@ app.kubernetes.io/component: {{ .component }}
 {{- default (printf "%s-database" (include "campusslot.fullname" .)) .Values.database.existingSecret -}}
 {{- end -}}
 
+{{/* Name of the CloudNativePG Cluster, when the operator runs the database (postgres.operator.enabled). */}}
+{{- define "campusslot.pgClusterName" -}}
+{{- printf "%s-pg" (include "campusslot.fullname" .) -}}
+{{- end -}}
+
+{{/* The host that the backend and the jobs connect to: the read-write Service of the operator's cluster, which always
+points at the current primary, or the Service of the single pod StatefulSet. */}}
+{{- define "campusslot.databaseHost" -}}
+{{- if .Values.postgres.operator.enabled -}}
+{{- printf "%s-rw" (include "campusslot.pgClusterName" .) -}}
+{{- else -}}
+{{- printf "%s-postgres" (include "campusslot.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Hardened container defaults: no privilege escalation, no capabilities, read-only filesystem. */}}
 {{- define "campusslot.containerSecurityContext" -}}
 allowPrivilegeEscalation: false

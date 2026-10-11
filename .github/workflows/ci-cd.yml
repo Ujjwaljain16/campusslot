@@ -253,12 +253,14 @@ jobs:
           tar -xzf kubeconform-linux-amd64.tar.gz kubeconform
           # The value sets that are really used: CI, local development, and what Argo CD renders. Then the
           # optional parts: the canary variant (an Argo Rollout and an AnalysisTemplate have no schema here,
-          # so they are only checked to render and to be valid YAML) and the network policies.
+          # so they are only checked to render and to be valid YAML), the network policies, and the database that
+          # the CloudNativePG operator runs (its Cluster, ObjectStore and ScheduledBackup have no schema here either).
           for values in "-f helm/campusslot/values-ci.yaml" \
                         "-f helm/campusslot/values-dev.yaml" \
                         "-f helm/campusslot/values-dev.yaml -f gitops/values.yaml" \
                         "-f helm/campusslot/values-dev.yaml --set rollout.enabled=true" \
-                        "-f helm/campusslot/values-dev.yaml --set networkPolicy.enabled=true"; do
+                        "-f helm/campusslot/values-dev.yaml --set networkPolicy.enabled=true" \
+                        "-f helm/campusslot/values-dev.yaml --set postgres.operator.enabled=true --set postgres.operator.backup.enabled=true --set postgres.operator.synchronous=true --set networkPolicy.enabled=true"; do
             echo "== helm template $values"
             helm template campusslot helm/campusslot $values \
               --set backend.image.tag=ci --set frontend.image.tag=ci --set-string postgres.password=ci \

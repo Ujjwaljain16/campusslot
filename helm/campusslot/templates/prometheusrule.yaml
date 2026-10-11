@@ -99,7 +99,12 @@ spec:
             runbook_url: {{ $runbooks }}/backend-not-ready.md
 
         - alert: CampusSlotDatabaseDown
+          {{- if .Values.postgres.operator.enabled }}
+          # With the operator, "down" means that not a single instance is ready. One lost instance is a warning below.
+          expr: (sum(kube_pod_status_ready{namespace="{{ $ns }}", condition="true", pod=~"{{ include "campusslot.pgClusterName" . }}-[0-9]+"}) or vector(0)) < 1
+          {{- else }}
           expr: kube_statefulset_status_replicas_ready{namespace="{{ $ns }}", statefulset="{{ include "campusslot.fullname" . }}-postgres"} < 1
+          {{- end }}
           for: 2m
           labels:
             severity: critical
@@ -107,6 +112,19 @@ spec:
             summary: The PostgreSQL pod is not ready
             description: The database has been unavailable for 2 minutes. The backend answers 503 on /ready and receives no traffic.
             runbook_url: {{ $runbooks }}/database-down.md
+        {{- if .Values.postgres.operator.enabled }}
+
+        - alert: CampusSlotDatabaseReplicaMissing
+          # The database still works, but a failover has nowhere to go, and the synchronous commits (if on) may wait.
+          expr: (sum(kube_pod_status_ready{namespace="{{ $ns }}", condition="true", pod=~"{{ include "campusslot.pgClusterName" . }}-[0-9]+"}) or vector(0)) < {{ .Values.postgres.operator.instances }}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: A PostgreSQL instance is missing
+            description: Fewer than {{ .Values.postgres.operator.instances }} database instances have been ready for 5 minutes, so the cluster has no spare replica to fail over to.
+            runbook_url: {{ $runbooks }}/database-down.md
+        {{- end }}
 
         - alert: CampusSlotAutoscalerAtMaximum
           expr: |

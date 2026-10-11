@@ -64,7 +64,7 @@ spec:
                   echo "kept: $(ls -1 /backups/*.dump | wc -l) backup(s)"
               env:
                 - name: PGHOST
-                  value: {{ include "campusslot.fullname" . }}-postgres
+                  value: {{ include "campusslot.databaseHost" . }}
                 - name: PGDATABASE
                   value: {{ .Values.postgres.database | quote }}
                 - name: PGUSER

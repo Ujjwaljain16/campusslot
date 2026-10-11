@@ -67,6 +67,39 @@ postgres:
   resources:
     requests: { cpu: 150m, memory: 64Mi }
     limits: { cpu: 500m, memory: 256Mi }
+  # A highly available database run by the CloudNativePG operator, instead of the single pod above
+  # (scripts/install-cnpg.sh first). One primary and one or more replicas: when the primary is lost, the
+  # operator promotes a replica by itself, and the "-rw" Service that the backend connects to follows it.
+  # Off by default: it needs the operator, and the CI cluster tests the single pod path.
+  operator:
+    enabled: false
+    instances: 2
+    imageName: ghcr.io/cloudnative-pg/postgresql:16
+    # false: asynchronous replication, so a failover can lose the last few transactions that the old primary
+    # acknowledged. true: a commit waits for one replica (quorum), so an acknowledged write survives a
+    # failover, and writes pause while no replica is available. The CloudNativePG documentation advises
+    # three instances for this, so that losing one still leaves a replica.
+    synchronous: false
+    resources:
+      requests: { cpu: 150m, memory: 128Mi }
+      limits: { cpu: 500m, memory: 384Mi }
+    monitoring: false
+    # Continuous archiving of the WAL and scheduled base backups to S3 compatible storage with the Barman Cloud
+    # plugin. Together they make point-in-time recovery possible. Needs cert-manager, the plugin
+    # (scripts/install-cnpg.sh with WITH_BACKUP=1) and an object store (scripts/install-objectstore.sh).
+    backup:
+      enabled: false
+      destinationPath: s3://campusslot-backups/
+      endpointURL: http://rustfs.object-store.svc:9000
+      # A Secret in this namespace with ACCESS_KEY_ID and ACCESS_SECRET_KEY, created by the install script
+      # and never stored in Git.
+      credentialsSecret: object-store-credentials
+      # The schedule has six fields, and the first one is the seconds.
+      schedule: "0 0 */6 * * *"
+      retention: 7d
+      # The longest time that a WAL segment waits before it is archived. It is the data loss window (RPO) of the
+      # archive when the whole cluster is lost.
+      archiveTimeout: 60s
 
 # Scheduled pg_dump of the in-cluster database to its own volume (see docs/engineering/backup-drill.md).
 # The time between two backups is the worst case data loss (RPO). This copy lives in the same
@@ -142,6 +175,9 @@ networkPolicy:
   # The namespaces of the ingress controller and of Prometheus, which may reach the backend.
   ingressNamespace: ingress-nginx
   monitoringNamespace: monitoring
+  # Used when postgres.operator is on: the namespace of the operator, and of the object store for the backups.
+  operatorNamespace: cnpg-system
+  objectStoreNamespace: object-store
 
 pdb:
   enabled: true
