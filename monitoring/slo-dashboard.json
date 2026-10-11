@@ -18,20 +18,22 @@
     "list": [
       {
         "name": "namespace",
-        "type": "custom",
-        "query": "campusslot",
-        "current": {
-          "text": "campusslot",
-          "value": "campusslot"
+        "label": "Environment (namespace)",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
         },
-        "options": [
-          {
-            "text": "campusslot",
-            "value": "campusslot",
-            "selected": true
-          }
-        ],
-        "hide": 2
+        "query": {
+          "query": "label_values(http_requests_total, namespace)",
+          "refId": "ns"
+        },
+        "regex": "/campusslot.*/",
+        "refresh": 2,
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "current": {}
       }
     ]
   },

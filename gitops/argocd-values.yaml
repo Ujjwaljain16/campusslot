@@ -3,6 +3,10 @@
 #   helm upgrade --install argocd argo/argo-cd -n argocd --create-namespace --version 10.9.6 -f gitops/argocd-values.yaml
 configs:
   cm:
+    # How often Argo CD asks Git whether anything changed. The default is 3 minutes, which is a long wait in a drill.
+    # A laptop cluster has no address that a GitHub webhook could call, so it polls. A production cluster would use the
+    # webhook (a push is seen at once) and keep a slow poll as a safety net.
+    timeout.reconciliation: 30s
     # After a rollout the metrics server needs about a minute to see the new pods. During that window an
     # HPA reports that it cannot read metrics, which Argo CD would call Degraded and answer with a
     # failed sync and a retry (and a repeated migration). That state is progress, not failure.
@@ -24,6 +28,7 @@ dex:
   enabled: false
 notifications:
   enabled: false
-# This version of the chart has no enabled switch for the ApplicationSet controller, so it is scaled to zero.
+# The ApplicationSet controller makes one Application per environment (gitops/applicationset.yaml). In v1 it was
+# scaled to zero to save memory, because a single Application needs no generator. It needs about 50 MB.
 applicationSet:
-  replicas: 0
+  replicas: 1

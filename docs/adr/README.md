@@ -22,3 +22,4 @@ Short records of the choices that shaped this project, with the options that I r
 | [0016](0016-admission-policy-and-default-deny-networking.md) | Enforce what may run, and what may talk, at the cluster (v2) |
 | [0017](0017-database-run-by-an-operator.md) | Let an operator run the database, with a replica and a continuous archive (v2) |
 | [0018](0018-link-metrics-traces-and-logs-by-trace-id.md) | Link metrics, traces and logs by one trace id (v2) |
+| [0019](0019-environments-as-directories-promotion-by-pull-request.md) | Environments as directories, and promotion by pull request (v2) |

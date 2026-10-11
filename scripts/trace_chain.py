@@ -54,6 +54,7 @@ def main() -> int:
     ap.add_argument("--prometheus", default="http://localhost:9090")
     ap.add_argument("--tempo", default="http://localhost:3200")
     ap.add_argument("--loki", default="http://localhost:3100")
+    ap.add_argument("--namespace", default="campusslot.*", help="a regular expression: any environment by default")
     ap.add_argument("--requests", type=int, default=40)
     ap.add_argument("--slow-ms", type=int, default=250)
     ap.add_argument("--wait", type=int, default=45, help="seconds to wait for Tempo and Loki to show the request")
@@ -138,7 +139,7 @@ def main() -> int:
     while time.time() < deadline and not lines:
         try:
             now = time.time_ns()
-            query = f'{{namespace="campusslot", component="backend"}} | json | trace_id="{trace_id}"'
+            query = f'{{namespace=~"{args.namespace}", component="backend"}} | json | trace_id="{trace_id}"'
             params = {"query": query, "start": now - 900 * 10**9, "end": now + 60 * 10**9, "limit": 20}
             logs = get_json(f"{args.loki}/loki/api/v1/query_range?" + urllib.parse.urlencode(params))
             for stream in logs["data"]["result"]:

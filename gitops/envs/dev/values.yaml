@@ -1,0 +1,41 @@
+# The dev environment: the first place that a build arrives. A change to this file, committed to the
+# branch that Argo CD tracks, is what is rolled out here, and a manual change in the cluster is undone.
+#
+# Promotion: scripts/promote.py (or the "Promote" workflow) opens a pull request that changes the two
+# tags below. dev takes any build of this repository. staging takes only what dev runs now.
+backend:
+  image:
+    tag: "c0d5a17a0c002264fdf6c7c4be08faf29cb630f2"
+  replicaCount: 1
+  env:
+    APP_ENV: development
+    LOG_LEVEL: DEBUG
+frontend:
+  image:
+    tag: "c0d5a17a0c002264fdf6c7c4be08faf29cb630f2"
+  replicaCount: 1
+
+ingress:
+  host: dev.campusslot.test
+
+# Laptop sized: one pod of each, no autoscaler, and no monitoring objects (the laptop cluster of the
+# promotion drill has no Prometheus). The same chart, with more of these switched on, is staging and prod.
+hpa:
+  enabled: false
+pdb:
+  enabled: false
+serviceMonitor:
+  enabled: false
+prometheusRule:
+  enabled: false
+backup:
+  enabled: false
+
+# The database password is never stored in Git. scripts/gitops-drill.sh creates this Secret in the
+# namespace of the environment, with a random password, and the chart reads the connection string from it.
+database:
+  existingSecret: campusslot-db
+
+# Argo CD does not know the Helm release revision, so the migration runs as a sync hook instead.
+migration:
+  argocdHook: true

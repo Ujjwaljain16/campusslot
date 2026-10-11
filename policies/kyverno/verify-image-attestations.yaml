@@ -27,7 +27,8 @@ spec:
         any:
           - resources:
               kinds: [Pod]
-              namespaces: [campusslot]
+              # The namespace of v1 and one per environment (campusslot-dev, -staging, -prod).
+              namespaces: ["campusslot", "campusslot-*"]
       verifyImages:
         - imageReferences:
             - "ghcr.io/ujjwaljain16/campusslot-*"

@@ -1,0 +1,38 @@
+# One namespace per environment, with the same Pod Security profile as the single namespace of v1
+# (k8s/namespace.yaml): the "restricted" profile is enforced everywhere, so an environment cannot be
+# more permissive than another. The label app.kubernetes.io/part-of is what the image policy of
+# policies/admission selects, so it covers every environment without a list of names.
+#
+#   kubectl apply -f k8s/environments.yaml        # (scripts/gitops-drill.sh does this)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: campusslot-dev
+  labels:
+    app.kubernetes.io/name: campusslot
+    app.kubernetes.io/part-of: campusslot
+    campusslot.io/environment: dev
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: campusslot-staging
+  labels:
+    app.kubernetes.io/name: campusslot
+    app.kubernetes.io/part-of: campusslot
+    campusslot.io/environment: staging
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: campusslot-prod
+  labels:
+    app.kubernetes.io/name: campusslot
+    app.kubernetes.io/part-of: campusslot
+    campusslot.io/environment: prod
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted

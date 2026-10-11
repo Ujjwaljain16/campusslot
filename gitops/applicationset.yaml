@@ -1,0 +1,65 @@
+# One Argo CD Application per environment, made from one template: dev, staging and prod.
+#
+# The chart is the same everywhere. What differs is a values file per environment (gitops/envs/<env>/values.yaml),
+# and one rule in the sync policy: dev and staging are synchronised automatically, and a manual change in the
+# cluster is undone (selfHeal). prod is NOT synchronised automatically: a merged promotion makes the application
+# OutOfSync, and a person synchronises it. That is the approval gate that Argo CD itself enforces, on top of the pull
+# request review that is required before the promotion is merged.
+#
+#   kubectl apply -f gitops/applicationset.yaml           # all three
+#   python3 scripts/promote.py appset --envs dev,staging | kubectl apply -f -     # the laptop: without prod
+#
+# The branch that Argo CD follows is targetRevision. It is the v2 branch while the work is not merged, and main
+# after it is. The promotion pull requests are opened against the same branch.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: campusslot
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - env: dev
+            autoSync: "true"
+          - env: staging
+            autoSync: "true"
+          - env: prod
+            autoSync: "false"
+  template:
+    metadata:
+      name: "campusslot-{{.env}}"
+      labels:
+        campusslot.io/environment: "{{.env}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Ujjwaljain16/campusslot.git
+        targetRevision: v2
+        path: helm/campusslot
+        helm:
+          releaseName: campusslot
+          valueFiles:
+            - values-dev.yaml
+            # What makes this environment: the image tags (the promotion changes these) and its settings.
+            - "../../gitops/envs/{{.env}}/values.yaml"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "campusslot-{{.env}}"
+  # The sync policy differs per environment, so it is added by a patch of the template.
+  templatePatch: |
+    {{- if eq .autoSync "true" }}
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 3
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 2m
+    {{- end }}

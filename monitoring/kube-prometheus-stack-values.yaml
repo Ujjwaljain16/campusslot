@@ -67,7 +67,7 @@ grafana:
           spanStartTimeShift: -1m
           spanEndTimeShift: 1m
           customQuery: true
-          query: '{namespace="campusslot"} | json | trace_id="$${__trace.traceId}"'
+          query: '{namespace=~"campusslot.*"} | json | trace_id="$${__trace.traceId}"'
   # The sidecar loads every ConfigMap labelled grafana_dashboard=1, in any namespace.
   sidecar:
     dashboards:

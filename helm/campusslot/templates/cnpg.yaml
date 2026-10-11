@@ -1,14 +1,16 @@
 {{- if and .Values.postgres.enabled .Values.postgres.operator.enabled }}
 {{- $op := .Values.postgres.operator }}
 {{- $cluster := include "campusslot.pgClusterName" . }}
-{{- $password := required "postgres.password is required: pass it at install time with --set-string postgres.password=<value>" .Values.postgres.password }}
+{{- $appSecret := default (printf "%s-app" $cluster) $op.appSecret }}
 # The database as a CloudNativePG Cluster: a primary and replicas, streaming replication, and automatic failover.
 # The operator creates the Services "<cluster>-rw" (always the primary), "-ro" (replicas) and "-r" (any instance).
 # The backend connects to "-rw", so after a failover it reconnects to the new primary without any change.
+{{- if not $op.appSecret }}
+{{- $password := required "postgres.password is required: pass it at install time with --set-string postgres.password=<value>, or name an existing Secret in postgres.operator.appSecret" .Values.postgres.password }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ $cluster }}-app
+  name: {{ $appSecret }}
   labels:
     {{- include "campusslot.labels" . | nindent 4 }}
 type: kubernetes.io/basic-auth
@@ -16,6 +18,7 @@ stringData:
   username: {{ .Values.postgres.username | quote }}
   password: {{ $password | quote }}
 ---
+{{- end }}
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -35,7 +38,7 @@ spec:
       database: {{ .Values.postgres.database | quote }}
       owner: {{ .Values.postgres.username | quote }}
       secret:
-        name: {{ $cluster }}-app
+        name: {{ $appSecret }}
   storage:
     size: {{ .Values.postgres.persistence.size }}
     {{- with .Values.postgres.persistence.storageClass }}

@@ -1,0 +1,61 @@
+# The prod environment: what staging runs, promoted by a pull request that changes nothing else and
+# needs an approval, and synchronised by hand (see gitops/applicationset.yaml). It is the environment that
+# uses everything that the phases of the v2 branch built: canary releases judged by the SLO, a database
+# run by an operator with a replica and a continuous archive, tracing, and default deny networking.
+#
+# On a laptop this environment is declared and rendered in CI, but it is not deployed: it needs the Argo
+# Rollouts controller, the CloudNativePG operator with its plugin, Prometheus, Tempo and an object store
+# (the drills of the earlier phases run those parts one by one).
+backend:
+  image:
+    tag: "c0d5a17a0c002264fdf6c7c4be08faf29cb630f2"
+  replicaCount: 2
+  env:
+    APP_ENV: production
+    LOG_LEVEL: INFO
+frontend:
+  image:
+    tag: "c0d5a17a0c002264fdf6c7c4be08faf29cb630f2"
+  replicaCount: 2
+
+ingress:
+  host: campusslot.test
+
+# The HPA replaces the fixed replica count of the backend. Canary releases need the Rollouts controller.
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+rollout:
+  enabled: true
+serviceMonitor:
+  enabled: true
+prometheusRule:
+  enabled: true
+backup:
+  # The logical dump is replaced by the continuous archive of the operator below.
+  enabled: false
+
+postgres:
+  operator:
+    enabled: true
+    instances: 2
+    # The credentials come from a Secret that is created in the cluster, never from Git.
+    appSecret: campusslot-pg-app
+    synchronous: false
+    backup:
+      enabled: true
+
+tracing:
+  enabled: true
+  # A fraction of the traces, as a busy production service would keep.
+  sampleRatio: "0.1"
+
+networkPolicy:
+  enabled: true
+
+database:
+  existingSecret: campusslot-db
+
+migration:
+  argocdHook: true

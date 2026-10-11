@@ -1,0 +1,123 @@
+name: Promote
+
+# Opens a pull request that moves a build to the next environment (gitops/envs/<env>/values.yaml). Merging the pull request is
+# the deployment: Argo CD follows Git. Nothing here touches a cluster.
+#
+#   gh workflow run promote.yml --ref v2 -f environment=dev                 # the newest build of the branch
+#   gh workflow run promote.yml --ref v2 -f environment=dev -f sha=<commit>
+#   gh workflow run promote.yml --ref v2 -f environment=staging             # what dev runs now
+#   gh workflow run promote.yml --ref v2 -f environment=prod                # what staging runs now
+#
+# Three gates stand between a commit and prod: the image must carry a provenance attestation of the build workflow (dev),
+# the rules of scripts/promote.py must hold (a build is promoted one environment at a time), and a person has to review and
+# merge the pull request. For prod, Argo CD adds a fourth: the application is synchronised by hand.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: The environment to promote to
+        type: choice
+        required: true
+        options: [dev, staging, prod]
+      sha:
+        description: "dev only: the full commit hash of the build (default: the newest commit of the branch that has attested images)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: read
+  attestations: read
+
+env:
+  IMAGE_PREFIX: ghcr.io/ujjwaljain16/campusslot
+
+jobs:
+  propose:
+    name: Open the promotion pull request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Find the build
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ inputs.environment }}
+          REQUESTED: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+          verified() {
+            for image in backend frontend; do
+              gh attestation verify "oci://${IMAGE_PREFIX}-${image}:$1" --repo "${{ github.repository }}" \
+                --signer-workflow "${{ github.repository }}/.github/workflows/ci-cd.yml" >/dev/null 2>&1 || return 1
+            done
+          }
+          if [ "$TARGET" = "dev" ]; then
+            if [ -n "$REQUESTED" ]; then
+              sha="$REQUESTED"
+              verified "$sha" || { echo "::error::the images of $sha have no valid build attestation from this repository"; exit 1; }
+            else
+              # Commits that only promote have no images of their own, so walk back to the newest one that has.
+              sha=""
+              for candidate in $(git rev-list --max-count=30 HEAD); do
+                if verified "$candidate"; then sha="$candidate"; break; fi
+              done
+              [ -n "$sha" ] || { echo "::error::none of the last 30 commits has attested images"; exit 1; }
+            fi
+            echo "args=--sha $sha" >> "$GITHUB_OUTPUT"
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Change the tags
+        id: change
+        env:
+          TARGET: ${{ inputs.environment }}
+        run: |
+          python3 scripts/promote.py promote --to "$TARGET" ${{ steps.build.outputs.args }}
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing to promote: $TARGET already runs this build."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check the promotion rules against the branch
+        if: steps.change.outputs.changed == 'true'
+        env:
+          BASE: ${{ github.ref_name }}
+        run: |
+          # The change is not committed yet, so the working tree is compared with the branch it came from.
+          git add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -q -m "promotion (not pushed)"
+          python3 scripts/promote.py check --base "origin/${BASE}"
+          git reset -q --soft HEAD~1
+
+      - name: Open the pull request
+        if: steps.change.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ inputs.environment }}
+          BASE: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          tags="$(python3 scripts/promote.py status | sed -n "s/^${TARGET} *\([0-9a-f]*\).*/\1/p")"
+          branch="promote/${TARGET}-${tags}-${GITHUB_RUN_ID}"
+          git checkout -q -b "$branch"
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Promote ${tags} to ${TARGET}"
+          git push -q origin "$branch"
+          gh pr create --base "$BASE" --head "$branch" \
+            --title "Promote ${tags} to ${TARGET}" \
+            --body "Moves the build \`${tags}\` to **${TARGET}** (two image tags in \`gitops/envs/${TARGET}/values.yaml\`). Merging this pull request is the deployment, because Argo CD follows Git.
+
+          The rules (\`scripts/promote.py check\`) hold for this change. For prod, Argo CD does not synchronise by itself: a person synchronises the application after the merge.
+
+          A pull request that a workflow opens with the default token does not start the other workflows. Close it and open it again to run the checks, or push to its branch."

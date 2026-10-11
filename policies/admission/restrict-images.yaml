@@ -1,5 +1,6 @@
 # Admission policy built into Kubernetes (ValidatingAdmissionPolicy, CEL, no controller to run).
-# In the campusslot namespace, a pod may only run:
+# In every namespace of the project (labelled app.kubernetes.io/part-of=campusslot: campusslot, and one per
+# environment, see k8s/environments.yaml), a pod may only run:
 #   - the project's own images, from ghcr.io/ujjwaljain16/campusslot-*, or the pinned postgres image,
 #   - the images of the CloudNativePG operator and its PostgreSQL, from ghcr.io/cloudnative-pg/ (only needed when
 #     postgres.operator.enabled is on: the database pods, their bootstrap container and the backup sidecar),
@@ -50,4 +51,4 @@ spec:
   matchResources:
     namespaceSelector:
       matchLabels:
-        kubernetes.io/metadata.name: campusslot
+        app.kubernetes.io/part-of: campusslot

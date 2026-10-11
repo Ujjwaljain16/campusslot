@@ -33,6 +33,12 @@ remote: - 5 of 5 required status checks are expected.
 gh api -X DELETE repos/Ujjwaljain16/campusslot/branches/main/protection
 ```
 
+## What the promotion workflow needs (v2)
+
+The `Promote` workflow opens a pull request with the token of the workflow run. For that to work, **Settings, Actions, General, "Allow GitHub Actions to create and approve pull requests"** has to be on. It is off until it is switched on, and the workflow then fails with that message, which is the safe default.
+
+A pull request that is opened with the default token does not start the other workflows (a rule of GitHub, to prevent loops). On a protected branch with required checks, such a pull request would wait for checks that never start. Closing the pull request and opening it again, as a person, starts them. In production the workflow would use the token of a GitHub App instead.
+
 ## Why
 
 Direct pushes to `main` were the way that I built the project, and they are the reason for several of the red runs in [the DORA analysis](dora-analysis.md): the pipeline was a report that arrived after the change had already landed. With a protected branch, the pipeline is a gate that runs before the change lands.

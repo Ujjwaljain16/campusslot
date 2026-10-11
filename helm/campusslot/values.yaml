@@ -75,6 +75,10 @@ postgres:
     enabled: false
     instances: 2
     imageName: ghcr.io/cloudnative-pg/postgresql:16
+    # The name of an existing Secret of type kubernetes.io/basic-auth (the keys username and password) for the
+    # application user. With it, no password passes through Helm or Git, which is how the environments of
+    # gitops/ run. Empty: the chart creates the Secret from postgres.password.
+    appSecret: ""
     # false: asynchronous replication, so a failover can lose the last few transactions that the old primary
     # acknowledged. true: a commit waits for one replica (quorum), so an acknowledged write survives a
     # failover, and writes pause while no replica is available. The CloudNativePG documentation advises

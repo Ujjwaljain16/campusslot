@@ -1,0 +1,36 @@
+# The staging environment: what dev runs, promoted by a pull request, in a shape that is closer to prod.
+# The rule that is checked in CI (scripts/promote.py check): the tags here can only become the tags
+# that dev has at the moment of the pull request, so staging never gets a build that dev has not run.
+backend:
+  image:
+    tag: "c0d5a17a0c002264fdf6c7c4be08faf29cb630f2"
+  replicaCount: 2
+  env:
+    APP_ENV: staging
+    LOG_LEVEL: INFO
+frontend:
+  image:
+    tag: "c0d5a17a0c002264fdf6c7c4be08faf29cb630f2"
+  replicaCount: 2
+
+ingress:
+  host: staging.campusslot.test
+
+hpa:
+  enabled: false
+serviceMonitor:
+  enabled: false
+prometheusRule:
+  enabled: false
+backup:
+  enabled: false
+
+# Default deny between the pods (it is enforced only on a cluster with a network plugin that supports it).
+networkPolicy:
+  enabled: true
+
+database:
+  existingSecret: campusslot-db
+
+migration:
+  argocdHook: true

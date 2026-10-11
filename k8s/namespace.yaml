@@ -4,6 +4,8 @@ metadata:
   name: campusslot
   labels:
     app.kubernetes.io/name: campusslot
+    # The policies of policies/ and the log collection select the namespaces of the project by this label.
+    app.kubernetes.io/part-of: campusslot
     # Pod Security Admission: reject pods that do not follow the "restricted" profile
     # (non-root, no privilege escalation, dropped capabilities, seccomp). The chart complies.
     pod-security.kubernetes.io/enforce: restricted

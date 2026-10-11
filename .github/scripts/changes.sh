@@ -32,6 +32,13 @@ while IFS= read -r file; do
   [ -z "$file" ] && continue
   case "$file" in
     docs/*|*.md|LICENSE) ;;
+    gitops/envs/*/values.yaml)
+      # A promotion changes only the two image tags. That is a deployment decision and not a change of the code: the
+      # images of that commit already exist, so it must not build them again, and it must not start another promotion.
+      # Any other line of the file (a setting of the environment) is a real change and runs everything.
+      other="$(git diff -U0 "$base" HEAD -- "$file" | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' | grep -vE '^[+-]    tag: ' || true)"
+      if [ -n "$other" ]; then code=true; fi
+      ;;
     *) code=true ;;
   esac
 done <<< "$files"
