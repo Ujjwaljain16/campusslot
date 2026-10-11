@@ -10,3 +10,4 @@ One page per alert, linked from the `runbook_url` annotation of the alert rule.
 | [Database not ready](database-down.md) | CampusSlotDatabaseDown (critical) |
 | [Autoscaler at its maximum](autoscaler-at-maximum.md) | CampusSlotAutoscalerAtMaximum (warning) |
 | [Metrics missing](metrics-missing.md) | CampusSlotMetricsMissing (warning) |
+| [A canary release was aborted](canary-aborted.md) | No alert yet: a Rollout in the phase `Degraded` (v2) |

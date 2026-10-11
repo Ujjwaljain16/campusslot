@@ -254,7 +254,8 @@ jobs:
           # The three value sets that are really used: CI, local development, and what Argo CD renders.
           for values in "-f helm/campusslot/values-ci.yaml" \
                         "-f helm/campusslot/values-dev.yaml" \
-                        "-f helm/campusslot/values-dev.yaml -f gitops/values.yaml"; do
+                        "-f helm/campusslot/values-dev.yaml -f gitops/values.yaml" \
+                        "-f helm/campusslot/values-dev.yaml --set rollout.enabled=true"; do
             echo "== helm template $values"
             helm template campusslot helm/campusslot $values \
               --set backend.image.tag=ci --set frontend.image.tag=ci --set-string postgres.password=ci \
