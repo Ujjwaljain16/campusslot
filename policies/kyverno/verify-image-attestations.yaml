@@ -1,0 +1,50 @@
+# Kyverno policy: an image of this project may only run if GitHub Actions built it from this repository.
+#
+# The pipeline attests the build provenance of every image with actions/attest-build-provenance and pushes
+# the attestation to the registry (a Sigstore bundle, signed keyless with the workflow's OIDC identity).
+# Kyverno checks it at admission, so an image that someone built on a laptop and pushed, or an image from
+# before the attestations existed, is refused even when its name looks right.
+#
+#   scripts/install-kyverno.sh
+#   kubectl apply -f policies/kyverno/verify-image-attestations.yaml
+#
+# Written from the Kyverno documentation for type SigstoreBundle and not run on a cluster yet: the first run
+# of scripts/policy-drill.sh shows whether the field names match the installed version, and this file is
+# corrected from what the cluster says.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: campusslot-verify-image-attestations
+  annotations:
+    pod-policies.kyverno.io/autogen-controllers: none
+spec:
+  background: false
+  validationFailureAction: Enforce
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: build-provenance-from-this-repository
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [campusslot]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/ujjwaljain16/campusslot-*"
+          type: SigstoreBundle
+          attestations:
+            - type: https://slsa.dev/provenance/v1
+              attestors:
+                - entries:
+                    - keyless:
+                        issuer: https://token.actions.githubusercontent.com
+                        # Built by this repository's pipeline, on main or on the v2 branch. The dot is escaped
+                        # because the value is a regular expression.
+                        subjectRegExp: '^https://github\.com/Ujjwaljain16/campusslot/\.github/workflows/ci-cd\.yml@refs/heads/(main|v2)$'
+                        rekor:
+                          url: https://rekor.sigstore.dev
+              conditions:
+                - all:
+                    - key: '{{ buildDefinition.buildType }}'
+                      operator: Equals
+                      value: https://actions.github.io/buildtypes/workflow/v1

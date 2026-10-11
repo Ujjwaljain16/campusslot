@@ -134,6 +134,15 @@ rollout:
     # Equal to the share of failures that the availability SLO already treats as a problem, with some margin.
     maxErrorRatio: 0.02
 
+# Default deny and an allow list of the connections that the application needs (templates/networkpolicy.yaml).
+# Only enforced by a network plugin that supports NetworkPolicy (Calico, Cilium). Off by default, because
+# the CI cluster (kind) and a default Minikube do not enforce it.
+networkPolicy:
+  enabled: false
+  # The namespaces of the ingress controller and of Prometheus, which may reach the backend.
+  ingressNamespace: ingress-nginx
+  monitoringNamespace: monitoring
+
 pdb:
   enabled: true
   minAvailable: 1

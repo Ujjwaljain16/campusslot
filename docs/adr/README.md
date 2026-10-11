@@ -19,3 +19,4 @@ Short records of the choices that shaped this project, with the options that I r
 | [0013](0013-range-operator-for-overlap-queries.md) | Ask "what overlaps this period" with a range operator and a GiST index |
 | [0014](0014-one-worker-per-pod-scale-with-pods.md) | One uvicorn worker per pod, and more capacity from more pods |
 | [0015](0015-canary-releases-judged-by-their-own-metrics.md) | Judge canary releases by their own metrics (v2) |
+| [0016](0016-admission-policy-and-default-deny-networking.md) | Enforce what may run, and what may talk, at the cluster (v2) |

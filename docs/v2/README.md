@@ -15,7 +15,7 @@ grows from "built and deployed" into a platform that releases, protects and reco
 | # | Phase | The drill that proves it | Status |
 |---|---|---|---|
 | 1 | Canary releases that the SLO judges (Argo Rollouts and Prometheus analysis) | A release that is ready but bad is aborted at 10 percent of the traffic | built and checked in CI, drill not run yet ([method and predictions](../engineering/canary-releases.md), [ADR 0015](../adr/0015-canary-releases-judged-by-their-own-metrics.md)) |
-| 2 | Policy and supply chain enforced at admission (Kyverno, NetworkPolicies) | An unsigned image and an unwanted connection are both refused | planned |
+| 2 | Policy and supply chain enforced at admission (Kyverno, NetworkPolicies) | An unsigned image and an unwanted connection are both refused | written and checked in CI, drill not run yet ([method and predictions](../engineering/admission-and-network-policy.md), [ADR 0016](../adr/0016-admission-policy-and-default-deny-networking.md)) |
 | 3 | Database reliability (operator, replica, point-in-time restore) | The primary is killed under load, with failover time, RPO and RTO measured | planned |
 | 4 | Signals that link to each other (traces, error budget dashboards) | One slow request is followed from the alert to the trace to the log line | planned |
 | 5 | Several environments with promotion through Git | A change moves from dev to staging to prod, and drift is reverted | planned |

@@ -251,16 +251,22 @@ jobs:
           curl -fsSLO "https://github.com/yannh/kubeconform/releases/download/${version}/CHECKSUMS"
           grep " kubeconform-linux-amd64.tar.gz$" CHECKSUMS | sha256sum -c -
           tar -xzf kubeconform-linux-amd64.tar.gz kubeconform
-          # The three value sets that are really used: CI, local development, and what Argo CD renders.
+          # The value sets that are really used: CI, local development, and what Argo CD renders. Then the
+          # optional parts: the canary variant (an Argo Rollout and an AnalysisTemplate have no schema here,
+          # so they are only checked to render and to be valid YAML) and the network policies.
           for values in "-f helm/campusslot/values-ci.yaml" \
                         "-f helm/campusslot/values-dev.yaml" \
                         "-f helm/campusslot/values-dev.yaml -f gitops/values.yaml" \
-                        "-f helm/campusslot/values-dev.yaml --set rollout.enabled=true"; do
+                        "-f helm/campusslot/values-dev.yaml --set rollout.enabled=true" \
+                        "-f helm/campusslot/values-dev.yaml --set networkPolicy.enabled=true"; do
             echo "== helm template $values"
             helm template campusslot helm/campusslot $values \
               --set backend.image.tag=ci --set frontend.image.tag=ci --set-string postgres.password=ci \
               | ./kubeconform -strict -summary -ignore-missing-schemas -kubernetes-version 1.36.0
           done
+          # The admission policies of policies/. The Kyverno policy has no schema here, so it is only parsed.
+          echo "== policies"
+          ./kubeconform -strict -summary -ignore-missing-schemas -kubernetes-version 1.36.0 policies/admission policies/kyverno
 
   # ------------------------------------------------------------------------------------------
   # Build both images in parallel, scan them with Trivy, and push to GHCR only if both are clean AND

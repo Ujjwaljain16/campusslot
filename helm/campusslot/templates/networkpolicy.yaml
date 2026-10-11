@@ -1,0 +1,150 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- $backend := include "campusslot.selectorLabels" (dict "root" . "component" "backend") }}
+{{- $frontend := include "campusslot.selectorLabels" (dict "root" . "component" "frontend") }}
+{{- $postgres := include "campusslot.selectorLabels" (dict "root" . "component" "postgres") }}
+{{- $migration := include "campusslot.selectorLabels" (dict "root" . "component" "migration") }}
+{{- $backup := include "campusslot.selectorLabels" (dict "root" . "component" "backup") }}
+# Default deny, then only the connections that the application needs. A pod that is compromised or
+# started by mistake in this namespace cannot reach the database, and the database cannot call out.
+# This only takes effect on a cluster whose network plugin enforces NetworkPolicy (Calico or Cilium,
+# for example "minikube start --cni=calico"). On a plugin that does not, the objects are accepted and ignored.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "campusslot.fullname" . }}-default-deny
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+# Every pod needs name resolution.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "campusslot.fullname" . }}-allow-dns
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# The frontend receives the traffic of the ingress controller and calls the backend.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "campusslot.fullname" . }}-frontend
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- $frontend | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace }}
+      ports:
+        - { protocol: TCP, port: {{ .Values.frontend.port }} }
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- $backend | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: {{ .Values.backend.port }} }
+---
+# The backend receives the ingress controller (the /api path), the frontend, and Prometheus (the metrics),
+# and calls the database only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "campusslot.fullname" . }}-backend
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- $backend | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.monitoringNamespace }}
+        - podSelector:
+            matchLabels:
+              {{- $frontend | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: {{ .Values.backend.port }} }
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- $postgres | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: 5432 }
+{{- if .Values.postgres.enabled }}
+---
+# The database receives the backend, the migration job and the backup job, and calls nothing.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "campusslot.fullname" . }}-postgres
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- $postgres | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- $backend | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              {{- $migration | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              {{- $backup | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: 5432 }
+---
+# The two jobs call the database and nothing else.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "campusslot.fullname" . }}-jobs
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/component
+        operator: In
+        values: [migration, backup]
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- $postgres | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: 5432 }
+{{- end }}
+{{- end }}

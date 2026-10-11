@@ -1,0 +1,49 @@
+# Admission policy built into Kubernetes (ValidatingAdmissionPolicy, CEL, no controller to run).
+# In the campusslot namespace, a pod may only run:
+#   - the project's own images, from ghcr.io/ujjwaljain16/campusslot-*, or the pinned postgres image,
+#   - with an explicit tag that is not "latest", so that what runs can always be traced to a commit.
+# Everything else is refused at admission, before a pod exists.
+#
+#   kubectl apply -f policies/admission/restrict-images.yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: campusslot-restrict-images
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  variables:
+    - name: images
+      expression: >-
+        object.spec.containers.map(c, c.image) +
+        (has(object.spec.initContainers) ? object.spec.initContainers.map(c, c.image) : [])
+  validations:
+    - expression: >-
+        variables.images.all(i,
+          i.startsWith('ghcr.io/ujjwaljain16/campusslot-') || i.startsWith('postgres:'))
+      messageExpression: >-
+        'image not allowed in this namespace: ' + variables.images.filter(i,
+          !(i.startsWith('ghcr.io/ujjwaljain16/campusslot-') || i.startsWith('postgres:'))).join(', ') +
+        '. Only ghcr.io/ujjwaljain16/campusslot-* and postgres are permitted.'
+      reason: Forbidden
+    - expression: >-
+        variables.images.all(i, i.contains(':') && !i.endsWith(':latest'))
+      message: 'an image needs an explicit tag, and the tag must not be latest'
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: campusslot-restrict-images
+spec:
+  policyName: campusslot-restrict-images
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: campusslot
