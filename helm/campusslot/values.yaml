@@ -111,6 +111,29 @@ hpa:
   targetCPUUtilizationPercentage: 70
   scaleDownStabilizationSeconds: 300
 
+# Canary releases with Argo Rollouts. When enabled, the backend is an Argo Rollout instead of a Deployment:
+# a new version gets a small share of the traffic first, and an analysis of its own error rate and latency
+# (read from Prometheus) decides whether it goes on or is aborted by itself. Needs the Argo Rollouts
+# controller (scripts/install-rollouts.sh), the nginx ingress for the traffic split, and the Prometheus
+# Operator for the metrics. Off by default so that the plain Deployment path stays what CI tests.
+rollout:
+  enabled: false
+  steps:
+    - setWeight: 10
+    - pause: { duration: 60s }
+    - setWeight: 50
+    - pause: { duration: 60s }
+  analysis:
+    # The release name and the namespace of scripts/install-monitoring.sh.
+    prometheusAddress: http://monitoring-kube-prometheus-prometheus.monitoring.svc:9090
+    interval: 15s
+    # Time for Prometheus to discover the new pods and collect enough samples before the first reading.
+    initialDelay: 45s
+    # Readings that may be bad before the rollout is aborted. 2 means that the third bad reading aborts it.
+    failureLimit: 2
+    # Equal to the share of failures that the availability SLO already treats as a problem, with some margin.
+    maxErrorRatio: 0.02
+
 pdb:
   enabled: true
   minAvailable: 1

@@ -1,5 +1,13 @@
+{{- if .Values.rollout.enabled }}
+# A canary release: the new version first receives a small share of the traffic, an analysis reads its
+# own error rate and latency from Prometheus, and the rollout is aborted by itself when they are bad.
+# This needs the Argo Rollouts controller (scripts/install-rollouts.sh).
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+{{- else }}
 apiVersion: apps/v1
 kind: Deployment
+{{- end }}
 metadata:
   name: {{ include "campusslot.fullname" . }}-backend
   labels:
@@ -10,89 +18,47 @@ spec:
   # When the HPA is enabled it owns the replica count, so Helm must not reset it on every upgrade.
   replicas: {{ .Values.backend.replicaCount }}
   {{- end }}
+  selector:
+    matchLabels:
+      {{- include "campusslot.selectorLabels" (dict "root" . "component" "backend") | nindent 6 }}
+  {{- if .Values.rollout.enabled }}
+  revisionHistoryLimit: 3
+  strategy:
+    canary:
+      stableService: {{ include "campusslot.fullname" . }}-backend
+      canaryService: {{ include "campusslot.fullname" . }}-backend-canary
+      {{- if .Values.ingress.enabled }}
+      # The ingress controller splits the traffic by weight, so 10 percent means 10 percent of the
+      # requests, not "one pod in ten".
+      trafficRouting:
+        nginx:
+          stableIngress: {{ include "campusslot.fullname" . }}
+      {{- end }}
+      # Never take a stable pod away before its replacement is ready.
+      maxUnavailable: 0
+      maxSurge: 1
+      # The analysis runs in the background from the first step until the rollout is complete. If it
+      # fails at any moment, the rollout is aborted and all traffic goes back to the stable version.
+      analysis:
+        templates:
+          - templateName: {{ include "campusslot.fullname" . }}-canary-health
+        startingStep: 1
+        args:
+          - name: canary-hash
+            valueFrom:
+              podTemplateHashValue: Latest
+      steps:
+        {{- toYaml .Values.rollout.steps | nindent 8 }}
+  {{- else }}
   # Never take a pod away before its replacement is ready: zero-downtime rollouts.
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
       maxSurge: 1
-  selector:
-    matchLabels:
-      {{- include "campusslot.selectorLabels" (dict "root" . "component" "backend") | nindent 6 }}
+  {{- end }}
   template:
-    metadata:
-      labels:
-        {{- include "campusslot.selectorLabels" (dict "root" . "component" "backend") | nindent 8 }}
-      annotations:
-        # A changed database Secret rolls the pods so they pick up the new connection string.
-        checksum/database-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-        # A changed ConfigMap rolls the pods too, because environment variables are read only at start.
-        checksum/backend-config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-    spec:
-      serviceAccountName: {{ include "campusslot.fullname" . }}
-      automountServiceAccountToken: false
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 10001
-        runAsGroup: 10001
-        seccompProfile:
-          type: RuntimeDefault
-      terminationGracePeriodSeconds: 30
-      containers:
-        - name: backend
-          image: {{ include "campusslot.backendImage" . | quote }}
-          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.backend.port }}
-          envFrom:
-            - configMapRef:
-                name: {{ include "campusslot.fullname" . }}-backend-config
-          env:
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "campusslot.databaseSecretName" . }}
-                  key: {{ .Values.database.secretKey }}
-          # Starting up: give the app up to a minute before liveness checks can restart it.
-          startupProbe:
-            httpGet: { path: /health, port: http }
-            periodSeconds: 2
-            failureThreshold: 30
-          # Readiness: only receive traffic when the database is reachable and migrated.
-          # Keep serving for a few seconds after the pod is marked for deletion. The ingress controller
-          # learns about the removal a moment later, and until then it still sends requests here.
-          {{- with .Values.preStopDelaySeconds }}
-          lifecycle:
-            preStop:
-              exec:
-                command: ["sleep", {{ . | quote }}]
-          {{- end }}
-          readinessProbe:
-            httpGet: { path: /ready, port: http }
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
-          # Liveness: independent of the database, so a database outage never restarts the pods.
-          livenessProbe:
-            httpGet: { path: /health, port: http }
-            periodSeconds: 15
-            timeoutSeconds: 3
-            failureThreshold: 3
-          resources:
-            {{- toYaml .Values.backend.resources | nindent 12 }}
-          securityContext:
-            {{- include "campusslot.containerSecurityContext" . | nindent 12 }}
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-      volumes:
-        - name: tmp
-          emptyDir: {}
+    {{- include "campusslot.backendPodTemplate" . | nindent 4 }}
 ---
 apiVersion: v1
 kind: Service
@@ -109,3 +75,23 @@ spec:
       targetPort: http
   selector:
     {{- include "campusslot.selectorLabels" (dict "root" . "component" "backend") | nindent 4 }}
+{{- if .Values.rollout.enabled }}
+---
+# The canary version is reachable through its own Service. Argo Rollouts points it at the new pods only,
+# and gives it the same labels as the stable Service, so the ServiceMonitor scrapes both.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "campusslot.fullname" . }}-backend-canary
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: {{ .Values.backend.port }}
+      targetPort: http
+  selector:
+    {{- include "campusslot.selectorLabels" (dict "root" . "component" "backend") | nindent 4 }}
+{{- end }}

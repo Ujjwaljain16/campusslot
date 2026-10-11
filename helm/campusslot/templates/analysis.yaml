@@ -1,0 +1,43 @@
+{{- if .Values.rollout.enabled }}
+{{- $ns := .Release.Namespace }}
+{{- $pods := printf "%s-backend-%s-.*" (include "campusslot.fullname" .) "{{args.canary-hash}}" }}
+# What "healthy" means for a canary, read from the metrics of the canary pods only. The pod name of a
+# Rollout contains the hash of its pod template, and the analysis is given the hash of the new version.
+# No traffic gives no number, and a missing number is "inconclusive", not "healthy": the rollout waits.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "campusslot.fullname" . }}-canary-health
+  labels:
+    {{- include "campusslot.labels" . | nindent 4 }}
+spec:
+  args:
+    - name: canary-hash
+  metrics:
+    - name: error-ratio
+      # The same definition as the availability SLI: the share of requests that ended with a 5xx.
+      interval: {{ .Values.rollout.analysis.interval }}
+      initialDelay: {{ .Values.rollout.analysis.initialDelay }}
+      failureLimit: {{ .Values.rollout.analysis.failureLimit }}
+      successCondition: result[0] < {{ .Values.rollout.analysis.maxErrorRatio }}
+      failureCondition: result[0] >= {{ .Values.rollout.analysis.maxErrorRatio }}
+      provider:
+        prometheus:
+          address: {{ .Values.rollout.analysis.prometheusAddress }}
+          query: |
+            (sum(rate(http_requests_total{namespace="{{ $ns }}", pod=~"{{ $pods }}", status="5xx"}[1m])) or vector(0))
+            / sum(rate(http_requests_total{namespace="{{ $ns }}", pod=~"{{ $pods }}"}[1m]))
+    - name: fast-ratio
+      # The same definition as the latency SLI: the share of requests that finished within the threshold.
+      interval: {{ .Values.rollout.analysis.interval }}
+      initialDelay: {{ .Values.rollout.analysis.initialDelay }}
+      failureLimit: {{ .Values.rollout.analysis.failureLimit }}
+      successCondition: result[0] >= {{ .Values.prometheusRule.latencyTarget }}
+      failureCondition: result[0] < {{ .Values.prometheusRule.latencyTarget }}
+      provider:
+        prometheus:
+          address: {{ .Values.rollout.analysis.prometheusAddress }}
+          query: |
+            sum(rate(http_request_duration_highr_seconds_bucket{namespace="{{ $ns }}", pod=~"{{ $pods }}", le="{{ .Values.prometheusRule.latencyThresholdSeconds }}"}[1m]))
+            / sum(rate(http_request_duration_highr_seconds_count{namespace="{{ $ns }}", pod=~"{{ $pods }}"}[1m]))
+{{- end }}

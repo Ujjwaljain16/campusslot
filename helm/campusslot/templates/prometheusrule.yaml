@@ -70,7 +70,12 @@ spec:
             runbook_url: {{ $runbooks }}/latency.md
 
         - alert: CampusSlotBackendReplicasUnavailable
+          {{- if .Values.rollout.enabled }}
+          # A Rollout has no Deployment, so the pods are counted directly.
+          expr: sum(kube_pod_status_ready{namespace="{{ $ns }}", condition="false", pod=~"{{ include "campusslot.fullname" . }}-backend-.*"}) > 0
+          {{- else }}
           expr: kube_deployment_status_replicas_unavailable{namespace="{{ $ns }}", deployment="{{ include "campusslot.fullname" . }}-backend"} > 0
+          {{- end }}
           for: 2m
           labels:
             severity: warning
@@ -80,7 +85,11 @@ spec:
             runbook_url: {{ $runbooks }}/backend-not-ready.md
 
         - alert: CampusSlotBackendDown
+          {{- if .Values.rollout.enabled }}
+          expr: (sum(kube_pod_status_ready{namespace="{{ $ns }}", condition="true", pod=~"{{ include "campusslot.fullname" . }}-backend-.*"}) or vector(0)) == 0
+          {{- else }}
           expr: kube_deployment_status_replicas_available{namespace="{{ $ns }}", deployment="{{ include "campusslot.fullname" . }}-backend"} == 0
+          {{- end }}
           for: 1m
           labels:
             severity: critical
