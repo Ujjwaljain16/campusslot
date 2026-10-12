@@ -149,6 +149,10 @@ npm run dev        # http://localhost:5173, the dev server proxies /api to port 
 
 I ran these steps and recorded the output in [`docs/evidence/run-locally.txt`](docs/evidence/run-locally.txt). The migrations created the schema and seeded six rooms, `/health` and `/ready` answered, and a request to `http://localhost:5173/api/info` through the Vite proxy returned the application metadata.
 
+![The interactive API documentation that FastAPI serves at /docs](docs/evidence/api-docs.png)
+
+<img src="docs/evidence/app-mobile.png" alt="The same page on a phone-sized screen" width="300">
+
 ### Configuration
 
 | Variable | Used by | Meaning | Default |
@@ -248,6 +252,8 @@ The deploy job creates a throw-away kind cluster, installs the ingress controlle
 
 ![A green pipeline run: all eight jobs, including the Helm deploy to kind](docs/evidence/github-actions-run.png)
 ![Images in GHCR, tagged with commit SHAs](docs/evidence/ghcr-backend-package.png)
+![The frontend image in GHCR, also tagged with commit SHAs](docs/evidence/ghcr-frontend-package.png)
+![Commit history of main on 5 October 2026: more than ten commits, each with its pipeline status (the repository has many more now)](docs/evidence/github-commit-history.png)
 
 The pipeline was not green on the first try, and three failures taught me something:
 
@@ -378,6 +384,11 @@ The backend exposes the standard HTTP metrics and two of its own, `campusslot_bo
 ![Grafana dashboard](docs/evidence/grafana-dashboard.png)
 
 The dashboard shows request rate by route, latency percentiles, the 5xx rate, rejected bookings by layer, CPU per backend pod, and current against desired replicas. Two details came from real problems. The first latency panel showed every route at exactly 0.1 seconds, because the default histogram has no bucket below that value, so I switched to the high resolution histogram. Grafana was also killed once for exceeding my 300 MiB memory limit while it rendered the dashboard, and I raised the limit to 512 MiB.
+
+Alert rules are part of the chart. In the alert drill (see [resilience](docs/engineering/resilience.md)) I pointed the backend at a database that does not exist: the new pod never became ready, the alert fired, and it went inactive again after `kubectl rollout undo`.
+
+![CampusSlotBackendReplicasUnavailable firing in Prometheus during the alert drill](docs/evidence/alert-firing.png)
+![The same alert rules inactive again after the rollback](docs/evidence/alert-resolved.png)
 
 ### Logs
 
