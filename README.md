@@ -317,6 +317,7 @@ Public worker subnets and no NAT gateway are an intentional simplification for c
 
 ![terraform output and cluster status](docs/evidence/terraform-output-terminal.png)
 ![terraform validate and plan, 48 to add](docs/evidence/terminal-terraform-plan.png)
+![The second terraform apply, rendered from the recorded transcript: after the public subnets assign public IPs, the node group and the add-ons are created (the first apply created the rest and failed on the node group, as described above)](docs/evidence/terminal-terraform-apply2-transcript.png)
 ![The recorded destroy transcript and the empty cluster list. The destroy itself ran earlier and is not repeated here](docs/evidence/terminal-terraform-destroy-transcript.png)
 ![EKS cluster in the console](docs/evidence/aws-eks-cluster.png)
 ![Node group in the console](docs/evidence/aws-eks-node-group.png)
@@ -357,6 +358,8 @@ In this first test the backend autoscaler targeted 50 percent of a 100m CPU requ
 | 16:45:00 | Load stops |
 | 16:47:08 | CPU back to 3 percent |
 | 16:48:51 | Scaled back down to 2 replicas |
+
+![The autoscaling timeline, rendered from the recorded transcript: 2 replicas, then 5 under load, then 2 again](docs/evidence/terminal-hpa-timeline-transcript.png)
 
 At first the autoscaler showed `<unknown>` for about two minutes, because metrics-server had only just started. I repeated the test later while Prometheus was recording, and the dashboard in section 15 shows the same shape.
 
@@ -453,11 +456,11 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 | Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt`, `terminal-pytest.png` |
 | Docker | `docker-proof.txt`, three `terminal-docker-*.png` screenshots |
 | Git and CI/CD | `github-commit-history.png`, `github-actions-run.png`, `ghcr-backend-package.png`, `ghcr-frontend-package.png`, `trivy-ci-output.txt` and `trivy-*-report.png` (the Trivy report of both images from the pipeline log) |
-| Kubernetes and the final rehearsal | `hpa-timeline.txt`, `rehearsal.txt`, `rehearsal-after-deploy.png` |
+| Kubernetes and the final rehearsal | `hpa-timeline.txt` and its rendering `terminal-hpa-timeline-transcript.png`, `rehearsal.txt`, `rehearsal-after-deploy.png` |
 | Monitoring and logs | `prometheus-targets.png`, `grafana-dashboard.png`, `grafana-dashboard-with-logs.png`, `metrics-and-promql.txt`, `loki-logs-proof.txt` |
 | GitOps | `gitops-bootstrap.txt`, `gitops-demo.txt`, `argocd-application.png`, `terminal-configmap-argocd.png` |
 | Troubleshooting | `lab1` to `lab4` transcripts |
-| Terraform and AWS | plan, apply, second apply, destroy transcripts, `eks-verification.txt`, `aws-cleanup-verification.txt`, console screenshots |
+| Terraform and AWS | plan, apply, second apply, destroy transcripts, `eks-verification.txt`, `aws-cleanup-verification.txt`, `aws-final-sweep.txt`, console screenshots, and renderings of three transcripts (`terminal-terraform-apply2-transcript.png`, `terminal-aws-final-sweep-transcript.png`; the images named `*-transcript.png` are renderings of recorded text, not live terminal captures) |
 
 Known limitations, stated plainly:
 
@@ -491,6 +494,8 @@ terraform apply destroy.tfplan       # the 48 AWS resources, destroyed earlier
 I also stopped the port-forwards that I had started, and I removed the leftover test container, the Compose volume and the project images from Docker, by name, so that data of my other projects was not touched. A final listing shows no container, volume, image or network of this project, no Minikube profile and no kube context.
 
 On AWS, a final check of `ap-south-1` ([`final-cleanup-verification.txt`](docs/evidence/final-cleanup-verification.txt), run twice) reported no EKS cluster, no VPC other than the default one, and no NAT gateway, Elastic IP, internet gateway, instance, volume, load balancer or OIDC provider. The AWS account page still showed the full 120 USD credit at the second check, which was several hours after the destroy, because billing data arrives late. A third check, after the engineering experiments, showed a remaining credit of 119.94 USD, so the whole EKS run used about 6 US cents of credit (my estimate was 10 cents). That third check is appended to the same file, and a fourth one, after the scale, load and sizing experiments, showed the same empty account and the same 119.94 USD.
+
+![A sweep of every region and every service that can bill, rendered from the recorded transcript of 6 October: nothing running or stored, 119.94 USD of credit left (the only IAM item is the Terraform user and its access key, which costs nothing)](docs/evidence/terminal-aws-final-sweep-transcript.png)
 
 To rebuild any part of the project, the sections above give the exact commands. The Minikube demo is recreated with `minikube start`, `scripts/install-monitoring.sh` and either `scripts/deploy-local.sh <sha>` or `scripts/bootstrap-gitops.sh` for the GitOps variant.
 
