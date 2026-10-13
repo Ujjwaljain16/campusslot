@@ -11,7 +11,7 @@ This maps every item of the instructor's grading rubric (`session21-python/GRADI
 | Container images, tagged with the commit SHA | [backend](https://github.com/Ujjwaljain16/campusslot/pkgs/container/campusslot-backend), [frontend](https://github.com/Ujjwaljain16/campusslot/pkgs/container/campusslot-frontend) |
 | README (20 sections, then the engineering results) | [`README.md`](../README.md) |
 | Recorded demo (4 min 22 s, the failure drill runs live in it) | [`docs/demo/CampusSlot-demo.mp4`](demo/CampusSlot-demo.mp4) |
-| Presentation (15 slides with speaker notes, and a PDF copy) | [`CampusSlot-final-presentation.pptx`](presentation/CampusSlot-final-presentation.pptx) |
+| Presentation (15 slides with speaker notes, and a PDF copy), in the root of the repository | [`CampusSlot-final-presentation.pptx`](../CampusSlot-final-presentation.pptx), [PDF](../CampusSlot-final-presentation.pdf) |
 
 ## M1 Application (10 points)
 
