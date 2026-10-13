@@ -115,7 +115,7 @@ scripts/         deploy-local, install-monitoring, bootstrap-gitops, load-test, 
 terraform/       VPC and EKS configuration, plan, README with the design notes
 troubleshooting/ Four failure labs with manifests and write-ups
 docs/            evidence/ (transcripts and screenshots from real runs), engineering/ (measured decisions), adr/ (decision records), runbooks/ (alerts), demo/ (the recorded demo)
-CampusSlot-final-presentation.pptx   The presentation (15 slides with speaker notes), and the PDF copy next to it
+CampusSlot-final-presentation.pptx   The presentation (17 slides with speaker notes), and the PDF copy next to it
 .github/workflows/ci-cd.yml
 docker-compose.yml, .env.example
 ```
@@ -452,7 +452,7 @@ All transcripts and screenshots are in [`docs/evidence`](docs/evidence). Every c
 
 | Topic | Evidence |
 |---|---|
-| Presentation | [`CampusSlot-final-presentation.pptx`](CampusSlot-final-presentation.pptx) in the root of the repository, and the [PDF copy](CampusSlot-final-presentation.pdf): 15 slides for a non-technical viewer, the first 11 in the order of the course checklist, then three on the engineering decisions, the trade-offs and the scale measurements, and the final rehearsal, with speaker notes in the PowerPoint file |
+| Presentation | [`CampusSlot-final-presentation.pptx`](CampusSlot-final-presentation.pptx) in the root of the repository, and the [PDF copy](CampusSlot-final-presentation.pdf): 17 slides for a non-technical viewer, the first 11 in the order of the course checklist, then three on the engineering decisions, the trade-offs and the scale measurements, the final rehearsal, a slide with the recorded demo (the highlight and a QR code for the full recording) and a closing slide, with speaker notes in the PowerPoint file |
 | Application | `app-desktop.png`, `app-mobile.png`, `app-compose.png`, `api-docs.png`, `postgres-data-proof.txt` (tables, Alembic version 0003 at the time of that transcript, seeded rooms, bookings and the `EXCLUDE` constraint, read with `psql` inside the database pod) |
 | Tests | `backend-tests.txt`, `postgres-tests.txt`, `frontend-tests.txt`, `terminal-pytest.png` |
 | Docker | `docker-proof.txt`, three `terminal-docker-*.png` screenshots |
