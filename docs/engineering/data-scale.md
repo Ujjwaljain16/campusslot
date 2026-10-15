@@ -8,12 +8,12 @@ All my tests and drills used a few dozen bookings. A query that is instant on 40
 
 - [`scripts/scale-test.sh`](../../scripts/scale-test.sh) empties the table, loads N non-overlapping bookings for the 6 rooms (12 one-hour slots per day, the last one today), runs `ANALYZE`, and then runs each query twice and keeps the second run (warm cache).
 - The queries are the ones that SQLAlchemy sends for the day view, the overlap check before a booking, and the statistics page. The full plans are in [`docs/evidence/scale-before`](../evidence/scale-before) and [`docs/evidence/scale-after`](../evidence/scale-after).
-- **Pages read** (`shared hit`) is the number to trust. It is the same on every run. Timings are not: on this shared 4-CPU Minikube node the same sequential scan took between 9 and 32 ms in three runs, so I give medians and ranges for time.
+- **Shared buffer hits** (the `Buffers: shared hit=N` line of the plan) is the number I compare. A hit is an access to a block that was already in PostgreSQL's shared buffers, so it counts accesses and not distinct pages, and these plans contain no `shared read` at all because the cache is warm. It is a repeatable measure of database work for this experiment, not a substitute for latency or I/O measurements. It is the same on every run. Timings are not: on this shared 4-CPU Minikube node the same sequential scan took between 9 and 32 ms in three runs, so I give medians and ranges for time.
 - The data is synthetic and regular, with no cancelled bookings and a warm cache. It shows the shape of the growth, not the production numbers.
 
 ## Baseline: the cost grew with the table
 
-| Query | Plan at 200k rows | Pages read at 1k / 10k / 50k / 200k | Time at 200k (median of 3, range) |
+| Query | Plan at 200k rows | Shared buffer hits at 1k / 10k / 50k / 200k | Time at 200k (median of 3, range) |
 |---|---|---|---|
 | Day view of one room | Bitmap scan | 20 / 137 / 656 / 2605 | 7.1 ms (6.8 to 8.2) |
 | Day view of all rooms | Parallel sequential scan | 12 / 123 / 617 / 2515 | 9.3 ms (8.0 to 52.3) |
@@ -23,9 +23,9 @@ All my tests and drills used a few dozen bookings. A query that is instant on 40
 | Statistics: total confirmed | Parallel sequential scan | 12 / 123 / 617 / 2469 | 79.7 ms (14.7 to 87.8) |
 | Insert one booking | Insert | 79 / 79 / 81 / 83 | 1.6 ms (1.4 to 2.9) |
 
-The pages read grow in exact proportion to the table: 10 times the rows, 10 times the pages. Only the insert stays flat, because the exclusion constraint checks one place in its index.
+The buffer hits grow in exact proportion to the table: 10 times the rows, 10 times the hits. Only the insert stays flat, because the exclusion constraint checks one place in its index.
 
-**Why the indexes did not help.** The question "which bookings overlap this period" was written as `start_time < end AND end_time > start`. For a period near today, `start_time < end` is true for almost every old row, and the index on `end_time` does not exist, so PostgreSQL correctly decides that reading the whole table is cheapest. A B-tree answers "equal to" and "between" well and answers "everything before" badly.
+**Why the indexes did not help.** The question "which bookings overlap this period" was written as `start_time < end AND end_time > start`. For a period near today, `start_time < end` is true for almost every old row, and the index on `end_time` does not exist, so PostgreSQL correctly decides that reading the whole table is cheapest. A B-tree supports inequality scans, and PostgreSQL can use multicolumn indexes, but two opposed inequalities on two different columns do not narrow the candidates enough here, and an index scan that matches most of the table is worse than reading it once. I checked ordinary B-tree alternatives against the range form (an index on `(room_id, end_time)`, on `(room_id, start_time, end_time)`, and `(room_id, start_time)` with a one-day lower bound) at three positions in the data: a plain B-tree is fast only at one end of the data, and the lower-bound variant is as fast as the range form but is correct only while no booking is longer than the bound, which the database does not enforce. The range form needs no new index for the overlap check and carries no such assumption. The method and the plans are in [`overlap-alternatives.sql`](https://github.com/Ujjwaljain16/Personal-Portfolio-Cortex/blob/main/blog-assets/postgres-overlap-queries/overlap-alternatives.sql).
 
 ## The change
 
@@ -39,7 +39,7 @@ The same question as a range: `tstzrange(start_time, end_time, '[)') && tstzrang
 
 ## Result
 
-| Query | Pages read at 200k, before and after | Time at 200k, median of 3 (before and after) |
+| Query | Shared buffer hits at 200k, before and after | Time at 200k, median of 3 (before and after) |
 |---|---|---|
 | Day view of one room | 2605 to 11 | 7.05 ms to 0.20 ms |
 | Day view of all rooms | 2515 to 5 | 9.28 ms to 0.11 ms |
@@ -48,7 +48,7 @@ The same question as a range: `tstzrange(start_time, end_time, '[)') && tstzrang
 | Statistics: rooms in use now | 2469 to 4 | 81.95 ms to 0.11 ms |
 | Insert one booking | 83 to 48 | 1.61 ms to 1.16 ms |
 
-After the change the pages read are flat from 1 thousand to 200 thousand rows (the day view reads 4 or 5 pages at every size), which is the property I wanted. Through the whole API, at 200 thousand rows, one backend replica and 4 client threads ([`scale-api.txt`](../evidence/scale-api.txt)):
+After the change the buffer hits are flat from 1 thousand to 200 thousand rows (the day view touches 4 or 5 buffers at every size), which is the property I wanted. Through the whole API, at 200 thousand rows, one backend replica and 4 client threads ([`scale-api.txt`](../evidence/scale-api.txt)):
 
 | Request | Before | After |
 |---|---|---|
@@ -64,7 +64,7 @@ My first scale test covered the day view, the overlap check and the two statisti
 ## What did not change
 
 - **The total count is still linear.** `count(*)` of confirmed bookings on the statistics page reads the whole table: about 57 ms at 200 thousand rows (range 42 to 60 after the change). It is one number on a dashboard card. Options are a maintained counter, an estimate from the planner statistics, or dropping the number. I did not build any of them, because the cost is acceptable at this size and each option adds code that must stay correct.
-- **Small tables got slightly slower.** At 1 thousand rows the overlap check takes 0.37 ms instead of 0.05 ms, because reading 12 pages is cheaper than walking an index. At real campus volume, a few thousand bookings a year, both are far below anything a user can feel, so the honest summary is that this change is headroom for growth and not a fix for a slowness that exists today.
+- **Small tables got slightly slower.** At 1 thousand rows the overlap check takes 0.37 ms instead of 0.05 ms, because touching 12 buffers is cheaper than walking an index. At real campus volume, a few thousand bookings a year, both are far below anything a user can feel, so the honest summary is that this change is headroom for growth and not a fix for a slowness that exists today.
 
 ## What it costs
 

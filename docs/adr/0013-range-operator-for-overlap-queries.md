@@ -4,7 +4,7 @@ Status: accepted
 
 ## Context
 
-The day view, the overlap check before a booking and the statistics all ask which bookings overlap a period. I wrote the question as two comparisons (`start_time < end AND end_time > start`). Measured on 1 thousand to 200 thousand bookings, the pages read grew in step with the table, from 12 to about 2500, because the first comparison is true for almost every old row and no B-tree can narrow that down. See [data-scale](../engineering/data-scale.md).
+The day view, the overlap check before a booking and the statistics all ask which bookings overlap a period. I wrote the question as two comparisons (`start_time < end AND end_time > start`). Measured on 1 thousand to 200 thousand bookings, the shared buffer hits grew in step with the table, from 12 to about 2500, because the first comparison is true for almost every old row and the available indexes could not narrow that down (there was no index on `end_time`, and two opposed inequalities on two columns do not narrow the candidates enough for a B-tree to help across the whole table). See [data-scale](../engineering/data-scale.md).
 
 ## Options considered
 
@@ -20,7 +20,7 @@ The range operators, with the existing exclusion constraint index for the overla
 
 ## Consequences
 
-- At 200 thousand rows the pages read dropped from about 2500 to between 4 and 30 and stayed flat as the table grew. Through the API, the day view for all rooms went from 21 to 113 requests per second.
+- At 200 thousand rows the shared buffer hits dropped from about 2500 to between 4 and 30 and stayed flat as the table grew. Through the API, the day view for all rooms went from 21 to 113 requests per second.
 - Costs: 14 MB more index (48 percent), a bulk load about a third slower, and slightly slower queries on tiny tables (0.37 ms instead of 0.05 ms at 1 thousand rows).
 - The `'[)'` bounds must be part of the SQL text. As a bind parameter, they prevent the planner from matching the index expression in a generic plan.
 - Two PostgreSQL tests protect the result: one proves that the new predicate means exactly the same as the old one at every boundary, and one fails if these queries go back to a sequential scan.
