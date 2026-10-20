@@ -28,6 +28,10 @@ env:
   NAMESPACE: campusslot
   PYTHON: python3
 
+defaults:
+  run:
+    shell: bash   # bash -eo pipefail, so a failure before a pipe to tee is not hidden
+
 jobs:
   phase1:
     name: Phase 1, canary (${{ matrix.mode }})
