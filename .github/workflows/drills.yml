@@ -409,3 +409,118 @@ jobs:
         with:
           name: phase3
           path: evidence/
+
+  phase4:
+    name: Phase 4, linked signals (metric, trace, log)
+    if: startsWith(github.ref_name, 'drill/phase4')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      BASE: http://localhost
+    steps:
+      - uses: actions/checkout@v7
+      - run: mkdir -p evidence
+      - uses: azure/setup-helm@v5
+        with:
+          version: v3.22.0
+
+      - name: Create the kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: drill
+          config: ci/kind-config.yaml
+
+      - name: Record the environment of the measurements
+        run: |
+          {
+            echo "runner: $(nproc) vCPU, $(free -m | awk '/Mem:/ {print $2}') MB memory, $(uname -r)"
+            echo "kubernetes: $(kubectl version -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)["serverVersion"]["gitVersion"])')"
+            echo "image: ghcr.io/ujjwaljain16/campusslot-backend:$IMAGE_SHA"
+          } | tee evidence/environment.txt
+
+      - name: Install the ingress controller
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
+          kubectl wait --namespace ingress-nginx --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller --timeout=180s
+          for _ in $(seq 1 60); do
+            ready=$(kubectl get endpointslices --namespace ingress-nginx \
+              -l kubernetes.io/service-name=ingress-nginx-controller-admission \
+              -o jsonpath='{.items[*].endpoints[?(@.conditions.ready==true)].addresses[0]}')
+            [ -n "$ready" ] && break
+            sleep 2
+          done
+          test -n "$ready"
+
+      - name: Install Prometheus, Grafana, Loki and Alloy
+        run: scripts/install-monitoring.sh 2>&1 | tee evidence/install-monitoring.txt
+
+      - name: Install Tempo and link the data sources
+        run: scripts/install-tracing.sh 2>&1 | tee evidence/install-tracing.txt
+
+      - name: Deploy the application as a plain Deployment
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl create secret docker-registry ghcr --namespace "$NAMESPACE" \
+            --docker-server=ghcr.io --docker-username="${{ github.actor }}" --docker-password="${{ secrets.GITHUB_TOKEN }}"
+          password="$(openssl rand -hex 16)"
+          for attempt in 1 2 3; do
+            if helm upgrade --install campusslot helm/campusslot --namespace "$NAMESPACE" \
+              -f helm/campusslot/values-ci.yaml \
+              --set serviceMonitor.enabled=true --set serviceMonitor.interval=15s --set prometheusRule.enabled=true \
+              --set backend.image.tag="$IMAGE_SHA" --set frontend.image.tag="$IMAGE_SHA" \
+              --set-string postgres.password="$password" --atomic --timeout 6m; then
+              break
+            fi
+            echo "helm attempt $attempt of 3 failed"; sleep 10
+            [ "$attempt" = 3 ] && exit 1
+          done
+          kubectl get pods -n "$NAMESPACE"
+
+      - name: Port forwards, and the state of the data sources in Grafana
+        run: |
+          kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-prometheus 9090:9090 >/dev/null 2>&1 &
+          kubectl port-forward -n monitoring svc/tempo 3200:3200 >/dev/null 2>&1 &
+          kubectl port-forward -n monitoring svc/loki 3100:3100 >/dev/null 2>&1 &
+          kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80 >/dev/null 2>&1 &
+          sleep 8
+          for url in http://localhost:9090/-/ready http://localhost:3200/ready http://localhost:3100/ready; do
+            for _ in $(seq 1 40); do curl -sf -o /dev/null "$url" && break; sleep 3; done
+            echo "$url -> $(curl -s -o /dev/null -w '%{http_code}' "$url")"
+          done
+          pw="$(kubectl get secret monitoring-grafana -n monitoring -o jsonpath='{.data.admin-password}' | base64 -d)"
+          {
+            echo "== Grafana data sources (health, and the links between them)"
+            for uid in loki tempo; do
+              echo "-- $uid health: $(curl -s -u "admin:$pw" "http://localhost:3000/api/datasources/uid/$uid/health" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("status"), d.get("message"))')"
+            done
+            curl -s -u "admin:$pw" http://localhost:3000/api/datasources/uid/loki | python3 -c 'import json,sys; d=json.load(sys.stdin); print("-- Loki derived fields:", json.dumps(d["jsonData"].get("derivedFields")))'
+            curl -s -u "admin:$pw" http://localhost:3000/api/datasources/uid/tempo | python3 -c 'import json,sys; d=json.load(sys.stdin); print("-- Tempo traces to logs:", json.dumps(d["jsonData"].get("tracesToLogsV2")))'
+            echo "-- dashboards in Grafana:"
+            curl -s -u "admin:$pw" "http://localhost:3000/api/search?type=dash-db" | python3 -c 'import json,sys; [print("  ", x["title"], x["uid"]) for x in json.load(sys.stdin)]'
+          } 2>&1 | tee evidence/grafana.txt
+
+      - name: Warm up, so that the metric has a baseline
+        run: |
+          for _ in $(seq 1 30); do curl -fsS "$BASE/api/rooms" >/dev/null && break; sleep 2; done
+          python3 scripts/probe.py "$BASE/api/rooms" --seconds 20 --interval 0.2 --label warm-up | tail -3
+          sleep 60   # the recording rule needs an evaluation or two
+
+      - name: The drill, from the metric to the trace to the log line
+        run: |
+          PYTHON=python3 scripts/trace-drill.sh 2>&1 | tee evidence/trace-drill.txt
+
+      - name: Diagnostics
+        if: always()
+        run: |
+          kubectl get pods -A -o wide > evidence/pods.txt 2>&1 || true
+          kubectl logs -n monitoring statefulset/tempo --tail=200 > evidence/tempo.log 2>&1 || true
+          kubectl logs -n monitoring daemonset/alloy --tail=100 > evidence/alloy.log 2>&1 || true
+          kubectl logs -n campusslot -l app.kubernetes.io/component=backend --tail=40 > evidence/backend.log 2>&1 || true
+          { echo '```'; tail -n 25 evidence/trace-drill.txt 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase4
+          path: evidence/
