@@ -26,23 +26,37 @@ result() {   # $1 = PASS|FAIL, $2 = description, $3 = detail
   printf '%-5s %s\n      %s\n' "$1" "$2" "$3"
 }
 
+# The test pod meets the "restricted" Pod Security profile of the namespace, so that the only thing that can refuse
+# it is the image rule under test. (The first run of this drill used a bare pod: Pod Security refused all of them
+# before the image policies were asked, and the checks passed for the wrong reason.)
+overrides() {   # $1 = image
+  printf '{"spec":{"containers":[{"name":"drill-pod","image":"%s","securityContext":{"allowPrivilegeEscalation":false,"runAsNonRoot":true,"runAsUser":10001,"capabilities":{"drop":["ALL"]},"seccompProfile":{"type":"RuntimeDefault"}}}]}}' "$1"
+}
+
+try_pod() {   # $1 = image
+  kubectl run drill-pod -n "$NS" --image="$1" --restart=Never --dry-run=server -o name --overrides="$(overrides "$1")" 2>&1
+}
+
+# A refusal only counts when it names one of the policies of this project.
+POLICY_MESSAGE='campusslot-restrict-images|image not allowed|explicit tag|image attestations verification failed'
+
 expect_denied() {   # $1 = description, $2 = image
   local out
-  out="$(kubectl run drill-pod -n "$NS" --image="$2" --restart=Never --dry-run=server -o name 2>&1)"
-  if [ $? -ne 0 ] && echo "$out" | grep -qiE "denied|forbidden|violat|blocked|failed"; then
-    result PASS "$1" "$(echo "$out" | tail -n 1 | cut -c1-220)"
+  out="$(try_pod "$2")"
+  if [ $? -ne 0 ] && echo "$out" | grep -qE "$POLICY_MESSAGE"; then
+    result PASS "$1" "$(echo "$out" | grep -E "$POLICY_MESSAGE" | head -n 1 | cut -c1-260)"
   else
-    result FAIL "$1 (it was NOT refused)" "$(echo "$out" | tail -n 1 | cut -c1-220)"
+    result FAIL "$1 (it was NOT refused by an image policy)" "$(echo "$out" | tail -n 1 | cut -c1-260)"
   fi
 }
 
 expect_allowed() {  # $1 = description, $2 = image
   local out
-  out="$(kubectl run drill-pod -n "$NS" --image="$2" --restart=Never --dry-run=server -o name 2>&1)"
+  out="$(try_pod "$2")"
   if [ $? -eq 0 ]; then
     result PASS "$1" "$out"
   else
-    result FAIL "$1 (it was refused)" "$(echo "$out" | tail -n 1 | cut -c1-220)"
+    result FAIL "$1 (it was refused)" "$(echo "$out" | tail -n 1 | cut -c1-260)"
   fi
 }
 
