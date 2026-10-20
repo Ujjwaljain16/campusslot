@@ -1,0 +1,7 @@
+NAME                      POD-SELECTOR                                                                                                   AGE
+campusslot-allow-dns      <none>                                                                                                         0s
+campusslot-backend        app.kubernetes.io/component=backend,app.kubernetes.io/instance=campusslot,app.kubernetes.io/name=campusslot    0s
+campusslot-default-deny   <none>                                                                                                         0s
+campusslot-frontend       app.kubernetes.io/component=frontend,app.kubernetes.io/instance=campusslot,app.kubernetes.io/name=campusslot   0s
+campusslot-jobs           app.kubernetes.io/component in (backup,migration)                                                              0s
+campusslot-postgres       app.kubernetes.io/component=postgres,app.kubernetes.io/instance=campusslot,app.kubernetes.io/name=campusslot   0s

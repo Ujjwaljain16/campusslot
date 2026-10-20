@@ -1,0 +1,12 @@
+== admission policies, namespace campusslot (good image: ghcr.io/ujjwaljain16/campusslot-backend:2ca20e497c58cd409a9b1c2b7d36413a6370d4b2)
+PASS  an image from Docker Hub is refused
+      Error from server (Forbidden): pods "drill-pod" is forbidden: ValidatingAdmissionPolicy 'campusslot-restrict-images' with binding 'campusslot-restrict-images' denied request: image not allowed in this namespace: nginx:1.27-alpine. Allowed prefixes: ghcr.io/ujj
+PASS  an image of the project with the tag latest is refused
+      Error from server (Forbidden): pods "drill-pod" is forbidden: ValidatingAdmissionPolicy 'campusslot-restrict-images' with binding 'campusslot-restrict-images' denied request: an image needs an explicit tag, and the tag must not be latest
+PASS  an image without a tag is refused
+      Error from server (Forbidden): pods "drill-pod" is forbidden: ValidatingAdmissionPolicy 'campusslot-restrict-images' with binding 'campusslot-restrict-images' denied request: image not allowed in this namespace: postgres. Allowed prefixes: ghcr.io/ujjwaljain16
+PASS  the image that is running now is accepted
+      pod/drill-pod
+skip  the attestation check: set BAD_ATTEST to an image built without an attestation
+----
+passed: 4, failed: 0

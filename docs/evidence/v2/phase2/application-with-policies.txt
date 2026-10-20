@@ -1,0 +1,12 @@
+== the application with the policies on
+NAME                                   READY   STATUS      RESTARTS   AGE
+campusslot-backend-7746b5bff9-5sd2l    1/1     Running     0          67s
+campusslot-backend-7746b5bff9-hlrcn    1/1     Running     0          67s
+campusslot-frontend-5dbff6d68c-5trcp   1/1     Running     0          67s
+campusslot-frontend-5dbff6d68c-ql6s8   1/1     Running     0          67s
+campusslot-migrate-2-xwp84             0/1     Completed   0          31s
+campusslot-postgres-0                  1/1     Running     0          67s
+rooms through the ingress: HTTP 200
+first booking: HTTP 201
+same slot again: HTTP 409
+backend targets that Prometheus can scrape: 2 of 2

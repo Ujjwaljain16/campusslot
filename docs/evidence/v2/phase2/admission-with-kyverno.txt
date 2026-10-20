@@ -1,0 +1,13 @@
+== admission policies, namespace campusslot (good image: ghcr.io/ujjwaljain16/campusslot-backend:2ca20e497c58cd409a9b1c2b7d36413a6370d4b2)
+PASS  an image from Docker Hub is refused
+      Error from server (Forbidden): pods "drill-pod" is forbidden: ValidatingAdmissionPolicy 'campusslot-restrict-images' with binding 'campusslot-restrict-images' denied request: image not allowed in this namespace: nginx:1.27-alpine. Allowed prefixes: ghcr.io/ujj
+PASS  an image of the project with the tag latest is refused
+        build-provenance-from-this-repository: 'image attestations verification failed, verifiedCount: 0, requiredCount: 1, error: failed to fetch bundles: ghcr.io/ujjwaljain16/campusslot-backend:latest: HEAD https://ghcr.io/v2/ujjwaljain16/campusslot-backend/manife
+PASS  an image without a tag is refused
+      Error from server (Forbidden): pods "drill-pod" is forbidden: ValidatingAdmissionPolicy 'campusslot-restrict-images' with binding 'campusslot-restrict-images' denied request: image not allowed in this namespace: postgres. Allowed prefixes: ghcr.io/ujjwaljain16
+PASS  the image that is running now is accepted
+      pod/drill-pod
+PASS  an image of the project without a build attestation is refused (Kyverno)
+        build-provenance-from-this-repository: 'image attestations verification failed, verifiedCount: 0, requiredCount: 1, error: sigstore bundle verification failed: no matching signatures found'
+----
+passed: 5, failed: 0

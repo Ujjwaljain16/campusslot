@@ -1,0 +1,15 @@
+== network policies, namespace campusslot
+PASS  the backend reaches the database
+      connection is open, as intended
+PASS  the frontend reaches the backend
+      connection is open, as intended
+PASS  the frontend cannot reach the database
+      connection is blocked, as intended
+PASS  the backend cannot reach the internet
+      connection is blocked, as intended
+PASS  the database cannot reach the internet
+      connection is blocked, as intended
+PASS  a pod in another namespace cannot reach the backend
+      connection is blocked, as intended
+----
+passed: 6, failed: 0
