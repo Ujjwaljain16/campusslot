@@ -57,6 +57,7 @@ def main() -> int:
     ap.add_argument("--namespace", default="campusslot.*", help="a regular expression: any environment by default")
     ap.add_argument("--requests", type=int, default=40)
     ap.add_argument("--slow-ms", type=int, default=250)
+    ap.add_argument("--metric-wait", type=int, default=150, help="seconds to wait for the metric to show the breach")
     ap.add_argument("--wait", type=int, default=45, help="seconds to wait for Tempo and Loki to show the request")
     args = ap.parse_args()
 
@@ -88,17 +89,35 @@ def main() -> int:
     if not trace_id:
         return 1
 
-    # 2. the metric
-    try:
-        data = get_json(f"{args.prometheus}/api/v1/query?" + urllib.parse.urlencode({"query": "campusslot:http_fast_ratio:rate10m"}))
-        samples = data["data"]["result"]
-        ratio = float(samples[0]["value"][1]) if samples else None
-        if ratio is None:
-            result(False, "the metric: the share of fast requests", "no data yet: is prometheusRule.enabled on, and has a rate window passed?")
-        else:
-            result(ratio < 0.95, "the metric: the share of fast requests is below the objective of 95 percent", f"{ratio:.1%} of the requests of the last 10 minutes were within 0.25 s")
-    except Exception as exc:
-        result(False, "the metric: Prometheus could not be asked", str(exc))
+    # 2. the metric. It lags behind the requests on purpose: Prometheus scrapes every 15 s and the recording rule is evaluated
+    # every 30 s, so the breach shows up some tens of seconds late. The script waits for it and reports how long it took.
+    # (The first run of the drill read the metric right after the requests and saw 100 percent: a race in the script, not a
+    # missing link. The time to show up is the measurement.)
+    sent_at = time.time()
+    ratio = None
+    shown_after = None
+    metric_error = None
+    while time.time() - sent_at < args.metric_wait:
+        try:
+            data = get_json(f"{args.prometheus}/api/v1/query?" + urllib.parse.urlencode({"query": "campusslot:http_fast_ratio:rate10m"}))
+            samples = data["data"]["result"]
+            ratio = float(samples[0]["value"][1]) if samples else None
+            metric_error = None
+            if ratio is not None and ratio < 0.95:
+                shown_after = time.time() - sent_at
+                break
+        except Exception as exc:
+            metric_error = str(exc)
+        time.sleep(5)
+    if metric_error:
+        result(False, "the metric: Prometheus could not be asked", metric_error)
+    elif ratio is None:
+        result(False, "the metric: the share of fast requests", "no data: is prometheusRule.enabled on, and has a rate window passed?")
+    elif shown_after is None:
+        result(False, "the metric: the share of fast requests is below the objective of 95 percent", f"still {ratio:.1%} after {args.metric_wait} s")
+    else:
+        result(True, "the metric: the share of fast requests is below the objective of 95 percent",
+               f"{ratio:.1%} of the requests of the last 10 minutes were within 0.25 s; it showed {shown_after:.0f} s after the requests were sent")
 
     # 3. the trace
     deadline = time.time() + args.wait
