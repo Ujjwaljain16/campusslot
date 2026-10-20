@@ -176,3 +176,127 @@ jobs:
         with:
           name: phase1-${{ matrix.mode }}
           path: evidence/
+
+  phase2:
+    name: Phase 2, policies (Calico)
+    if: startsWith(github.ref_name, 'drill/phase2')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - run: mkdir -p evidence
+      - uses: azure/setup-helm@v5
+        with:
+          version: v3.22.0
+
+      - name: Create the kind cluster without a network plugin
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: drill
+          config: ci/kind-calico.yaml
+
+      - name: Install Calico, which enforces NetworkPolicy
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.30.3/manifests/calico.yaml
+          kubectl -n kube-system set env daemonset/calico-node FELIX_IGNORELOOSERPF=true
+          kubectl -n kube-system rollout status daemonset/calico-node --timeout=300s
+          kubectl wait --for=condition=Ready nodes --all --timeout=300s
+          kubectl -n kube-system rollout status deployment/coredns --timeout=300s
+
+      - name: Record the environment of the measurements
+        run: |
+          {
+            echo "runner: $(nproc) vCPU, $(free -m | awk '/Mem:/ {print $2}') MB memory, $(uname -r)"
+            echo "kubernetes: $(kubectl version -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)["serverVersion"]["gitVersion"])')"
+            echo "network plugin: Calico v3.30.3"
+            echo "image: ghcr.io/ujjwaljain16/campusslot-backend:$IMAGE_SHA"
+          } | tee evidence/environment.txt
+
+      - name: Install the ingress controller
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
+          kubectl wait --namespace ingress-nginx --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller --timeout=180s
+          for _ in $(seq 1 60); do
+            ready=$(kubectl get endpointslices --namespace ingress-nginx \
+              -l kubernetes.io/service-name=ingress-nginx-controller-admission \
+              -o jsonpath='{.items[*].endpoints[?(@.conditions.ready==true)].addresses[0]}')
+            [ -n "$ready" ] && break
+            sleep 2
+          done
+          test -n "$ready"
+
+      - name: Install Prometheus, to see whether the backend stays scraped
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update prometheus-community
+          helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+            --namespace monitoring --create-namespace --version 91.9.0 \
+            -f monitoring/kube-prometheus-stack-values.yaml --set grafana.enabled=false \
+            --wait --timeout 10m
+
+      - name: Deploy the application, with the network policies still off
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl create secret docker-registry ghcr --namespace "$NAMESPACE" \
+            --docker-server=ghcr.io --docker-username="${{ github.actor }}" --docker-password="${{ secrets.GITHUB_TOKEN }}"
+          password="$(openssl rand -hex 16)"
+          for attempt in 1 2 3; do
+            if helm upgrade --install campusslot helm/campusslot --namespace "$NAMESPACE" \
+              -f helm/campusslot/values-ci.yaml \
+              --set serviceMonitor.enabled=true --set serviceMonitor.interval=15s \
+              --set backend.image.tag="$IMAGE_SHA" --set frontend.image.tag="$IMAGE_SHA" \
+              --set-string postgres.password="$password" --atomic --timeout 6m; then
+              break
+            fi
+            echo "helm attempt $attempt of 3 failed"; sleep 10
+            [ "$attempt" = 3 ] && exit 1
+          done
+          kubectl get pods,svc,ingress --namespace "$NAMESPACE"
+
+      - name: The control, network checks with no policy (the blocked ones must fail here)
+        run: |
+          scripts/policy-drill.sh network 2>&1 | tee evidence/network-before.txt || true
+
+      - name: Enable the network policies, and check that the application still works
+        run: |
+          helm upgrade campusslot helm/campusslot -n "$NAMESPACE" --reuse-values --set networkPolicy.enabled=true
+          kubectl get networkpolicy -n "$NAMESPACE" | tee evidence/networkpolicies.txt
+          sleep 15
+          scripts/policy-drill.sh network 2>&1 | tee evidence/network-after.txt || true
+          bash scripts/ci-app-checks.sh 2>&1 | tee evidence/application-with-policies.txt
+
+      - name: Admission policy of Kubernetes (CEL)
+        run: |
+          kubectl apply -f policies/admission/restrict-images.yaml
+          sleep 10
+          kubectl get validatingadmissionpolicy campusslot-restrict-images -o jsonpath='{.status}' > evidence/vap-status.json 2>&1 || true
+          scripts/policy-drill.sh admission 2>&1 | tee evidence/admission.txt || true
+
+      - name: Kyverno, the build attestation of the images
+        run: |
+          scripts/install-kyverno.sh
+          kubectl apply -f policies/kyverno/verify-image-attestations.yaml
+          kubectl wait --for=condition=Ready clusterpolicy/campusslot-verify-image-attestations --timeout=120s || true
+          kubectl get clusterpolicy campusslot-verify-image-attestations -o yaml > evidence/kyverno-policy-status.yaml 2>&1 || true
+          sleep 10
+          # 6f22604 is the last commit of main before the attestations existed: its image was never attested.
+          BAD_ATTEST=ghcr.io/ujjwaljain16/campusslot-backend:6f22604ad87c09e44d6ca39fdcc51ae56dd54ac9 \
+            scripts/policy-drill.sh admission 2>&1 | tee evidence/admission-with-kyverno.txt || true
+
+      - name: Diagnostics
+        if: always()
+        run: |
+          kubectl get pods -A -o wide > evidence/pods.txt 2>&1 || true
+          kubectl -n kyverno logs deploy/kyverno-admission-controller --tail=150 > evidence/kyverno-admission.log 2>&1 || true
+          kubectl get validatingadmissionpolicy,validatingadmissionpolicybinding,clusterpolicy -o yaml > evidence/policies.yaml 2>&1 || true
+          for f in network-before network-after admission admission-with-kyverno; do
+            echo "**$f**" >> "$GITHUB_STEP_SUMMARY"
+            { echo '```'; grep -E '^(PASS|FAIL|passed|skip)' "evidence/$f.txt" 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase2
+          path: evidence/
