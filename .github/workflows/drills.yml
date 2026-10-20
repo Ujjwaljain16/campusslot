@@ -524,3 +524,74 @@ jobs:
         with:
           name: phase4
           path: evidence/
+
+  phase5:
+    name: Phase 5, environments and promotion (Argo CD)
+    if: startsWith(github.ref_name, 'drill/phase5')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    # The drill pushes one branch of its own (promotion-drill), because Argo CD follows what is on GitHub.
+    permissions:
+      contents: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # the promotion rules check that a build is a commit of this repository
+      - run: mkdir -p evidence
+      - uses: azure/setup-helm@v5
+        with:
+          version: v3.22.0
+
+      - name: Create the kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: drill
+          config: ci/kind-config.yaml
+
+      - name: Record the environment of the measurements
+        run: |
+          {
+            echo "runner: $(nproc) vCPU, $(free -m | awk '/Mem:/ {print $2}') MB memory, $(uname -r)"
+            echo "kubernetes: $(kubectl version -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)["serverVersion"]["gitVersion"])')"
+            echo "argo cd chart: 10.9.6, polling Git every 30 s"
+            echo "old build: c0d5a17a0c00, new build: d79ce938f742"
+          } | tee evidence/environment.txt
+
+      - name: Setup, Argo CD with the ApplicationSet, dev and staging at the old build
+        env:
+          PYTHON: python3
+        run: scripts/gitops-drill.sh setup 2>&1 | tee evidence/setup.txt
+
+      - name: Promote, a build goes to dev, a wrong promotion is refused, staging takes what dev runs
+        env:
+          PYTHON: python3
+        run: scripts/gitops-drill.sh promote 2>&1 | tee evidence/promote.txt || true
+
+      - name: Drift, change the cluster by hand and measure how long Argo CD takes to undo it
+        run: scripts/gitops-drill.sh drift 2>&1 | tee evidence/drift.txt || true
+
+      - name: Diagnostics
+        if: always()
+        run: |
+          kubectl get applications,applicationsets -n argocd -o yaml > evidence/applications.yaml 2>&1 || true
+          kubectl get pods -A -o wide > evidence/pods.txt 2>&1 || true
+          kubectl logs -n argocd deploy/argocd-applicationset-controller --tail=100 > evidence/applicationset-controller.log 2>&1 || true
+          kubectl logs -n argocd statefulset/argocd-application-controller --tail=150 > evidence/application-controller.log 2>&1 || true
+          git -C ../campusslot-promotion-drill log --oneline -8 > evidence/drill-branch-log.txt 2>&1 || true
+          for f in setup promote drift; do
+            echo "**$f**" >> "$GITHUB_STEP_SUMMARY"
+            { echo '```'; tail -n 25 "evidence/$f.txt" 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Cleanup, remove the drill branch from GitHub
+        if: always()
+        env:
+          PYTHON: python3
+        run: scripts/gitops-drill.sh cleanup 2>&1 | tee evidence/cleanup.txt || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase5
+          path: evidence/
