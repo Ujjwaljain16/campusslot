@@ -1,0 +1,39 @@
+Release "tempo" does not exist. Installing it now.
+WARNING: This chart is deprecated
+NAME: tempo
+LAST DEPLOYED: Tue Oct 20 21:14:46 2026
+NAMESPACE: monitoring
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+Release "monitoring" has been upgraded. Happy Helming!
+NAME: monitoring
+LAST DEPLOYED: Tue Oct 20 21:15:31 2026
+NAMESPACE: monitoring
+STATUS: deployed
+REVISION: 2
+NOTES:
+kube-prometheus-stack has been installed. Check its status by running:
+  kubectl --namespace monitoring get pods -l "release=monitoring"
+
+Get Grafana 'admin' user password by running:
+
+  kubectl --namespace monitoring get secrets monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+Access Grafana local instance:
+
+  export POD_NAME=$(kubectl --namespace monitoring get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=monitoring" -oname)
+  kubectl --namespace monitoring port-forward $POD_NAME 3000
+
+Get your grafana admin user password by running:
+
+  kubectl get secret --namespace monitoring -l app.kubernetes.io/component=admin-secret -o jsonpath="{.items[0].data.admin-password}" | base64 --decode ; echo
+
+
+Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.
+configmap/campusslot-slo-dashboard created
+NAME      READY   STATUS    RESTARTS   AGE
+tempo-0   1/1     Running   0          79s
+
+Tempo:   http://tempo.monitoring.svc.cluster.local:3200 (data source in Grafana: Tempo)
+Next:    helm upgrade campusslot ... --reuse-values --set tracing.enabled=true

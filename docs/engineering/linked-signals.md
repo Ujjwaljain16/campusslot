@@ -1,6 +1,6 @@
 # Linked signals: from a breached objective to the request
 
-Status: **written and tested where it can be without a cluster (60 backend tests, the script's failure handling against a local backend, the dashboard JSON, the chart renders). The drill has not been run on a cluster yet.** The measured results are added next to the predictions below after the first run. The decision is in [ADR 0018](../adr/0018-link-metrics-traces-and-logs-by-trace-id.md).
+Status: **built, and the drill has run** on a kind cluster of a GitHub-hosted runner (20 October 2026, [run 39498371341](https://github.com/Ujjwaljain16/campusslot/actions/runs/39498371341)). All five links held. The results are below, next to the predictions. The decision is in [ADR 0018](../adr/0018-link-metrics-traces-and-logs-by-trace-id.md).
 
 ## The problem
 
@@ -21,6 +21,8 @@ An alert says that an objective is breached. Finding out which requests were slo
 Tested without a cluster: the 7 new tests in `backend/tests/test_tracing.py` check that a request is one trace with its route, that its database statements are spans of the same trace, that the probes are not traced, that the response names its trace, that a failed request marks its span as an error, and that the log line carries the same id. One test failed on the first run and found a real problem: the OpenTelemetry package for SQLAlchemy supports only versions older than 2.1, and the application runs 2.1.3, so it switched itself off. Statements are now traced with SQLAlchemy's own events (ADR 0018).
 
 ## How to run the drill
+
+The route that was used, with no laptop: push the branch `drill/phase4` (`git push -f origin v2:refs/heads/drill/phase4`), and the job `phase4` of `.github/workflows/drills.yml` installs the monitoring stack, Tempo and the application on a kind cluster and runs the drill. On a laptop:
 
 About 400 MB more than the application and Prometheus alone. Close heavy applications first.
 
@@ -51,11 +53,28 @@ If a link is missing, the script says which, and the missing link is the finding
 
 ## Results
 
-Not measured yet.
+Environment ([environment.txt](../evidence/v2/phase4/environment.txt)): a GitHub-hosted runner, 4 vCPU, 16 GB, one kind node with Kubernetes v1.35.0, the full monitoring stack (Prometheus, Grafana, Loki, Alloy) and Tempo, the images of commit `2ca20e4`, two backend replicas. Every API request delayed by 400 ms, 40 requests sent ([trace-drill.txt](../evidence/v2/phase4/trace-drill.txt)).
+
+| Link | Predicted | Measured |
+|---|---|---|
+| The slowest request | 400 to 450 ms | **417 ms** |
+| The metric | below 95 percent fast | **80.9 percent** of the requests of the last 10 minutes within 0.25 s, **20 s** after the requests were sent (see below) |
+| The trace is found by a TraceQL search | within 15 s | **found** within the 45 s that the script waits (it polls every 3 s; the delay itself was not recorded) |
+| The spans of the trace | one for the request, one to three for the database | **5 spans**: the request (`/api/rooms`) and **1 database statement**. The other three were not looked at by the script and are not named here |
+| The time in the database | under 10 ms of about 400 | **3.2 ms of 415 ms**, so **412 ms were spent outside the database**: the trace says "the application, not the database" |
+| The log line | found by `trace_id` alone within 30 s | **found**, with the same `trace_id`, a `span_id`, the path, the status and the duration |
+
+The chain works from the objective to the request: the metric says that the fast share dropped, the trace of the slowest request says that 412 of its 415 ms were outside the database, and the log line of the same request is found with nothing but the trace id.
+
+### What the run showed that the predictions did not
+
+1. **The metric lags behind the requests.** The first run of the drill read the metric right after sending the requests, and it still said 100 percent: the share of fast requests comes from a recording rule that Prometheus evaluates every 30 s over data that it scrapes every 15 s. The script was wrong to read it at once, and it now waits for the breach and reports how long that took. In the second run the breach showed **20 s** after the last request. A person looking at the dashboard right after an incident starts sees the old value for up to about 45 s. This is a property of the design (scrape interval plus rule evaluation interval), not of this run.
+2. **The Tempo chart is deprecated, as suspected.** `helm install` prints "This chart is deprecated", and it works: the single binary ran, accepted the OTLP traffic and answered the TraceQL searches. Moving to the distributed chart or to Grafana Alloy plus a managed store stays on the list for a production version. It was not needed for this drill.
+3. **Grafana accepted the `$$` escapes.** The Loki data source has the derived field with the URL `${__value.raw}` and points to Tempo, and the Tempo data source has the logs query with `${__trace.traceId}` ([grafana.txt](../evidence/v2/phase4/grafana.txt)). Both data sources report healthy, and the SLO dashboard is loaded. Whether a click in the Grafana interface opens the trace was **not tested**: the script checks the provisioned settings and the three queries, and not the browser.
 
 ## Limits that are already known
 
-- The Tempo chart is configured from its documentation and has not run yet. The chart for a single binary may be deprecated in favour of the distributed chart, and if the first run shows that, the values move there.
+- The Tempo chart (single binary) is deprecated, and it works (see the results). A production version would use the distributed chart.
 - Tempo keeps the traces in memory and on the pod's own disk. A restart starts empty.
 - A graph point does not open its own trace (there are no exemplars). The dashboard links by a search over the same period and threshold.
 - The cost of tracing is not measured yet. It is part of the game day: the same load with tracing off, at a ratio of 0.1, and at 1.

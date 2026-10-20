@@ -1,0 +1,8 @@
+== Grafana data sources (health, and the links between them)
+-- loki health: OK Data source successfully connected.
+-- tempo health: OK Data source is working
+-- Loki derived fields: [{"datasourceUid": "tempo", "matcherRegex": "\"trace_id\": \"(\\w+)\"", "name": "trace_id", "url": "${__value.raw}", "urlDisplayLabel": "Open the trace"}]
+-- Tempo traces to logs: {"customQuery": true, "datasourceUid": "loki", "query": "{namespace=~\"campusslot.*\"} | json | trace_id=\"${__trace.traceId}\"", "spanEndTimeShift": "1m", "spanStartTimeShift": "-1m"}
+-- dashboards in Grafana:
+   CampusSlot overview campusslot-overview
+   CampusSlot SLO campusslot-slo
