@@ -300,3 +300,112 @@ jobs:
         with:
           name: phase2
           path: evidence/
+
+  phase3:
+    name: Phase 3, database (CloudNativePG)
+    if: startsWith(github.ref_name, 'drill/phase3')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      BASE: http://localhost
+      OBJECTSTORE_IMAGE: rustfs/rustfs:1.0.3
+    steps:
+      - uses: actions/checkout@v7
+      - run: mkdir -p evidence
+      - uses: azure/setup-helm@v5
+        with:
+          version: v3.22.0
+
+      - name: Create the kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: drill
+          config: ci/kind-config.yaml
+
+      - name: Record the environment of the measurements
+        run: |
+          {
+            echo "runner: $(nproc) vCPU, $(free -m | awk '/Mem:/ {print $2}') MB memory, $(uname -r)"
+            echo "kubernetes: $(kubectl version -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)["serverVersion"]["gitVersion"])')"
+            echo "storage class: $(kubectl get storageclass -o jsonpath='{.items[0].metadata.name}') (local disk of the runner, one node)"
+            echo "image: ghcr.io/ujjwaljain16/campusslot-backend:$IMAGE_SHA"
+            echo "object store image: $OBJECTSTORE_IMAGE"
+          } | tee evidence/environment.txt
+
+      - name: Install the ingress controller
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
+          kubectl wait --namespace ingress-nginx --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller --timeout=180s
+          for _ in $(seq 1 60); do
+            ready=$(kubectl get endpointslices --namespace ingress-nginx \
+              -l kubernetes.io/service-name=ingress-nginx-controller-admission \
+              -o jsonpath='{.items[*].endpoints[?(@.conditions.ready==true)].addresses[0]}')
+            [ -n "$ready" ] && break
+            sleep 2
+          done
+          test -n "$ready"
+
+      - name: Install the operator, cert-manager, the backup plugin and the object store
+        run: |
+          WITH_BACKUP=1 scripts/install-cnpg.sh 2>&1 | tee evidence/install-cnpg.txt
+          scripts/install-objectstore.sh 2>&1 | tee evidence/install-objectstore.txt
+
+      - name: Deploy the application on a database cluster with backups
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl create secret docker-registry ghcr --namespace "$NAMESPACE" \
+            --docker-server=ghcr.io --docker-username="${{ github.actor }}" --docker-password="${{ secrets.GITHUB_TOKEN }}"
+          password="$(openssl rand -hex 16)"
+          for attempt in 1 2 3; do
+            if helm upgrade --install campusslot helm/campusslot --namespace "$NAMESPACE" \
+              -f helm/campusslot/values-ci.yaml \
+              --set postgres.operator.enabled=true --set postgres.operator.backup.enabled=true \
+              --set backend.image.tag="$IMAGE_SHA" --set frontend.image.tag="$IMAGE_SHA" \
+              --set-string postgres.password="$password" --atomic --timeout 10m; then
+              break
+            fi
+            echo "helm attempt $attempt of 3 failed"; sleep 10
+            [ "$attempt" = 3 ] && exit 1
+          done
+          kubectl wait --for=condition=Ready cluster/campusslot-pg -n "$NAMESPACE" --timeout=600s
+          kubectl get cluster,pods,objectstore -n "$NAMESPACE" -o wide | tee evidence/cluster-before.txt
+          for _ in $(seq 1 30); do curl -fsS "$BASE/api/rooms" >/dev/null && break; sleep 2; done
+
+      - name: Failover with asynchronous replication
+        run: |
+          PYTHON=python3 FIRST_SLOT=0 scripts/db-drill.sh failover 2>&1 | tee evidence/failover-async.txt || true
+
+      - name: Failover with synchronous replication
+        run: |
+          helm upgrade campusslot helm/campusslot -n "$NAMESPACE" --reuse-values --set postgres.operator.synchronous=true
+          sleep 20
+          python3 scripts/cnpg_watch.py --namespace "$NAMESPACE" --cluster campusslot-pg --seconds 300 --until-healthy | tail -n 2 || true
+          PYTHON=python3 FIRST_SLOT=1000 scripts/db-drill.sh failover 2>&1 | tee evidence/failover-sync.txt || true
+
+      - name: Point in time recovery
+        run: |
+          # The recovery is of the cluster as it is; the synchronous setting does not matter for it.
+          python3 scripts/cnpg_watch.py --namespace "$NAMESPACE" --cluster campusslot-pg --seconds 300 --until-healthy | tail -n 2
+          PYTHON=python3 scripts/db-drill.sh pitr 2>&1 | tee evidence/pitr.txt || true
+
+      - name: Diagnostics
+        if: always()
+        run: |
+          kubectl get cluster,backup,scheduledbackup,objectstore,pods -n "$NAMESPACE" -o wide > evidence/cluster-after.txt 2>&1 || true
+          kubectl get cluster -n "$NAMESPACE" -o yaml > evidence/cluster.yaml 2>&1 || true
+          kubectl get backup -n "$NAMESPACE" -o yaml > evidence/backups.yaml 2>&1 || true
+          kubectl logs -n cnpg-system deploy/cnpg-cloudnative-pg --tail=300 > evidence/operator.log 2>&1 || true
+          kubectl logs -n cnpg-system deploy/barman-cloud --tail=200 > evidence/barman-plugin.log 2>&1 || true
+          kubectl logs -n object-store deploy/rustfs --tail=100 > evidence/objectstore.log 2>&1 || true
+          kubectl get events -n "$NAMESPACE" --sort-by=.lastTimestamp > evidence/events.txt 2>&1 || true
+          for f in failover-async failover-sync pitr; do
+            echo "**$f**" >> "$GITHUB_STEP_SUMMARY"
+            { echo '```'; tail -n 25 "evidence/$f.txt" 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase3
+          path: evidence/
