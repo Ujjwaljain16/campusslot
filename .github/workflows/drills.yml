@@ -1,0 +1,174 @@
+name: Drills (v2)
+
+# The drills of v2 on throw-away kind clusters of GitHub-hosted runners, so that no laptop is needed.
+# A drill runs when a branch named drill/<phase> is pushed, and only that phase runs:
+#
+#   git push origin v2:refs/heads/drill/phase1
+#
+# The workflow file is read from the pushed branch, so main (the submitted version) is never touched.
+# Every job saves its transcripts and the state of the cluster as an artifact. Numbers measured here come
+# from a shared runner (4 vCPU, 16 GB, one kind node): the documents say so next to every result.
+#
+# The images are the ones that the CI pipeline built for IMAGE_SHA. Change IMAGE_SHA when the code of the
+# backend or the frontend changes; the chart and the scripts always come from the pushed branch.
+on:
+  push:
+    branches: ['drill/**']
+
+concurrency:
+  group: drills-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  IMAGE_SHA: 2ca20e497c58cd409a9b1c2b7d36413a6370d4b2
+  NAMESPACE: campusslot
+  PYTHON: python3
+
+jobs:
+  phase1:
+    name: Phase 1, canary (${{ matrix.mode }})
+    if: startsWith(github.ref_name, 'drill/phase1')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [control, canary]
+    steps:
+      - uses: actions/checkout@v7
+
+      - run: mkdir -p evidence
+
+      - uses: azure/setup-helm@v5
+        with:
+          version: v3.22.0
+
+      - name: Create the kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: drill
+          config: ci/kind-config.yaml
+
+      - name: Record the environment of the measurements
+        run: |
+          {
+            echo "runner: $(nproc) vCPU, $(free -m | awk '/Mem:/ {print $2}') MB memory, $(uname -r)"
+            echo "kubernetes: $(kubectl version -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)["serverVersion"]["gitVersion"])')"
+            echo "image: ghcr.io/ujjwaljain16/campusslot-backend:$IMAGE_SHA"
+            echo "mode: ${{ matrix.mode }}"
+          } | tee evidence/environment.txt
+
+      - name: Install the ingress controller
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
+          kubectl wait --namespace ingress-nginx --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller --timeout=180s
+          for _ in $(seq 1 60); do
+            ready=$(kubectl get endpointslices --namespace ingress-nginx \
+              -l kubernetes.io/service-name=ingress-nginx-controller-admission \
+              -o jsonpath='{.items[*].endpoints[?(@.conditions.ready==true)].addresses[0]}')
+            [ -n "$ready" ] && break
+            sleep 2
+          done
+          test -n "$ready"
+
+      - name: Install Prometheus without Grafana, because the drill reads Prometheus directly
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update prometheus-community
+          helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+            --namespace monitoring --create-namespace --version 91.9.0 \
+            -f monitoring/kube-prometheus-stack-values.yaml --set grafana.enabled=false \
+            --wait --timeout 10m
+
+      - name: Install the Argo Rollouts controller
+        if: matrix.mode == 'canary'
+        run: scripts/install-rollouts.sh
+
+      - name: Deploy the application
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl create secret docker-registry ghcr --namespace "$NAMESPACE" \
+            --docker-server=ghcr.io --docker-username="${{ github.actor }}" --docker-password="${{ secrets.GITHUB_TOKEN }}"
+          extra=()
+          if [ "${{ matrix.mode }}" = "canary" ]; then extra+=(--set rollout.enabled=true); fi
+          password="$(openssl rand -hex 16)"
+          for attempt in 1 2 3; do
+            if helm upgrade --install campusslot helm/campusslot --namespace "$NAMESPACE" \
+              -f helm/campusslot/values-ci.yaml \
+              --set serviceMonitor.enabled=true --set serviceMonitor.interval=15s --set prometheusRule.enabled=true \
+              "${extra[@]}" \
+              --set backend.image.tag="$IMAGE_SHA" --set frontend.image.tag="$IMAGE_SHA" \
+              --set-string postgres.password="$password" --atomic --timeout 6m; then
+              break
+            fi
+            echo "helm attempt $attempt of 3 failed"; sleep 10
+            [ "$attempt" = 3 ] && exit 1
+          done
+          if [ "${{ matrix.mode }}" = "canary" ]; then
+            # helm does not wait for a Rollout; the first revision goes straight to Healthy.
+            kubectl wait --namespace "$NAMESPACE" --for=jsonpath='{.status.phase}'=Healthy rollout/campusslot-backend --timeout=300s
+          else
+            kubectl rollout status deployment/campusslot-backend --namespace "$NAMESPACE" --timeout=300s
+          fi
+          kubectl get pods,svc,ingress --namespace "$NAMESPACE"
+
+      - name: Warm up, and wait until Prometheus has numbers for the application
+        run: |
+          kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-prometheus 9090:9090 >/dev/null 2>&1 &
+          sleep 5
+          python3 scripts/probe.py http://localhost/api/rooms --seconds 45 --interval 0.1 --label warm-up | tail -5
+          for _ in $(seq 1 30); do
+            n=$(curl -s --get http://localhost:9090/api/v1/query --data-urlencode "query=count(http_requests_total{namespace=\"$NAMESPACE\"})" | python3 -c 'import json,sys; r=json.load(sys.stdin)["data"]["result"]; print(r[0]["value"][1] if r else 0)')
+            echo "series of http_requests_total in Prometheus: $n"
+            [ "$n" != "0" ] && break
+            sleep 5
+          done
+          test "$n" != "0"
+
+      - name: The drill
+        env:
+          URL: http://localhost/api/rooms
+          PROM: http://localhost:9090
+        run: |
+          # Two recorders next to the drill: the Ingress objects (does the canary Ingress keep the frontend rule?)
+          # and the status of the frontend page (does the page stay up while the traffic is split?).
+          ( while true; do
+              echo "--- $(date +%T)"
+              kubectl get ingress -n "$NAMESPACE" -o custom-columns='NAME:.metadata.name,PATHS:.spec.rules[*].http.paths[*].path,CANARY:.metadata.annotations.nginx\.ingress\.kubernetes\.io/canary,WEIGHT:.metadata.annotations.nginx\.ingress\.kubernetes\.io/canary-weight' --no-headers
+              sleep 5
+            done ) > evidence/ingress-timeline.txt 2>&1 &
+          ( while true; do
+              echo "$(date +%T) $(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://localhost/)"
+              sleep 1
+            done ) > evidence/frontend-timeline.txt 2>&1 &
+
+          if [ "${{ matrix.mode }}" = "control" ]; then
+            SECONDS_TOTAL=180 scripts/canary-drill.sh control 2>&1 | tee evidence/control.txt
+          else
+            SECONDS_TOTAL=240 scripts/canary-drill.sh good 2>&1 | tee evidence/good.txt
+            kubectl wait --namespace "$NAMESPACE" --for=jsonpath='{.status.phase}'=Healthy rollout/campusslot-backend --timeout=120s
+            sleep 30
+            SECONDS_TOTAL=180 scripts/canary-drill.sh bad 2>&1 | tee evidence/bad.txt
+          fi
+
+      - name: The state of the cluster afterwards
+        if: always()
+        run: |
+          kubectl get rollout,analysisrun,replicaset,pods,ingress,events -n "$NAMESPACE" -o wide > evidence/cluster-state.txt 2>&1 || true
+          kubectl get analysisrun -n "$NAMESPACE" -o yaml > evidence/analysisruns.yaml 2>&1 || true
+          kubectl get rollout -n "$NAMESPACE" -o yaml > evidence/rollout.yaml 2>&1 || true
+          kubectl logs -n argo-rollouts deploy/argo-rollouts --tail=200 > evidence/rollouts-controller.log 2>&1 || true
+          sort evidence/frontend-timeline.txt 2>/dev/null | awk '{print $2}' | sort | uniq -c > evidence/frontend-status-counts.txt || true
+          { echo "### Phase 1, ${{ matrix.mode }}"; echo; echo '```'; cat evidence/environment.txt; echo '```';
+            echo "Frontend page status counts while the drill ran:"; echo '```'; cat evidence/frontend-status-counts.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase1-${{ matrix.mode }}
+          path: evidence/
