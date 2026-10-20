@@ -1,0 +1,19 @@
+== failover: the primary is killed at +20 s, the users write for 90 s (5 per second)
+primary before: campusslot-pg-1
+(asynchronous replication)
++20 s  killing campusslot-pg-1
+---- the cluster
++   0.1 s  primary=campusslot-pg-1, ready=2/2, phase=Cluster in healthy state
++  20.9 s  primary=campusslot-pg-1, ready=1/2, phase=Failing over
++  40.6 s  primary=campusslot-pg-2, ready=1/2, phase=Failing over
++  41.7 s  primary=campusslot-pg-2, ready=1/2, phase=Waiting for the instances to become active
++  52.1 s  primary=campusslot-pg-2, ready=2/2, phase=Cluster in healthy state
+---- the users
+requests: 450, acknowledged: 319, failed: 131
+first failure at +22.2 s, last at +48.2 s, kinds: {'HTTP 503': 130, 'TimeoutError': 1}
+longest time without an acknowledged write: 26.4 s (from +22.0 s)
+wrote /tmp/tmp.y70IvUcTdZ/writes.json (319 acknowledged bookings)
+---- after the failover
+primary now: campusslot-pg-2 (was campusslot-pg-1)
+healthy after 0.0 s
+acknowledged writes: 319, still present: 319, LOST: 0

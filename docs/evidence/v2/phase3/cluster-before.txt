@@ -1,0 +1,14 @@
+NAME                                       AGE   INSTANCES   READY   STATUS                     PRIMARY
+cluster.postgresql.cnpg.io/campusslot-pg   83s   2           2       Cluster in healthy state   campusslot-pg-1
+
+NAME                                       READY   STATUS      RESTARTS   AGE   IP            NODE                  NOMINATED NODE   READINESS GATES
+pod/campusslot-backend-5d7767d66-5mxkk     1/1     Running     0          83s   10.244.0.21   drill-control-plane   <none>           <none>
+pod/campusslot-backend-5d7767d66-jsqcv     1/1     Running     0          83s   10.244.0.18   drill-control-plane   <none>           <none>
+pod/campusslot-frontend-5dbff6d68c-lgqgb   1/1     Running     0          83s   10.244.0.19   drill-control-plane   <none>           <none>
+pod/campusslot-frontend-5dbff6d68c-p7nnl   1/1     Running     0          83s   10.244.0.20   drill-control-plane   <none>           <none>
+pod/campusslot-migrate-1-rgz86             0/1     Completed   0          83s   10.244.0.17   drill-control-plane   <none>           <none>
+pod/campusslot-pg-1                        2/2     Running     0          58s   10.244.0.24   drill-control-plane   <none>           <none>
+pod/campusslot-pg-2                        2/2     Running     0          11s   10.244.0.28   drill-control-plane   <none>           <none>
+
+NAME                                                  AGE
+objectstore.barmancloud.cnpg.io/campusslot-pg-store   83s

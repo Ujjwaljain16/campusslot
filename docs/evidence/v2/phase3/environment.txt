@@ -1,0 +1,5 @@
+runner: 4 vCPU, 15983 MB memory, 7.0.0-1017-azure
+kubernetes: v1.35.0
+storage class: standard (local disk of the runner, one node)
+image: ghcr.io/ujjwaljain16/campusslot-backend:2ca20e497c58cd409a9b1c2b7d36413a6370d4b2
+object store image: rustfs/rustfs:1.0.3

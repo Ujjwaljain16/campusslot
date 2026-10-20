@@ -4,8 +4,8 @@
 #
 # It lives in its own namespace, outside the application's namespace and its image policy, and it is installed by
 # scripts/install-objectstore.sh, which also creates the credentials. The image tag is a setting of that script
-# (OBJECTSTORE_IMAGE), because the project that publishes it changes its tags often and this one was not verified
-# on a cluster yet.
+# (OBJECTSTORE_IMAGE), because the project that publishes it changes its tags often. 1.0.3 is the tag that the
+# database drill ran with (docs/engineering/database-reliability.md).
 apiVersion: v1
 kind: Namespace
 metadata:

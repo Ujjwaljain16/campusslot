@@ -1,0 +1,26 @@
+== point in time recovery of campusslot-pg (namespace campusslot)
+-- a base backup (the starting point of the recovery)
+backup.postgresql.cnpg.io/pitr-base-1792529700 created
+backup phase: completed
+-- the data that must survive
+requests: 50, acknowledged: 50, failed: 0
+bookings at T: 709, T = 2026-10-20 20:55:23.498733+00
+-- data written after T (it must NOT come back)
+requests: 25, acknowledged: 25, failed: 0
+-- the mistake: every booking is deleted
+bookings after the mistake: 0
+age of the newest archived WAL file, before the mistake: 22 s (the archive's data loss window is at most archive_timeout)
+-- restore a second cluster to 2026-10-20 20:55:23.498733+00
+cluster.postgresql.cnpg.io/campusslot-pg-restore created
++   0.1 s  primary=-, ready=0/?, phase=?
++   1.1 s  primary=-, ready=0/1, phase=Setting up primary
++  28.4 s  primary=-, ready=0/1, phase=Waiting for the instances to become active
++  31.5 s  primary=campusslot-pg-restore-1, ready=0/1, phase=Waiting for the instances to become active
++  38.8 s  primary=campusslot-pg-restore-1, ready=0/1, phase=Primary instance is being restarted without a switchover
++  53.4 s  primary=campusslot-pg-restore-1, ready=1/1, phase=Cluster in healthy state
+healthy after 53.4 s
+---- result
+restore time (RTO): 53 s
+bookings at T: 709, bookings in the restored cluster: 709
+PASS: the restored data is exactly the data of the time T
+(the restored cluster stays for inspection: kubectl delete cluster campusslot-pg-restore -n campusslot)

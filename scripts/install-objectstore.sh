@@ -11,7 +11,7 @@ set -euo pipefail
 
 NAMESPACE="${NAMESPACE:-campusslot}"
 BUCKET="${BUCKET:-campusslot-backups}"
-OBJECTSTORE_IMAGE="${OBJECTSTORE_IMAGE:-rustfs/rustfs:1.0.0}"   # check the tag on Docker Hub before the first run
+OBJECTSTORE_IMAGE="${OBJECTSTORE_IMAGE:-rustfs/rustfs:1.0.3}"   # the tag that the phase 3 drill ran with
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 kubectl create namespace object-store --dry-run=client -o yaml | kubectl apply -f - >/dev/null

@@ -1,0 +1,10 @@
+namespace/object-store configured
+persistentvolumeclaim/rustfs-data created
+Warning: would violate PodSecurity "restricted:latest": allowPrivilegeEscalation != false (container "rustfs" must set securityContext.allowPrivilegeEscalation=false), unrestricted capabilities (container "rustfs" must set securityContext.capabilities.drop=["ALL"]), runAsNonRoot != true (pod or container "rustfs" must set securityContext.runAsNonRoot=true), seccompProfile (pod or container "rustfs" must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
+deployment.apps/rustfs created
+service/rustfs created
+Waiting for deployment "rustfs" rollout to finish: 0 of 1 updated replicas are available...
+deployment "rustfs" successfully rolled out
+Warning: would violate PodSecurity "restricted:latest": allowPrivilegeEscalation != false (container "create-bucket" must set securityContext.allowPrivilegeEscalation=false), unrestricted capabilities (container "create-bucket" must set securityContext.capabilities.drop=["ALL"]), runAsNonRoot != true (pod or container "create-bucket" must set securityContext.runAsNonRoot=true), seccompProfile (pod or container "create-bucket" must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
+make_bucket: campusslot-backups
+object store ready: http://rustfs.object-store.svc:9000, bucket campusslot-backups

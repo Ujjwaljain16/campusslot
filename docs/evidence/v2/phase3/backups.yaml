@@ -1,0 +1,100 @@
+apiVersion: v1
+items:
+- apiVersion: postgresql.cnpg.io/v1
+  kind: Backup
+  metadata:
+    creationTimestamp: "2026-10-20T20:50:13Z"
+    generation: 1
+    labels:
+      cnpg.io/cluster: campusslot-pg
+      cnpg.io/immediateBackup: "true"
+      cnpg.io/scheduled-backup: campusslot-pg
+    name: campusslot-pg-20261020205013
+    namespace: campusslot
+    ownerReferences:
+    - apiVersion: postgresql.cnpg.io/v1
+      controller: true
+      kind: ScheduledBackup
+      name: campusslot-pg
+      uid: e0dfeacc-1e4d-4c88-a67e-95f85f398352
+    resourceVersion: "2009"
+    uid: faad26cf-7ec9-4f3a-b250-5d0f5da034d5
+  spec:
+    cluster:
+      name: campusslot-pg
+    method: plugin
+    pluginConfiguration:
+      name: barman-cloud.cloudnative-pg.io
+  status:
+    backupId: 20261020T205114
+    backupName: backup-20261020205113
+    beginLSN: 0/403B710
+    beginWal: "000000010000000000000004"
+    endLSN: 0/5000100
+    endWal: "000000010000000000000005"
+    instanceID:
+      ContainerID: containerd://a7276b154dbd22560e629ba7748cc60bd15ab0784ffe46cf4105605c0d1f8c70
+      podName: campusslot-pg-1
+      sessionID: 5f848270-547e-425f-8846-2c21beaf0558
+    majorVersion: 16
+    method: plugin
+    online: true
+    phase: completed
+    pluginMetadata:
+      clusterUID: a2404a5d-ccce-4416-ba68-860d52055c24
+      displayName: BarmanCloudInstance
+      name: barman-cloud.cloudnative-pg.io
+      pluginName: barman-cloud.cloudnative-pg.io
+      timeline: "1"
+      version: 0.15.1
+    reconciliationStartedAt: "2026-10-20T20:51:13Z"
+    reconciliationTerminatedAt: "2026-10-20T20:51:31Z"
+    startedAt: "2026-10-20T20:51:14Z"
+    stoppedAt: "2026-10-20T20:51:27Z"
+- apiVersion: postgresql.cnpg.io/v1
+  kind: Backup
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"postgresql.cnpg.io/v1","kind":"Backup","metadata":{"annotations":{},"name":"pitr-base-1792529700","namespace":"campusslot"},"spec":{"cluster":{"name":"campusslot-pg"},"method":"plugin","pluginConfiguration":{"name":"barman-cloud.cloudnative-pg.io"}}}
+    creationTimestamp: "2026-10-20T20:55:00Z"
+    generation: 1
+    name: pitr-base-1792529700
+    namespace: campusslot
+    resourceVersion: "3025"
+    uid: 0056359e-9f90-4543-87db-9d2d1c0336ad
+  spec:
+    cluster:
+      name: campusslot-pg
+    method: plugin
+    pluginConfiguration:
+      name: barman-cloud.cloudnative-pg.io
+  status:
+    backupId: 20261020T205501
+    backupName: backup-20261020205501
+    beginLSN: 0/702FA30
+    beginWal: "000000030000000000000007"
+    endLSN: 0/709E308
+    endWal: "000000030000000000000007"
+    instanceID:
+      ContainerID: containerd://da32fd99badfacb3834068320a496fff17d05318a4c62d6ba1406d22ce511140
+      podName: campusslot-pg-2
+      sessionID: 5c12be1c-0bdc-4150-986d-97e62442931b
+    majorVersion: 16
+    method: plugin
+    online: true
+    phase: completed
+    pluginMetadata:
+      clusterUID: a2404a5d-ccce-4416-ba68-860d52055c24
+      displayName: BarmanCloudInstance
+      name: barman-cloud.cloudnative-pg.io
+      pluginName: barman-cloud.cloudnative-pg.io
+      timeline: "3"
+      version: 0.15.1
+    reconciliationStartedAt: "2026-10-20T20:55:00Z"
+    reconciliationTerminatedAt: "2026-10-20T20:55:12Z"
+    startedAt: "2026-10-20T20:55:01Z"
+    stoppedAt: "2026-10-20T20:55:10Z"
+kind: List
+metadata:
+  resourceVersion: ""
