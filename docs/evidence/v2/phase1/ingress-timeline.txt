@@ -1,0 +1,273 @@
+--- 20:20:20
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:20:25
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:20:30
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:20:35
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:20:40
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:20:45
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:20:50
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:20:55
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:21:00
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:21:05
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:21:10
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:21:15
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:21:21
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:21:26
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:21:31
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:21:36
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:21:41
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:21:46
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:21:51
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:21:56
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:22:01
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:22:06
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:22:11
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:22:16
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:22:21
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:22:26
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:22:31
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:22:36
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:22:41
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:22:47
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:22:52
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:22:57
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:02
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:07
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:12
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:17
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:22
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:27
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:32
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:37
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:42
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:47
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:52
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:23:57
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:02
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:07
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:13
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:18
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:23
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:28
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:33
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:38
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:43
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:48
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:53
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:24:58
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:03
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:08
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:13
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:18
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:23
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:28
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:33
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:38
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:43
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:49
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:54
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     10
+--- 20:25:59
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:26:04
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:26:09
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     50
+--- 20:26:14
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:26:19
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:26:24
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:26:29
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:26:34
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:26:39
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:26:44
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:26:49
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:26:54
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:26:59
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:04
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:10
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:15
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:20
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:25
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:30
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:35
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:40
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:45
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:50
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0
+--- 20:27:55
+campusslot                             /api,/docs,/openapi.json,/   <none>   <none>
+campusslot-backend-campusslot-canary   /api,/docs,/openapi.json,/   true     0

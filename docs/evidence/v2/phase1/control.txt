@@ -1,0 +1,9 @@
+== plain Deployment, bad release (FAULT_ERROR_RATE=0.3), users watched for 180 s
++   0.1 s  updated=1, ready=2, available=2, replicas=3
++   3.2 s  updated=2, ready=2, available=2, replicas=3
++   6.5 s  updated=2, ready=2, available=2, replicas=2
+----
+[users] requests: 1800, failed: 521 (28.94 percent)
+[users] latency of successful requests: median 5.1 ms, p95 6.9 ms, slowest 44.3 ms
+[users] first failure at +6.0 s, last at +179.8 s
+[users] kinds: {'HTTP 500': 521}

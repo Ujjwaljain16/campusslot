@@ -1,0 +1,15 @@
+== canary Rollout, bad release (FAULT_ERROR_RATE=0.3), users watched for 180 s
++   0.1 s  phase=Progressing, step=0, canary weight=0, message=more replicas need to be updated
++   0.1 s  analysis campusslot-backend-54878bbf7c-2: Successful
++   3.4 s  phase=Paused, step=1, canary weight=10, message=CanaryPauseStep
++   3.5 s  analysis campusslot-backend-8546f4b89d-3: Running
++  64.1 s  phase=Paused, step=3, canary weight=50, message=CanaryPauseStep
++  78.6 s  phase=Degraded, step=0, canary weight=0, message=RolloutAborted: Rollout aborted update to revision 3: Background analysis phase error/failed: Metric "error-ratio" assessed Failed due to failed (3) > failureLimit (2)
++  78.7 s  analysis campusslot-backend-8546f4b89d-3: Failed
+canary version (8546f4b89d): 150 of 3012 requests (5.0 percent), 49 failed
+stable version (54878bbf7c): 2862 of 3012 requests (95.0 percent), 0 failed
+----
+[users] requests: 1800, failed: 45 (2.50 percent)
+[users] latency of successful requests: median 5.0 ms, p95 6.7 ms, slowest 45.0 ms
+[users] first failure at +8.0 s, last at +81.6 s
+[users] kinds: {'HTTP 500': 45}

@@ -1,0 +1,14 @@
+== canary Rollout, harmless change, users watched for 240 s
++   0.1 s  phase=Progressing, step=0, canary weight=0, message=more replicas need to be updated
++   3.5 s  phase=Paused, step=1, canary weight=10, message=CanaryPauseStep
++   3.5 s  analysis campusslot-backend-54878bbf7c-2: Running
++  63.1 s  phase=Paused, step=3, canary weight=50, message=CanaryPauseStep
++ 122.8 s  phase=Progressing, step=4, canary weight=50, message=waiting for all steps to complete
++ 125.1 s  phase=Healthy, step=4, canary weight=100, message=
++ 125.2 s  analysis campusslot-backend-54878bbf7c-2: Successful
++ 126.2 s  phase=Healthy, step=4, canary weight=0, message=
+canary version (54878bbf7c): 2569 of 3472 requests (74.0 percent), 0 failed
+stable version (cb879bbc6): 903 of 3472 requests (26.0 percent), 0 failed
+----
+[users] requests: 2400, failed: 0 (0.00 percent)
+[users] latency of successful requests: median 5.0 ms, p95 6.4 ms, slowest 50.2 ms

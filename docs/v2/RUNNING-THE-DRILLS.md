@@ -10,6 +10,10 @@ Every phase of v2 was written and tested as far as it can be without a cluster, 
 - **After a session**: write the results into the phase document, change the status in [the table](README.md), commit, then `minikube delete -p campusslot`. Docker's disk file does not shrink by itself, so compact it afterwards (`diskpart` in an administrator shell, with Docker stopped).
 - Port forwards are in the header of every drill script.
 
+## The CI route (used since phase 1)
+
+The drills can run on kind clusters of GitHub-hosted runners, with no load on the laptop: push `v2` to a branch named `drill/phaseN` (`git push -f origin v2:refs/heads/drill/phase1`), and the workflow `.github/workflows/drills.yml` runs that phase and saves the transcripts as artifacts (`gh run download <run-id>`). Phase 1 is ported and has run. Numbers from a runner are from a shared 4 vCPU machine, and the documents state it. Read the transcript of every job, not only its colour: the first run of phase 1 was green for a drill that had not run.
+
 ## The order, and what to check first
 
 | # | Phase | Cluster | Run | The least verified parts (look here first) |
