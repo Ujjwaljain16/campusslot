@@ -1,0 +1,8 @@
+applicationset.argoproj.io "campusslot" deleted from argocd namespace
+application.argoproj.io "campusslot-dev" deleted from argocd namespace
+application.argoproj.io "campusslot-staging" deleted from argocd namespace
+namespace "campusslot-dev" deleted
+namespace "campusslot-staging" deleted
+deleted the remote branch promotion-drill
+removed the worktree
+deleted the local branch promotion-drill

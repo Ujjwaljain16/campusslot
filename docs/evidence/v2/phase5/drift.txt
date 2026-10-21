@@ -1,0 +1,13 @@
+== 1. a person scales the backend of dev by hand
+replicas now: 3
+Argo CD puts the replica count back: 2 s
+== 2a. a person adds an environment variable to the backend Deployment that Git does not declare
+Argo CD removes the extra variable: NOT reached within 60 s (last value: by-hand)
+application state meanwhile: Synced/Healthy
+== 2b. a person changes a setting that Git declares (LOG_LEVEL in the ConfigMap of the backend)
+declared value: DEBUG
+Argo CD puts the declared value back: 2 s
+dev is synced again: 0 s
+== 3. a person deletes the frontend Service
+Error from server (NotFound): services "campusslot-frontend" not found
+Argo CD recreates the Service: 2 s

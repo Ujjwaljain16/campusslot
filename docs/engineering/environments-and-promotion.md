@@ -1,6 +1,6 @@
 # Environments and promotion through Git
 
-Status: **written and tested where it can be without a cluster (21 unit tests of the promotion rules on real git repositories, every environment renders in CI, the change detection was tried on a throw-away repository). The drill has not been run on a cluster yet.** The measured results are added next to the predictions below after the first run. The decision is in [ADR 0019](../adr/0019-environments-as-directories-promotion-by-pull-request.md).
+Status: **built, and the drill has run** on a kind cluster of a GitHub-hosted runner (21 October 2026, [run 39575969595](https://github.com/Ujjwaljain16/campusslot/actions/runs/39575969595)). The results are below, next to the predictions. The `Promote` workflow has not run (see the limits). The decision is in [ADR 0019](../adr/0019-environments-as-directories-promotion-by-pull-request.md).
 
 ## The problem
 
@@ -30,6 +30,8 @@ Tested without a cluster: the rules against a throw-away git repository (a skipp
 - A worktree is made from a commit, so the drill can only run on committed files. That is what a drill of Git should demand anyway.
 
 ## How to run the drill
+
+The route that was used, with no laptop: push the branch `drill/phase5` (`git push -f origin v2:refs/heads/drill/phase5`). The job `phase5` of `.github/workflows/drills.yml` builds a kind cluster with an ingress controller, runs `setup`, `promote` and `drift`, and always runs `cleanup`, which deletes the temporary `promotion-drill` branch from GitHub (the job needs `contents: write` for that branch). On a laptop:
 
 About 700 MB for Argo CD, plus a small application per environment (a backend, a frontend and a database each, no monitoring). The laptop runs dev and staging, and not prod (see the note in `gitops/envs/prod/values.yaml`).
 
@@ -62,7 +64,31 @@ If the numbers differ, the difference is the finding.
 
 ## Results
 
-Not measured yet.
+Environment ([environment.txt](../evidence/v2/phase5/environment.txt)): a GitHub-hosted runner, 4 vCPU, 16 GB, one kind node with Kubernetes v1.35.0, Argo CD chart 10.9.6 polling Git every 30 s, dev and staging at the old build `c0d5a17` and promoted to `d79ce93`. Transcripts: [setup](../evidence/v2/phase5/setup.txt), [promote](../evidence/v2/phase5/promote.txt), [drift](../evidence/v2/phase5/drift.txt).
+
+| What | Predicted | Measured |
+|---|---|---|
+| Dev runs the new image after the push | 40 to 100 s | **62 s**, and Synced/Healthy 4 s later |
+| Staging while dev has the new build | still the old build | **still `c0d5a17`**, as intended |
+| A hand edit that gives staging a build that dev does not run | refused by `check`, with the message of the rules | **refused**: "staging: takes eeeeeeeeeeee, but dev runs d79ce938f742 at the base. A build is promoted one step at a time." |
+| Staging after its own promotion | 40 to 100 s after the push | **35 s**, Synced/Healthy 6 s later |
+| From the first push to both environments on the new build | not predicted | **110 s** |
+| A manual scale of the backend in dev | back to 1 within 5 to 20 s | **2 s** |
+| A manual environment variable in dev | removed within 5 to 20 s | **not removed** (see below) |
+| A deleted Service in dev | recreated within 10 to 30 s | **2 s** |
+| Prod | OutOfSync after a merged promotion, waits for a person | **not deployed in this drill**, as planned |
+
+### The finding: Argo CD undoes what Git declares, and not what Git does not mention
+
+The first drift test failed, and the failure is the most useful result of the phase. A variable `DRILL_EXTRA` added by hand to the backend Deployment **stayed** (the drill waited 60 s), and during all that time Argo CD reported the application as **Synced/Healthy**. A declared setting that was changed by hand, `LOG_LEVEL` in the ConfigMap of the backend, was **put back in 2 s**, and so was the replica count. So the prediction "a manual setting is removed" was wrong for a setting that Git does not declare.
+
+This matches how Argo CD compares an application: it looks at the fields that the manifests in Git declare, and a field that only exists in the cluster is not a difference. This run shows the contrast (the extra variable stays, the declared setting returns) and does not test the mechanism or any remedy. What it means for the project: **self-heal protects the declared configuration, and it does not detect additions.** Someone with write access to the namespace can add an environment variable, a sidecar or a volume by hand and Git will not know. The things that would close the gap are not built and not tested: server-side diff in Argo CD, or an admission policy that refuses changes that do not come from Argo CD. This is a limit for the README, not only for this document.
+
+### What the first runs of the drill taught
+
+1. **The first run was green and measured nothing.** Argo CD's Redis was stuck in `ImagePullBackOff`: the chart pulls it from `ecr-public.aws.com`, which answered 429 (too many requests) to the runner. The script did not stop on the failed install, so it waited 300 s three times and the drift tests failed with "not found". The script now stops when Argo CD is not ready and prints the events, and the drill pulls Redis from a mirror (`REDIS_REPOSITORY`). A cluster that is not on shared addresses would not meet this limit.
+2. **Both applications stayed `Progressing`** although every pod was running. An Ingress with no controller has no address, and Argo CD calls such an Ingress Progressing. The job now installs the ingress controller first (on Minikube it is an addon).
+3. **The drill expected to find the variable removed** by comparing against an empty string. The check is now two checks, one for each case, so the result says what was learned.
 
 ## Limits that are already known
 

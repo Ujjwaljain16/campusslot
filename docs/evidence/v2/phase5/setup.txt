@@ -1,0 +1,19 @@
+== the drill branch promotion-drill, in /home/runner/work/campusslot/campusslot/../campusslot-promotion-drill: every environment at the old build c0d5a17a0c00
+remote: 
+remote: Create a pull request for 'promotion-drill' on GitHub by visiting:        
+remote:      https://github.com/Ujjwaljain16/campusslot/pull/new/promotion-drill        
+remote: 
+== namespaces and database Secrets (random passwords, only in the cluster)
+namespace/campusslot-dev created
+namespace/campusslot-staging created
+namespace/campusslot-prod created
+secret/campusslot-db created
+secret/campusslot-db created
+== Argo CD with the ApplicationSet controller
+NAMESPACE: argocd
+== the ApplicationSet, for dev and staging, following promotion-drill
+applicationset.argoproj.io/campusslot created
+dev is synced and healthy: 31 s
+staging is synced and healthy: 0 s
+dev runs ghcr.io/ujjwaljain16/campusslot-backend:c0d5a17a0c002264fdf6c7c4be08faf29cb630f2
+staging runs ghcr.io/ujjwaljain16/campusslot-backend:c0d5a17a0c002264fdf6c7c4be08faf29cb630f2

@@ -1,0 +1,4 @@
+runner: 4 vCPU, 15983 MB memory, 7.0.0-1017-azure
+kubernetes: v1.35.0
+argo cd chart: 10.9.6, polling Git every 30 s
+old build: c0d5a17a0c00, new build: d79ce938f742

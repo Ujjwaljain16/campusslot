@@ -1,0 +1,18 @@
+== before: dev runs c0d5a17a0c00, staging runs c0d5a17a0c00
+== 1. dev takes the new build d79ce938f742
+dev: c0d5a17a0c00 -> d79ce938f742  (gitops/envs/dev/values.yaml)
+dev runs the new image after the push: 62 s
+dev is synced and healthy: 4 s
+staging still runs c0d5a17a0c00: it has not been promoted
+== 2. a hand edit that gives staging a build that dev does not run is refused
+PASS: the rule stopped it, as CI would
+      changed environments: staging
+      PROMOTION RULES BROKEN:
+        - staging: takes eeeeeeeeeeee, but dev runs d79ce938f742 at the base. A build is promoted one step at a time.
+== 3. staging takes what dev runs
+staging: c0d5a17a0c00 -> d79ce938f742  (gitops/envs/staging/values.yaml)
+changed environments: staging
+the promotion rules hold (compared with 8f8d305e4b31781a6027cd404b01727a27b9a7d4)
+staging runs the new image after the push: 35 s
+staging is synced and healthy: 6 s
+total: 110 s from the first push to both environments on the new build
