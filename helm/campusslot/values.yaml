@@ -157,7 +157,10 @@ rollout:
   enabled: false
   steps:
     - setWeight: 10
-    - pause: { duration: 60s }
+    # Longer than the analysis needs to reach a verdict on a bad release (45 s of initial delay, two more readings 15 s
+    # apart, and the pod start). With 60 s the rollout was already at 50 percent of the traffic when the abort came
+    # (docs/engineering/canary-releases.md).
+    - pause: { duration: 90s }
     - setWeight: 50
     - pause: { duration: 60s }
   analysis:
