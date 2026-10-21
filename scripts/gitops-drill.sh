@@ -148,10 +148,21 @@ case "$MODE" in
     echo "replicas now: $(kubectl get deployment campusslot-backend -n campusslot-dev -o jsonpath='{.spec.replicas}')"
     wait_until "Argo CD puts the replica count back" "1" kubectl get deployment campusslot-backend -n campusslot-dev -o jsonpath='{.spec.replicas}'
 
-    echo "== 2. a person changes a setting of the backend by hand"
-    kubectl set env deployment/campusslot-backend -n campusslot-dev LOG_LEVEL=ERROR >/dev/null
-    wait_until "Argo CD removes the manual setting" "" kubectl get deployment campusslot-backend -n campusslot-dev -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="LOG_LEVEL")].value}'
-    wait_until "dev is synced and healthy again" "Synced/Healthy" app_state dev
+    # Two kinds of manual setting, because Argo CD compares the fields that Git declares, and a setting that Git does not
+    # mention is a different case from a setting that Git declares with another value. (The first run of this drill
+    # expected both to be undone; the first one was not.)
+    echo "== 2a. a person adds an environment variable to the backend Deployment that Git does not declare"
+    kubectl set env deployment/campusslot-backend -n campusslot-dev DRILL_EXTRA=by-hand >/dev/null
+    TIMEOUT=60 wait_until "Argo CD removes the extra variable" "" kubectl get deployment campusslot-backend -n campusslot-dev -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="DRILL_EXTRA")].value}'
+    echo "application state meanwhile: $(app_state dev)"
+    kubectl set env deployment/campusslot-backend -n campusslot-dev DRILL_EXTRA- >/dev/null   # removed by hand, to leave dev clean
+
+    echo "== 2b. a person changes a setting that Git declares (LOG_LEVEL in the ConfigMap of the backend)"
+    declared="$(kubectl get configmap campusslot-backend-config -n campusslot-dev -o jsonpath='{.data.LOG_LEVEL}')"
+    echo "declared value: $declared"
+    kubectl patch configmap campusslot-backend-config -n campusslot-dev --type merge -p '{"data":{"LOG_LEVEL":"ERROR"}}' >/dev/null
+    wait_until "Argo CD puts the declared value back" "$declared" kubectl get configmap campusslot-backend-config -n campusslot-dev -o jsonpath='{.data.LOG_LEVEL}'
+    wait_until "dev is synced again" "Synced" kubectl get application campusslot-dev -n argocd -o jsonpath='{.status.sync.status}'
 
     echo "== 3. a person deletes the frontend Service"
     kubectl delete service campusslot-frontend -n campusslot-dev >/dev/null

@@ -558,6 +558,11 @@ jobs:
             echo "old build: c0d5a17a0c00, new build: d79ce938f742"
           } | tee evidence/environment.txt
 
+      - name: Install the ingress controller, because Argo CD calls an Ingress without an address Progressing
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
+          kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
+
       - name: Setup, Argo CD with the ApplicationSet, dev and staging at the old build
         env:
           PYTHON: python3
