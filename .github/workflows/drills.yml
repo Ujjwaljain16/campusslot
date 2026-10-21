@@ -603,3 +603,161 @@ jobs:
         with:
           name: phase5
           path: evidence/
+
+  phase6:
+    name: Phase 6, game day (session ${{ matrix.session }})
+    if: startsWith(github.ref_name, 'drill/phase6')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - session: A
+            what: lean, plain Deployment and one database pod
+            kind_config: ci/kind-config.yaml
+          - session: B
+            what: canary, Prometheus and the Rollouts controller
+            kind_config: ci/kind-config.yaml
+          - session: C
+            what: database, the operator
+            kind_config: ci/kind-config.yaml
+          - session: D
+            what: node drain, a control plane and three workers
+            kind_config: ci/kind-multinode.yaml
+          - session: E
+            what: tracing overhead, the full monitoring stack and Tempo
+            kind_config: ci/kind-config.yaml
+    env:
+      SESSION: ${{ matrix.session }}
+      PYTHON: python3
+    steps:
+      - uses: actions/checkout@v7
+      - run: mkdir -p evidence
+      - uses: azure/setup-helm@v5
+        with:
+          version: v3.22.0
+
+      - name: Create the kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: drill
+          config: ${{ matrix.kind_config }}
+
+      - name: Record the environment of the measurements
+        run: |
+          {
+            echo "session ${{ matrix.session }}: ${{ matrix.what }}"
+            echo "runner: $(nproc) vCPU, $(free -m | awk '/Mem:/ {print $2}') MB memory, $(uname -r)"
+            echo "kubernetes: $(kubectl version -o json | python3 -c 'import json,sys; print(json.load(sys.stdin)["serverVersion"]["gitVersion"])')"
+            echo "nodes: $(kubectl get nodes --no-headers | wc -l)"
+            echo "image: ghcr.io/ujjwaljain16/campusslot-backend:$IMAGE_SHA"
+          } | tee evidence/environment.txt
+
+      - name: Install the ingress controller
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
+          kubectl wait --namespace ingress-nginx --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller --timeout=180s
+          for _ in $(seq 1 60); do
+            ready=$(kubectl get endpointslices --namespace ingress-nginx \
+              -l kubernetes.io/service-name=ingress-nginx-controller-admission \
+              -o jsonpath='{.items[*].endpoints[?(@.conditions.ready==true)].addresses[0]}')
+            [ -n "$ready" ] && break
+            sleep 2
+          done
+          test -n "$ready"
+
+      - name: Install what this session needs
+        run: |
+          case "$SESSION" in
+            B)
+              helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+              helm repo update prometheus-community
+              helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+                --namespace monitoring --create-namespace --version 91.9.0 \
+                -f monitoring/kube-prometheus-stack-values.yaml --set grafana.enabled=false --wait --timeout 10m
+              scripts/install-rollouts.sh
+              ;;
+            C)
+              scripts/install-cnpg.sh
+              ;;
+            E)
+              scripts/install-monitoring.sh
+              scripts/install-tracing.sh
+              ;;
+          esac
+
+      - name: Deploy the application
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl create secret docker-registry ghcr --namespace "$NAMESPACE" \
+            --docker-server=ghcr.io --docker-username="${{ github.actor }}" --docker-password="${{ secrets.GITHUB_TOKEN }}"
+          extra=()
+          case "$SESSION" in
+            B) extra+=(--set rollout.enabled=true --set serviceMonitor.enabled=true --set serviceMonitor.interval=15s --set prometheusRule.enabled=true) ;;
+            C) extra+=(--set postgres.operator.enabled=true) ;;
+            D) extra+=(--set backend.replicaCount=3) ;;
+            E) extra+=(--set serviceMonitor.enabled=true --set serviceMonitor.interval=15s --set prometheusRule.enabled=true) ;;
+          esac
+          password="$(openssl rand -hex 16)"
+          for attempt in 1 2 3; do
+            if helm upgrade --install campusslot helm/campusslot --namespace "$NAMESPACE" \
+              -f helm/campusslot/values-ci.yaml "${extra[@]}" \
+              --set backend.image.tag="$IMAGE_SHA" --set frontend.image.tag="$IMAGE_SHA" \
+              --set-string postgres.password="$password" --atomic --timeout 10m; then
+              break
+            fi
+            echo "helm attempt $attempt of 3 failed"; sleep 10
+            [ "$attempt" = 3 ] && exit 1
+          done
+          case "$SESSION" in
+            B) kubectl wait --namespace "$NAMESPACE" --for=jsonpath='{.status.phase}'=Healthy rollout/campusslot-backend --timeout=300s ;;
+            C) kubectl wait --for=condition=Ready cluster/campusslot-pg -n "$NAMESPACE" --timeout=600s ;;
+            *) kubectl rollout status deployment/campusslot-backend --namespace "$NAMESPACE" --timeout=300s ;;
+          esac
+          for _ in $(seq 1 30); do curl -fsS http://localhost/api/rooms >/dev/null && break; sleep 2; done
+          kubectl get pods -n "$NAMESPACE" -o wide | tee evidence/pods-before.txt
+
+      - name: Prometheus port forward, for the alert watcher
+        if: matrix.session == 'B' || matrix.session == 'E'
+        run: |
+          kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-prometheus 9090:9090 >/dev/null 2>&1 &
+          sleep 8
+          curl -s -o /dev/null -w "prometheus: %{http_code}\n" http://localhost:9090/-/ready
+
+      - name: The game day
+        run: |
+          # The drills are measurements: the verdict is in the report, so a FAIL does not stop the job.
+          case "$SESSION" in
+            A) python3 scripts/gameday.py run --base http://localhost --scenarios backend-pod-kill,database-pod-restart --out evidence/gameday.md 2>&1 | tee evidence/gameday.txt || true ;;
+            B) python3 scripts/gameday.py run --base http://localhost --scenarios bad-release,slow-release --out evidence/gameday.md 2>&1 | tee evidence/gameday.txt || true ;;
+            C)
+              python3 scripts/gameday.py run --base http://localhost --scenarios database-primary-failover --out evidence/gameday-async.md 2>&1 | tee evidence/gameday-async.txt || true
+              helm upgrade campusslot helm/campusslot -n "$NAMESPACE" --reuse-values --set postgres.operator.synchronous=true
+              sleep 20
+              python3 scripts/cnpg_watch.py --namespace "$NAMESPACE" --cluster campusslot-pg --seconds 300 --until-healthy | tail -n 2 || true
+              python3 scripts/gameday.py run --base http://localhost --scenarios database-primary-failover --out evidence/gameday-sync.md 2>&1 | tee evidence/gameday-sync.txt || true
+              ;;
+            D) python3 scripts/gameday.py run --base http://localhost --scenarios node-drain --out evidence/gameday.md 2>&1 | tee evidence/gameday.txt || true ;;
+            E) python3 scripts/gameday.py overhead --base http://localhost --rounds 3 --seconds 45 2>&1 | tee evidence/overhead.txt || true ;;
+          esac
+
+      - name: Diagnostics
+        if: always()
+        run: |
+          kubectl get pods -A -o wide > evidence/pods-after.txt 2>&1 || true
+          kubectl get events -n "$NAMESPACE" --sort-by=.lastTimestamp > evidence/events.txt 2>&1 || true
+          kubectl get rollout,analysisrun -n "$NAMESPACE" -o yaml > evidence/rollout.yaml 2>&1 || true
+          kubectl get cluster -n "$NAMESPACE" -o yaml > evidence/cluster.yaml 2>&1 || true
+          for f in evidence/gameday.md evidence/gameday-async.md evidence/gameday-sync.md; do
+            [ -f "$f" ] && { echo "**$f**" >> "$GITHUB_STEP_SUMMARY"; cat "$f" >> "$GITHUB_STEP_SUMMARY"; }
+          done
+          [ -f evidence/overhead.txt ] && { echo '```' >> "$GITHUB_STEP_SUMMARY"; tail -n 25 evidence/overhead.txt >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; }
+          true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase6-${{ matrix.session }}
+          path: evidence/

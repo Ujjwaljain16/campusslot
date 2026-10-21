@@ -414,11 +414,23 @@ def reset_release(ctx: Context) -> None:
     wait_until(lambda: rollout_phase(ctx) == "Healthy", 240)
 
 
+def database_nodes(ctx: Context) -> set[str]:
+    """The nodes that hold a database pod. Its volume is local to the node, so draining that node is the loss of the
+    database and not a test of the backend, and it is a different scenario."""
+    items = kubectl_json(ctx, "get", "pods", "-l", "app.kubernetes.io/component=postgres").get("items", [])
+    items += kubectl_json(ctx, "get", "pods", "-l", "cnpg.io/cluster").get("items", [])
+    return {p["spec"].get("nodeName", "") for p in items}
+
+
 def drain_busiest_node(ctx: Context) -> None:
     per_node: dict[str, int] = {}
+    avoid = database_nodes(ctx)
     for pod in backend_pods(ctx):
         node = pod["spec"].get("nodeName", "")
-        per_node[node] = per_node.get(node, 0) + 1
+        if node not in avoid:
+            per_node[node] = per_node.get(node, 0) + 1
+    if not per_node:
+        raise RuntimeError("every node with a backend pod also holds the database: nothing to drain without removing the database")
     node = max(per_node, key=per_node.get)
     ctx.__dict__["drained"] = node
     sh("kubectl", "drain", node, "--ignore-daemonsets", "--delete-emptydir-data", "--timeout=120s", timeout=150)
