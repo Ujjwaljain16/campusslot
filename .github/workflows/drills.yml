@@ -561,6 +561,7 @@ jobs:
       - name: Setup, Argo CD with the ApplicationSet, dev and staging at the old build
         env:
           PYTHON: python3
+          REDIS_REPOSITORY: mirror.gcr.io/library/redis   # ecr-public.aws.com answered 429 to the runner
         run: scripts/gitops-drill.sh setup 2>&1 | tee evidence/setup.txt
 
       - name: Promote, a build goes to dev, a wrong promotion is refused, staging takes what dev runs

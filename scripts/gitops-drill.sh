@@ -24,6 +24,9 @@ PY="${PYTHON:-python}"
 OLD_SHA="${OLD_SHA:-c0d5a17a0c002264fdf6c7c4be08faf29cb630f2}"
 NEW_SHA="${NEW_SHA:-d79ce938f7428ced862bc1a41c24b3624bf1b9de}"
 ARGOCD_VERSION="${ARGOCD_VERSION:-10.9.6}"
+# The chart pulls Redis from ecr-public.aws.com, which answers 429 (too many requests) to the shared addresses of a CI
+# runner. A mirror of the same image can be named here; unset, the chart default is used.
+REDIS_REPOSITORY="${REDIS_REPOSITORY:-}"
 TIMEOUT="${TIMEOUT:-300}"
 
 now() { date +%s; }
@@ -84,6 +87,7 @@ case "$MODE" in
     helm repo add argo https://argoproj.github.io/argo-helm >/dev/null 2>&1 || true
     helm repo update argo >/dev/null
     helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace \
+      ${REDIS_REPOSITORY:+--set "redis.image.repository=$REDIS_REPOSITORY"} \
       --version "$ARGOCD_VERSION" -f "$ROOT/gitops/argocd-values.yaml" --wait --timeout 8m || {
         # A drill that goes on after this measures nothing: without its Redis, Argo CD cannot compare Git with the cluster.
         echo "Argo CD did not become ready:"
