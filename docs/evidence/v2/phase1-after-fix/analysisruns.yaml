@@ -1,0 +1,273 @@
+apiVersion: v1
+items:
+- apiVersion: argoproj.io/v1alpha1
+  kind: AnalysisRun
+  metadata:
+    annotations:
+      rollout.argoproj.io/revision: "2"
+    creationTimestamp: "2026-10-21T17:44:56Z"
+    generation: 12
+    labels:
+      app.kubernetes.io/component: backend
+      app.kubernetes.io/instance: campusslot
+      app.kubernetes.io/name: campusslot
+      rollout-type: Background
+      rollouts-pod-template-hash: 6f8b9d55d5
+    name: campusslot-backend-6f8b9d55d5-2
+    namespace: campusslot
+    ownerReferences:
+    - apiVersion: argoproj.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Rollout
+      name: campusslot-backend
+      uid: 7b370a9e-6a5f-4367-86f8-6a699968f51e
+    resourceVersion: "1813"
+    uid: 1fa28718-ab01-4430-a6eb-2462790fd544
+  spec:
+    args:
+    - name: canary-hash
+      value: 6f8b9d55d5
+    metrics:
+    - failureCondition: result[0] >= 0.02
+      failureLimit: 2
+      initialDelay: 45s
+      interval: 15s
+      name: error-ratio
+      provider:
+        prometheus:
+          address: http://monitoring-kube-prometheus-prometheus.monitoring.svc:9090
+          authentication:
+            oauth2: {}
+            sigv4: {}
+          query: |
+            (sum(rate(http_requests_total{namespace="campusslot", pod=~"campusslot-backend-{{args.canary-hash}}-.*", status="5xx"}[1m])) or vector(0))
+            / sum(rate(http_requests_total{namespace="campusslot", pod=~"campusslot-backend-{{args.canary-hash}}-.*"}[1m]))
+      successCondition: result[0] < 0.02
+    - failureCondition: result[0] < 0.95
+      failureLimit: 2
+      initialDelay: 45s
+      interval: 15s
+      name: fast-ratio
+      provider:
+        prometheus:
+          address: http://monitoring-kube-prometheus-prometheus.monitoring.svc:9090
+          authentication:
+            oauth2: {}
+            sigv4: {}
+          query: |
+            sum(rate(http_request_duration_highr_seconds_bucket{namespace="campusslot", pod=~"campusslot-backend-{{args.canary-hash}}-.*", le="0.25"}[1m]))
+            / sum(rate(http_request_duration_highr_seconds_count{namespace="campusslot", pod=~"campusslot-backend-{{args.canary-hash}}-.*"}[1m]))
+      successCondition: result[0] >= 0.95
+    terminate: true
+  status:
+    completedAt: "2026-10-21T17:47:28Z"
+    dryRunSummary: {}
+    message: Run Terminated
+    metricResults:
+    - consecutiveSuccess: 8
+      count: 8
+      measurements:
+      - finishedAt: "2026-10-21T17:45:41Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:45:41Z"
+        value: '[1]'
+      - finishedAt: "2026-10-21T17:45:56Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:45:56Z"
+        value: '[1]'
+      - finishedAt: "2026-10-21T17:46:11Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:46:11Z"
+        value: '[1]'
+      - finishedAt: "2026-10-21T17:46:26Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:46:26Z"
+        value: '[1]'
+      - finishedAt: "2026-10-21T17:46:41Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:46:41Z"
+        value: '[1]'
+      - finishedAt: "2026-10-21T17:46:56Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:46:56Z"
+        value: '[1]'
+      - finishedAt: "2026-10-21T17:47:11Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:47:11Z"
+        value: '[1]'
+      - finishedAt: "2026-10-21T17:47:26Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:47:26Z"
+        value: '[1]'
+      metadata:
+        ResolvedPrometheusQuery: |
+          sum(rate(http_request_duration_highr_seconds_bucket{namespace="campusslot", pod=~"campusslot-backend-6f8b9d55d5-.*", le="0.25"}[1m]))
+          / sum(rate(http_request_duration_highr_seconds_count{namespace="campusslot", pod=~"campusslot-backend-6f8b9d55d5-.*"}[1m]))
+      name: fast-ratio
+      phase: Successful
+      successful: 8
+    - consecutiveSuccess: 8
+      count: 8
+      measurements:
+      - finishedAt: "2026-10-21T17:45:41Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:45:41Z"
+        value: '[0]'
+      - finishedAt: "2026-10-21T17:45:56Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:45:56Z"
+        value: '[0]'
+      - finishedAt: "2026-10-21T17:46:11Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:46:11Z"
+        value: '[0]'
+      - finishedAt: "2026-10-21T17:46:26Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:46:26Z"
+        value: '[0]'
+      - finishedAt: "2026-10-21T17:46:41Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:46:41Z"
+        value: '[0]'
+      - finishedAt: "2026-10-21T17:46:56Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:46:56Z"
+        value: '[0]'
+      - finishedAt: "2026-10-21T17:47:11Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:47:11Z"
+        value: '[0]'
+      - finishedAt: "2026-10-21T17:47:26Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:47:26Z"
+        value: '[0]'
+      metadata:
+        ResolvedPrometheusQuery: |
+          (sum(rate(http_requests_total{namespace="campusslot", pod=~"campusslot-backend-6f8b9d55d5-.*", status="5xx"}[1m])) or vector(0))
+          / sum(rate(http_requests_total{namespace="campusslot", pod=~"campusslot-backend-6f8b9d55d5-.*"}[1m]))
+      name: error-ratio
+      phase: Successful
+      successful: 8
+    phase: Successful
+    runSummary:
+      count: 2
+      successful: 2
+    startedAt: "2026-10-21T17:44:56Z"
+- apiVersion: argoproj.io/v1alpha1
+  kind: AnalysisRun
+  metadata:
+    annotations:
+      rollout.argoproj.io/revision: "3"
+    creationTimestamp: "2026-10-21T17:49:28Z"
+    generation: 6
+    labels:
+      app.kubernetes.io/component: backend
+      app.kubernetes.io/instance: campusslot
+      app.kubernetes.io/name: campusslot
+      rollout-type: Background
+      rollouts-pod-template-hash: 8c6d765c4
+    name: campusslot-backend-8c6d765c4-3
+    namespace: campusslot
+    ownerReferences:
+    - apiVersion: argoproj.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Rollout
+      name: campusslot-backend
+      uid: 7b370a9e-6a5f-4367-86f8-6a699968f51e
+    resourceVersion: "2283"
+    uid: b2cab957-5c44-459e-a3f5-d4f46c7f595d
+  spec:
+    args:
+    - name: canary-hash
+      value: 8c6d765c4
+    metrics:
+    - failureCondition: result[0] >= 0.02
+      failureLimit: 2
+      initialDelay: 45s
+      interval: 15s
+      name: error-ratio
+      provider:
+        prometheus:
+          address: http://monitoring-kube-prometheus-prometheus.monitoring.svc:9090
+          authentication:
+            oauth2: {}
+            sigv4: {}
+          query: |
+            (sum(rate(http_requests_total{namespace="campusslot", pod=~"campusslot-backend-{{args.canary-hash}}-.*", status="5xx"}[1m])) or vector(0))
+            / sum(rate(http_requests_total{namespace="campusslot", pod=~"campusslot-backend-{{args.canary-hash}}-.*"}[1m]))
+      successCondition: result[0] < 0.02
+    - failureCondition: result[0] < 0.95
+      failureLimit: 2
+      initialDelay: 45s
+      interval: 15s
+      name: fast-ratio
+      provider:
+        prometheus:
+          address: http://monitoring-kube-prometheus-prometheus.monitoring.svc:9090
+          authentication:
+            oauth2: {}
+            sigv4: {}
+          query: |
+            sum(rate(http_request_duration_highr_seconds_bucket{namespace="campusslot", pod=~"campusslot-backend-{{args.canary-hash}}-.*", le="0.25"}[1m]))
+            / sum(rate(http_request_duration_highr_seconds_count{namespace="campusslot", pod=~"campusslot-backend-{{args.canary-hash}}-.*"}[1m]))
+      successCondition: result[0] >= 0.95
+  status:
+    completedAt: "2026-10-21T17:50:43Z"
+    dryRunSummary: {}
+    message: Metric "error-ratio" assessed Failed due to failed (3) > failureLimit
+      (2)
+    metricResults:
+    - count: 3
+      failed: 3
+      measurements:
+      - finishedAt: "2026-10-21T17:50:13Z"
+        phase: Failed
+        startedAt: "2026-10-21T17:50:13Z"
+        value: '[0.2222222222222222]'
+      - finishedAt: "2026-10-21T17:50:28Z"
+        phase: Failed
+        startedAt: "2026-10-21T17:50:28Z"
+        value: '[0.3541666666666667]'
+      - finishedAt: "2026-10-21T17:50:43Z"
+        phase: Failed
+        startedAt: "2026-10-21T17:50:43Z"
+        value: '[0.3541666666666667]'
+      metadata:
+        ResolvedPrometheusQuery: |
+          (sum(rate(http_requests_total{namespace="campusslot", pod=~"campusslot-backend-8c6d765c4-.*", status="5xx"}[1m])) or vector(0))
+          / sum(rate(http_requests_total{namespace="campusslot", pod=~"campusslot-backend-8c6d765c4-.*"}[1m]))
+      name: error-ratio
+      phase: Failed
+    - consecutiveSuccess: 3
+      count: 3
+      measurements:
+      - finishedAt: "2026-10-21T17:50:13Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:50:13Z"
+        value: '[1]'
+      - finishedAt: "2026-10-21T17:50:28Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:50:28Z"
+        value: '[1]'
+      - finishedAt: "2026-10-21T17:50:43Z"
+        phase: Successful
+        startedAt: "2026-10-21T17:50:43Z"
+        value: '[1]'
+      metadata:
+        ResolvedPrometheusQuery: |
+          sum(rate(http_request_duration_highr_seconds_bucket{namespace="campusslot", pod=~"campusslot-backend-8c6d765c4-.*", le="0.25"}[1m]))
+          / sum(rate(http_request_duration_highr_seconds_count{namespace="campusslot", pod=~"campusslot-backend-8c6d765c4-.*"}[1m]))
+      name: fast-ratio
+      phase: Successful
+      successful: 3
+    phase: Failed
+    runSummary:
+      count: 2
+      failed: 1
+      successful: 1
+    startedAt: "2026-10-21T17:49:28Z"
+kind: List
+metadata:
+  resourceVersion: ""

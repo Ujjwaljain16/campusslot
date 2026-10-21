@@ -9,7 +9,7 @@ This maps every item of the instructor's grading rubric (`session21-python/GRADI
 | Repository | https://github.com/Ujjwaljain16/campusslot |
 | Pipeline runs, all green on `main` | https://github.com/Ujjwaljain16/campusslot/actions |
 | Container images, tagged with the commit SHA | [backend](https://github.com/Ujjwaljain16/campusslot/pkgs/container/campusslot-backend), [frontend](https://github.com/Ujjwaljain16/campusslot/pkgs/container/campusslot-frontend) |
-| README (20 sections, then the engineering results) | [`README.md`](../README.md) |
+| README (20 sections, then the engineering results; on `v2` it is the [build log](build-log.md)) | [`build-log.md`](build-log.md) |
 | Recorded demo (4 min 22 s, the failure drill runs live in it) | [`docs/demo/CampusSlot-demo.mp4`](demo/CampusSlot-demo.mp4) |
 | Presentation (15 slides with speaker notes, and a PDF copy) | [`CampusSlot-final-presentation.pptx`](presentation/CampusSlot-final-presentation.pptx) |
 
@@ -72,7 +72,7 @@ This maps every item of the instructor's grading rubric (`session21-python/GRADI
 |---|---|
 | Trivy on both images | steps `Scan backend image (Trivy)` and `Scan frontend image (Trivy)`, screenshot [`github-trivy-scan-steps.png`](evidence/github-trivy-scan-steps.png), reports [`trivy-backend-report.png`](evidence/trivy-backend-report.png) and [`trivy-frontend-report.png`](evidence/trivy-frontend-report.png) |
 | Fails on HIGH or CRITICAL | `severity: HIGH,CRITICAL`, `ignore-unfixed: true`, `exit-code: "1"`, before anything is pushed ([ADR 0010](adr/0010-trivy-ignore-unfixed.md)) |
-| Can explain the result | README section 11 explains what was scanned and what a clean result means |
+| Can explain the result | Build log section 11 explains what was scanned and what a clean result means |
 | Also | Bandit, `pip-audit`, `npm audit`, Gitleaks, and Trivy on the Terraform and the Helm chart |
 
 ## M7 Terraform (15 points)
@@ -114,7 +114,7 @@ This maps every item of the instructor's grading rubric (`session21-python/GRADI
 
 | Criterion | Evidence |
 |---|---|
-| `README.md` explaining the application | [`README.md`](../README.md) |
+| `README.md` explaining the application (on `v2`, the walkthrough moved to the [build log](build-log.md)) | [`build-log.md`](build-log.md) |
 | Live demo: commit, pipeline, deployment | rehearsed end to end: [`rehearsal.txt`](evidence/rehearsal.txt) and [`rehearsal-after-deploy.png`](evidence/rehearsal-after-deploy.png). The recorded demo is [`docs/demo/CampusSlot-demo.mp4`](demo/CampusSlot-demo.mp4), and the failure drill in it is measured in [`bad-release-drill.md`](engineering/bad-release-drill.md) |
 | Presentation | 15 slides with speaker notes, one slide per course topic, and three on the engineering results |
 
@@ -135,7 +135,7 @@ Argo CD GitOps, Loki and Alloy logs, a ConfigMap, a Pod Security profile, four t
 ## What I could not fully show
 
 - **The two browser screenshots of the application** ([`app-compose.png`](evidence/app-compose.png) and [`app-desktop.png`](evidence/app-desktop.png)) are captures of the page and do not show the address bar, so the port (3000 for Compose, 8080 for the Ingress through a port-forward) is stated in the README and not visible in the image.
-- **The `pytest -v` screenshot** shows 42 passed. The suite has 47 tests now. The README says so, and the current run is in `backend-tests.txt`.
+- **The `pytest -v` screenshot** shows 42 passed. The suite has 47 tests now. The build log says so, and the current run is in `backend-tests.txt`.
 - **The Ingress run on Minikube used a port-forward**, because Minikube has no external load balancer. The EKS cluster was destroyed after the infrastructure was proven and never ran the application.
 - **The recorded demo has captions and no audio**, and it captures only the browser viewport (the live drill is shown through a page that follows its real log). The commit and pull request step is not in it.
 - **Cost Explorer is not enabled for this account**, so the billed amount cannot be read directly. The empty account and the unchanged credit are the evidence that nothing is billing.

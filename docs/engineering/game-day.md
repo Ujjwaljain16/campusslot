@@ -74,7 +74,7 @@ Environment: GitHub-hosted runners with 4 vCPU and 16 GB, Kubernetes v1.35.0 ([s
 
 The backend containers did not restart in any scenario where it was judged. No alert fired in any scenario: the burn rate alerts wait 2 to 15 minutes on purpose, and a scenario of a minute or two cannot fire them (a limit that was known before the run).
 
-What the numbers say about the earlier phases: a killed backend pod and a drained node cost the users nothing measurable (0 failed of about 350 and 400 reads); a bad or slow release is aborted by its own metrics in about 80 s, with 3.95 % of the reads failing for the bad one and none for the slow one; and no acknowledged write was lost in any scenario, including the failover of the database. The canary figures agree with the drill of phase 1 (aborted at 78.6 s then, 80 s now).
+What the numbers say about the earlier phases: a killed backend pod and a drained node cost the users nothing measurable (0 failed of about 350 and 400 reads); a bad or slow release is aborted by its own metrics in about 80 s, with 3.95 % of the reads failing for the bad one and none for the slow one; and no acknowledged write was lost in any scenario, including the failover of the database. The canary figures agree with the drill of phase 1 (aborted at 78.6 s then, 80 s now). The game day ran before the first pause of the canary was lengthened from 60 s to 90 s, so its 3.95 % is the figure with the 60 s pause; the drill of phase 1 after the change failed 1.5 % ([canary releases](canary-releases.md)).
 
 ### Where the hypotheses or the predictions were wrong
 

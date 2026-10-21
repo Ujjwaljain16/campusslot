@@ -86,6 +86,21 @@ The same bad release reached **521 users' requests without a canary and 45 with 
 2. **Failed requests of the canary run: 45, predicted 25.** The prediction assumed that the canary has 10 percent of the traffic until the abort. It did not: the first pause (60 s) ended at +64.1 s and the rollout moved to **50 percent** (step 3), and the abort came at +78.6 s. For about 15 seconds half of the traffic went to the bad version. The abort took 75 s of analysis (45 s initial delay and two more readings, 15 s apart) plus the pod start, which is longer than the first pause. **The honest claim is therefore "aborted in 79 s, at 50 percent of the traffic", not "aborted at 10 percent".** Two ways to get the claim back, to be decided and measured in a later run: a first pause longer than the time to the abort (for example 90 s), or fewer allowed bad readings before the abort.
 3. **Good release: 125 s, predicted 150 to 180 s.** I had added a pod start time on top of the two 60 s pauses. With the images pulled, a pod is ready in about 3 s, so the total is the two pauses (120 s) and 5 s.
 
+### After the fix: a first pause of 90 s
+
+The second finding above was fixed by lengthening the first pause from 60 s to 90 s (`rollout.steps` in `values.yaml`), which is longer than the 75 s plus the pod start that the analysis needs to reach a verdict on a bad release. The drill was run again on the same kind of runner ([run 39646092777](https://github.com/Ujjwaljain16/campusslot/actions/runs/39646092777), transcripts in [`docs/evidence/v2/phase1-after-fix`](../evidence/v2/phase1-after-fix)).
+
+| | First run (60 s pause) | After the fix (90 s pause) |
+|---|---|---|
+| Control, plain Deployment, failed requests | 521 of 1800 (28.9 %) | 535 of 1800 (29.7 %) |
+| Canary, bad release: abort | at +78.6 s, **at 50 percent** of the traffic | at +78.7 s, **at 10 percent**: the rollout stayed at step 1 and never reached 50 |
+| Canary, bad release: failed requests | 45 of 1800 (2.5 %) | **27 of 1800 (1.5 %)**, against a prediction of about 25 |
+| The canary pods served | 150 requests (5.0 %), 49 failed | 83 requests (2.6 %), 27 failed |
+| Canary, good release: Healthy | +125.1 s | +155.5 s (two pauses of 90 s and 60 s, and the pod starts) |
+| Failed requests of the bad release against the control | 91 % fewer | **95 % fewer** (535 to 27) |
+
+The readings of the canary pods in the bad release were 0.22, 0.35 and 0.35 (the injected failure rate is 0.30), each above the limit of 0.02, so the third reading aborted it. The prediction of about 25 failed requests, which was wrong in the first run, now holds, and for the reason that it was written for: the canary had 10 percent of the traffic until the abort. The cost of the longer pause is a slower good release (about 30 s more). The frontend page answered `200` in all 449 probes again.
+
 ### What the known risks turned out to be
 
 | Risk named before the run | Result |
