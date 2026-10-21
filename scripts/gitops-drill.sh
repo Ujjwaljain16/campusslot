@@ -84,7 +84,13 @@ case "$MODE" in
     helm repo add argo https://argoproj.github.io/argo-helm >/dev/null 2>&1 || true
     helm repo update argo >/dev/null
     helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace \
-      --version "$ARGOCD_VERSION" -f "$ROOT/gitops/argocd-values.yaml" --wait --timeout 8m
+      --version "$ARGOCD_VERSION" -f "$ROOT/gitops/argocd-values.yaml" --wait --timeout 8m || {
+        # A drill that goes on after this measures nothing: without its Redis, Argo CD cannot compare Git with the cluster.
+        echo "Argo CD did not become ready:"
+        kubectl get pods -n argocd
+        kubectl get events -n argocd --sort-by=.lastTimestamp | tail -n 15
+        exit 1
+      }
 
     echo "== the ApplicationSet, for dev and staging, following $BRANCH"
     "$PY" "$ROOT/scripts/promote.py" appset --envs dev,staging --revision "$BRANCH" | kubectl apply -f -

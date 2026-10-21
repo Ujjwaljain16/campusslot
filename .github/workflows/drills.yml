@@ -576,6 +576,8 @@ jobs:
         run: |
           kubectl get applications,applicationsets -n argocd -o yaml > evidence/applications.yaml 2>&1 || true
           kubectl get pods -A -o wide > evidence/pods.txt 2>&1 || true
+          kubectl get events -A --sort-by=.lastTimestamp > evidence/events.txt 2>&1 || true
+          kubectl describe pods -n argocd > evidence/argocd-pods-described.txt 2>&1 || true
           kubectl logs -n argocd deploy/argocd-applicationset-controller --tail=100 > evidence/applicationset-controller.log 2>&1 || true
           kubectl logs -n argocd statefulset/argocd-application-controller --tail=150 > evidence/application-controller.log 2>&1 || true
           git -C ../campusslot-promotion-drill log --oneline -8 > evidence/drill-branch-log.txt 2>&1 || true
