@@ -77,4 +77,4 @@ The chain works from the objective to the request: the metric says that the fast
 - The Tempo chart (single binary) is deprecated, and it works (see the results). A production version would use the distributed chart.
 - Tempo keeps the traces in memory and on the pod's own disk. A restart starts empty.
 - A graph point does not open its own trace (there are no exemplars). The dashboard links by a search over the same period and threshold.
-- The cost of tracing is not measured yet. It is part of the game day: the same load with tracing off, at a ratio of 0.1, and at 1.
+- The cost of tracing was measured in the game day, and it is not small: under a saturating load the p95 rose by 15 to 18 % at a ratio of 0.1 and by 53 to 61 % at a ratio of 1 ([game day](game-day.md)).

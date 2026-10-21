@@ -1,0 +1,5 @@
+session A: lean, plain Deployment and one database pod
+runner: 4 vCPU, 15983 MB memory, 7.0.0-1017-azure
+kubernetes: v1.35.0
+nodes: 1
+image: ghcr.io/ujjwaljain16/campusslot-backend:2ca20e497c58cd409a9b1c2b7d36413a6370d4b2
