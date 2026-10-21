@@ -252,6 +252,7 @@ class Context:
     has_operator: bool = False
     synchronous: bool = False
     nodes: int = 1
+    old_database_uid: str = ""  # the pod that was deleted: a pod that is still terminating must not count as recovered
 
     @property
     def backend(self) -> str:
@@ -390,11 +391,15 @@ def kill_backend_pod(ctx: Context) -> None:
 
 def kill_database_pod(ctx: Context) -> None:
     pod = f"{ctx.release}-postgres-0"
+    _, ctx.old_database_uid = sh("kubectl", "get", "pod", pod, "-n", ctx.namespace, "-o", "jsonpath={.metadata.uid}")
     sh("kubectl", "delete", "pod", pod, "-n", ctx.namespace, "--wait=false")
 
 
 def database_pod_back(ctx: Context) -> bool:
     items = kubectl_json(ctx, "get", "pods", "-l", "app.kubernetes.io/component=postgres").get("items", [])
+    # The deleted pod stays in the list, and Ready, until it has stopped. Only a different pod counts as the database
+    # being back. (The first run of the game day measured a recovery of 0.1 s because it looked at the old pod.)
+    items = [p for p in items if p["metadata"].get("uid") != ctx.old_database_uid and not p["metadata"].get("deletionTimestamp")]
     return bool(items) and all(
         c.get("ready") for p in items for c in p.get("status", {}).get("containerStatuses", [{"ready": False}])
     )
@@ -516,6 +521,35 @@ SCENARIOS: list[Scenario] = [
         recovery_limit_s=240,
     ),
 ]
+
+
+class Trickle:
+    """A few requests per second while the system is being put back. A canary is judged by the traffic that it receives,
+    and with none the analysis is inconclusive and the rollout waits for ever: after the load of a scenario has stopped,
+    the release that undoes the fault would never finish. (The first run of the game day stopped there.)"""
+
+    def __init__(self, base: str, per_second: float = 5):
+        self.base = base
+        self.interval = 1 / per_second
+        self.stop_event = threading.Event()
+        self.thread = threading.Thread(target=self.run, daemon=True)
+
+    def run(self):
+        while not self.stop_event.is_set():
+            try:
+                with urllib.request.urlopen(self.base + "/api/rooms", timeout=3) as response:
+                    response.read()
+            except Exception:
+                pass
+            self.stop_event.wait(self.interval)
+
+    def __enter__(self):
+        self.thread.start()
+        return self
+
+    def __exit__(self, *exc):
+        self.stop_event.set()
+        self.thread.join(timeout=5)
 
 
 def detect_context(ctx: Context) -> Context:
@@ -642,7 +676,7 @@ def cmd_run(args) -> int:
         print("no scenario matches. Known:", ", ".join(s.name for s in SCENARIOS))
         return 2
     rows = []
-    slot = 10_000
+    slot = args.first_slot
     for s in wanted:
         print(f"== {s.name}: {s.title}", flush=True)
         ok, reason = s.applicable(ctx)
@@ -658,13 +692,16 @@ def cmd_run(args) -> int:
         try:
             observed, checks = run_scenario(ctx, s, slot)
         finally:
-            s.reset(ctx)
+            with Trickle(ctx.base):
+                s.reset(ctx)
         slot += 5_000
         for what, held, detail in checks:
             print(f"  {'PASS' if held else 'FAIL'}  {what}: {detail}")
         rows.append({"name": s.name, "scenario": s, "skipped": "", "observed": observed, "checks": checks})
         print("  waiting for the steady state ...", flush=True)
-        if wait_until(lambda: steady(ctx)[0], 300) is None:
+        with Trickle(ctx.base):
+            returned = wait_until(lambda: steady(ctx)[0], 300)
+        if returned is None:
             print("  the system did not return to the steady state: stopping the game day here")
             break
     report = render_report(rows, ctx)
@@ -775,6 +812,7 @@ def main() -> int:
             p.add_argument("--prometheus", default="http://localhost:9090")
             p.add_argument("--scenarios", default="all", help="a comma separated list, or all")
             p.add_argument("--out", default="gameday.md")
+            p.add_argument("--first-slot", type=int, default=10_000, help="the first booking slot of the writes; a second game day on the same data needs another one")
         else:
             p.add_argument("--rounds", type=int, default=3)
             p.add_argument("--seconds", type=float, default=45)

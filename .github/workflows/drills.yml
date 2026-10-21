@@ -737,7 +737,7 @@ jobs:
               helm upgrade campusslot helm/campusslot -n "$NAMESPACE" --reuse-values --set postgres.operator.synchronous=true
               sleep 20
               python3 scripts/cnpg_watch.py --namespace "$NAMESPACE" --cluster campusslot-pg --seconds 300 --until-healthy | tail -n 2 || true
-              python3 scripts/gameday.py run --base http://localhost --scenarios database-primary-failover --out evidence/gameday-sync.md 2>&1 | tee evidence/gameday-sync.txt || true
+              python3 scripts/gameday.py run --base http://localhost --first-slot 40000 --scenarios database-primary-failover --out evidence/gameday-sync.md 2>&1 | tee evidence/gameday-sync.txt || true
               ;;
             D) python3 scripts/gameday.py run --base http://localhost --scenarios node-drain --out evidence/gameday.md 2>&1 | tee evidence/gameday.txt || true ;;
             E) python3 scripts/gameday.py overhead --base http://localhost --rounds 3 --seconds 45 2>&1 | tee evidence/overhead.txt || true ;;
