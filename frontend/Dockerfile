@@ -11,7 +11,7 @@ RUN npm run build
 # ---- Stage 2: serve the static files with unprivileged nginx -----------------------------
 # Only the compiled dist/ folder reaches this stage, so Node and node_modules are not in the
 # final image. The "unprivileged" nginx variant runs as a non-root user and listens on 8080.
-FROM nginxinc/nginx-unprivileged:1.30-alpine AS runtime
+FROM nginxinc/nginx-unprivileged:1.31-alpine AS runtime
 ARG GIT_SHA=dev
 LABEL org.opencontainers.image.title="campusslot-frontend" \
       org.opencontainers.image.description="CampusSlot React frontend served by nginx" \
