@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- Stage 1: build the virtual environment with all dependencies --------------------------
-FROM python:3.12-slim AS builder
+FROM python:3.14-slim AS builder
 ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /build
 COPY requirements.txt .
@@ -10,7 +10,7 @@ RUN python -m venv /opt/venv \
     && /opt/venv/bin/python -m pip uninstall -y pip
 
 # ---- Stage 2: small runtime image, no build tooling, non-root ------------------------------
-FROM python:3.12-slim AS runtime
+FROM python:3.14-slim AS runtime
 ARG APP_VERSION=1.0.0
 ARG GIT_SHA=dev
 LABEL org.opencontainers.image.title="campusslot-backend" \
