@@ -1,4 +1,9 @@
-# CampusSlot
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/campusslot-logo-dark.svg">
+    <img alt="CampusSlot" src="docs/brand/campusslot-logo.svg" height="64">
+  </picture>
+</h1>
 
 [![CI](https://github.com/Ujjwaljain16/campusslot/actions/workflows/ci-cd.yml/badge.svg?branch=v2)](https://github.com/Ujjwaljain16/campusslot/actions/workflows/ci-cd.yml)
 

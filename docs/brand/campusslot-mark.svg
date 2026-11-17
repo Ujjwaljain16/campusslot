@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="CampusSlot">
+  <title>CampusSlot</title>
+  <rect width="96" height="96" rx="22" fill="#0f1e3d"/>
+  <path d="M67.92 64.71A26 26 0 0 1 48.18 74.00" fill="none" stroke="#cfe0ff" stroke-width="12" stroke-linecap="butt"/>
+  <path d="M44.56 73.77A26 26 0 0 1 26.15 62.08" fill="none" stroke="#cfe0ff" stroke-width="12" stroke-linecap="butt"/>
+  <path d="M24.40 58.91A26 26 0 0 1 24.40 37.09" fill="none" stroke="#cfe0ff" stroke-width="12" stroke-linecap="butt"/>
+  <path d="M26.15 33.92A26 26 0 0 1 44.56 22.23" fill="none" stroke="#fbbf24" stroke-width="12" stroke-linecap="butt"/>
+  <path d="M48.18 22.00A26 26 0 0 1 67.92 31.29" fill="none" stroke="#cfe0ff" stroke-width="12" stroke-linecap="butt"/>
+</svg>
